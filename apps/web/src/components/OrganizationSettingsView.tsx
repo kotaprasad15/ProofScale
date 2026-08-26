@@ -83,17 +83,17 @@ export function OrganizationSettingsView({ organizationId }: OrganizationSetting
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-12">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Organization Administration</h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <h2 className="text-2xl font-bold text-text-primary tracking-tight">Organization Administration</h2>
+          <p className="text-xs text-text-muted mt-1">
             Manage organization members, assign dual-scope roles, and approve tester access requests.
           </p>
         </div>
 
         <button
           onClick={() => { setShowInviteModal(true); setGeneratedInviteToken(null); }}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center space-x-1.5"
+          className="btn-solid-primary"
         >
           <UserPlus className="h-4 w-4" />
           <span>Invite Member</span>
@@ -101,11 +101,11 @@ export function OrganizationSettingsView({ organizationId }: OrganizationSetting
       </div>
 
       {/* Sub Tabs */}
-      <div className="flex items-center space-x-3 border-b border-slate-800">
+      <div className="flex items-center space-x-6 border-b border-white/[0.08]">
         <button
           onClick={() => setActiveSubTab("members")}
-          className={`pb-3 text-xs font-semibold flex items-center space-x-1.5 border-b-2 transition ${
-            activeSubTab === "members" ? "text-indigo-400 border-indigo-500" : "text-slate-400 border-transparent hover:text-slate-200"
+          className={`pb-3 text-xs font-semibold inline-flex items-center space-x-1.5 border-b-2 -mb-px transition cursor-pointer ${
+            activeSubTab === "members" ? "text-signal-indigo border-signal-indigo" : "text-text-muted border-transparent hover:text-text-primary"
           }`}
         >
           <Users className="h-4 w-4" />
@@ -114,8 +114,8 @@ export function OrganizationSettingsView({ organizationId }: OrganizationSetting
 
         <button
           onClick={() => setActiveSubTab("requests")}
-          className={`pb-3 text-xs font-semibold flex items-center space-x-1.5 border-b-2 transition ${
-            activeSubTab === "requests" ? "text-indigo-400 border-indigo-500" : "text-slate-400 border-transparent hover:text-slate-200"
+          className={`pb-3 text-xs font-semibold inline-flex items-center space-x-1.5 border-b-2 -mb-px transition cursor-pointer ${
+            activeSubTab === "requests" ? "text-signal-indigo border-signal-indigo" : "text-text-muted border-transparent hover:text-text-primary"
           }`}
         >
           <UserCheck className="h-4 w-4" />
@@ -125,22 +125,22 @@ export function OrganizationSettingsView({ organizationId }: OrganizationSetting
 
       {/* Active Members Table */}
       {activeSubTab === "members" && (
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-          <h3 className="font-bold text-white text-sm">Organization Members</h3>
+        <div className="glass-panel p-6 space-y-4">
+          <h3 className="font-bold text-text-primary text-sm">Organization Members</h3>
 
-          <div className="divide-y divide-slate-800">
+          <div className="divide-y divide-white/[0.06]">
             {membersQuery.data?.map(m => (
-              <div key={m.id} className="py-3.5 flex items-center justify-between">
+              <div key={m.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-0.5">
-                  <span className="text-sm font-semibold text-slate-200">{m.userEmail}</span>
-                  <p className="text-[11px] text-slate-500 font-mono">User ID: {m.userId}</p>
+                  <span className="text-sm font-semibold text-text-primary">{m.userEmail}</span>
+                  <p className="text-[11px] text-text-muted font-mono">User ID: {m.userId}</p>
                 </div>
 
                 <div className="flex items-center space-x-3">
                   <select
                     value={m.role}
                     onChange={e => handleRoleChange(m.id, e.target.value as OrgRole)}
-                    className="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200"
+                    className="px-2.5 py-1.5 rounded-xl bg-ink-900 border border-white/[0.1] text-xs font-semibold text-text-primary focus:outline-none focus:border-signal-indigo"
                   >
                     <option value="owner">Owner</option>
                     <option value="admin">Admin</option>
@@ -148,7 +148,7 @@ export function OrganizationSettingsView({ organizationId }: OrganizationSetting
                     <option value="tester">Tester</option>
                   </select>
 
-                  <span className="px-2 py-0.5 rounded-full text-[10px] uppercase font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="px-2.5 py-1 rounded-full text-[10px] uppercase font-mono font-bold bg-signal-teal-soft text-signal-teal border border-signal-teal/30">
                     {m.status}
                   </span>
                 </div>
@@ -160,30 +160,30 @@ export function OrganizationSettingsView({ organizationId }: OrganizationSetting
 
       {/* Access Requests Table */}
       {activeSubTab === "requests" && (
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-          <h3 className="font-bold text-white text-sm">Pending Tester Access Requests</h3>
+        <div className="glass-panel p-6 space-y-4">
+          <h3 className="font-bold text-text-primary text-sm">Pending Tester Access Requests</h3>
 
           {requestsQuery.data?.length === 0 ? (
-            <div className="text-xs text-slate-500 py-4">No pending tester access requests.</div>
+            <div className="text-xs text-text-muted py-4 font-mono">No pending tester access requests.</div>
           ) : (
-            <div className="divide-y divide-slate-800">
+            <div className="divide-y divide-white/[0.06]">
               {requestsQuery.data?.map(r => (
-                <div key={r.id} className="py-3.5 flex items-center justify-between">
+                <div key={r.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="space-y-1">
-                    <span className="text-sm font-semibold text-slate-200">{r.userEmail}</span>
-                    <p className="text-xs text-slate-400">{r.message || "Requested tester access"}</p>
+                    <span className="text-sm font-semibold text-text-primary">{r.userEmail}</span>
+                    <p className="text-xs text-text-muted">{r.message || "Requested tester access"}</p>
                   </div>
 
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => handleApproveRequest(r.id)}
-                      className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-lg transition"
+                      className="px-3 py-1.5 bg-signal-teal hover:bg-emerald-400 text-ink-950 font-bold text-xs rounded-xl transition cursor-pointer"
                     >
                       Approve Tester
                     </button>
                     <button
                       onClick={() => handleDenyRequest(r.id)}
-                      className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition"
+                      className="px-3 py-1.5 bg-white/[0.06] hover:bg-white/[0.1] text-text-muted hover:text-text-primary text-xs font-semibold rounded-xl border border-white/[0.08] transition cursor-pointer"
                     >
                       Deny
                     </button>
@@ -197,17 +197,17 @@ export function OrganizationSettingsView({ organizationId }: OrganizationSetting
 
       {/* Invite Member Modal */}
       {showInviteModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 max-w-md w-full space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white text-base">Invite Organization Member</h3>
-              <button onClick={() => setShowInviteModal(false)} className="text-slate-400 hover:text-white">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="glass-panel max-w-md w-full p-6 space-y-5 shadow-2xl border border-white/[0.15]">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+              <h3 className="font-bold text-text-primary text-base">Invite Organization Member</h3>
+              <button onClick={() => setShowInviteModal(false)} className="text-text-muted hover:text-text-primary cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+              <div className="p-3 rounded-xl bg-signal-rose-soft border border-signal-rose/30 text-xs text-signal-rose">
                 {errorMsg}
               </div>
             )}
@@ -215,23 +215,23 @@ export function OrganizationSettingsView({ organizationId }: OrganizationSetting
             {!generatedInviteToken ? (
               <form onSubmit={handleSendInvite} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Member Email Address *</label>
+                  <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">Member Email Address *</label>
                   <input
                     type="email"
                     value={inviteEmail}
                     onChange={e => setInviteEmail(e.target.value)}
                     placeholder="teammate@company.com"
                     required
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-ink-900 border border-white/[0.1] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Role Assignment</label>
+                  <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">Role Assignment</label>
                   <select
                     value={inviteRole}
                     onChange={e => setInviteRole(e.target.value as OrgRole)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-ink-900 border border-white/[0.1] text-sm text-text-primary focus:outline-none focus:border-signal-indigo"
                   >
                     <option value="admin">Admin (Can manage projects and members)</option>
                     <option value="member">Member (Standard project access)</option>
@@ -242,22 +242,22 @@ export function OrganizationSettingsView({ organizationId }: OrganizationSetting
                 <button
                   type="submit"
                   disabled={inviteMemberMutation.isPending}
-                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs rounded-xl transition shadow-lg shadow-indigo-600/30"
+                  className="btn-solid-primary w-full py-3 justify-center"
                 >
                   {inviteMemberMutation.isPending ? "Generating Invitation..." : "Generate Invitation Token"}
                 </button>
               </form>
             ) : (
-              <div className="space-y-3">
-                <p className="text-xs text-slate-400">
-                  Invitation created! Share this secure token with <strong className="text-slate-200">{inviteEmail}</strong>:
+              <div className="space-y-4">
+                <p className="text-xs text-text-muted">
+                  Invitation created! Share this secure token with <strong className="text-text-primary font-mono">{inviteEmail}</strong>:
                 </p>
 
-                <div className="p-3 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-between">
-                  <span className="text-xs font-mono text-indigo-300 truncate mr-2">{generatedInviteToken}</span>
+                <div className="p-3 rounded-xl bg-ink-950 border border-white/[0.1] flex items-center justify-between">
+                  <span className="text-xs font-mono text-signal-indigo truncate mr-2">{generatedInviteToken}</span>
                   <button
                     onClick={copyInvite}
-                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-lg shrink-0 flex items-center space-x-1"
+                    className="px-3 py-1.5 bg-signal-indigo hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg shrink-0 flex items-center space-x-1 cursor-pointer"
                   >
                     {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                     <span>{copied ? "Copied!" : "Copy"}</span>
@@ -266,7 +266,7 @@ export function OrganizationSettingsView({ organizationId }: OrganizationSetting
 
                 <button
                   onClick={() => { setShowInviteModal(false); setGeneratedInviteToken(null); setInviteEmail(""); }}
-                  className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl"
+                  className="w-full py-2.5 bg-white/[0.06] hover:bg-white/[0.1] text-text-primary text-xs font-semibold rounded-xl border border-white/[0.08] transition cursor-pointer"
                 >
                   Done
                 </button>

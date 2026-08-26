@@ -1,5 +1,5 @@
 import React from "react";
-import { LayoutDashboard, Target, PlaySquare, FileText, Settings, ShieldCheck, Activity, Users, LogOut, ChevronDown, Bell } from "lucide-react";
+import { LayoutDashboard, Target, PlaySquare, FileText, Settings, ShieldCheck, Activity, Users, LogOut, ChevronRight, Home, Globe } from "lucide-react";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { PointWave } from "./PointWave";
 import { UserPermissions } from "@proofscale/shared";
@@ -16,6 +16,7 @@ interface LayoutProps {
   userEmail?: string;
   onSelectOrg?: (orgId: string) => void;
   onLogout?: () => void;
+  onGoHome?: () => void;
 }
 
 export function Layout({
@@ -28,7 +29,8 @@ export function Layout({
   permissions,
   userEmail = "lead@acme.dev",
   onSelectOrg,
-  onLogout
+  onLogout,
+  onGoHome
 }: LayoutProps) {
   const activeOrg = organizations.find(o => o.id === activeOrgId) || organizations[0];
 
@@ -43,94 +45,140 @@ export function Layout({
   ].filter((item) => item.visible);
 
   return (
-    <div className="workspace-page">
-      {/* Tidal Ledger Workspace Signal Rail */}
-      <aside className="workspace-rail">
-        <BrandLogo compact />
-
-        {/* Active Workspace / Org Switcher */}
-        <div className="rail-workspace">
-          <span className="rail-company-dot" />
-          <div>
-            <strong>{activeOrg?.name || "Acme Engineering"}</strong>
-            <small>{orgRole || "Owner"}</small>
+    <div className="flex h-screen w-screen overflow-hidden bg-ink-950 text-text-primary font-sans">
+      {/* Sidebar Rail */}
+      <aside className="w-64 min-w-[260px] bg-ink-900 border-r border-white/[0.08] flex flex-col justify-between p-4 z-20 select-none">
+        <div className="space-y-6">
+          {/* Brand Header with Home click */}
+          <div className="px-2 pt-1">
+            <BrandLogo onClick={onGoHome} />
           </div>
-          {organizations.length > 1 && (
+
+          {/* Workspace Switcher */}
+          <div className="px-1">
             <WorkspaceSwitcher
               organizations={organizations}
               activeOrgId={activeOrgId}
               orgRole={orgRole}
               onSelectOrg={onSelectOrg || (() => {})}
             />
-          )}
-        </div>
-
-        {/* Active Envelope Context */}
-        <div className="rail-signal-context" aria-label="Active test envelope">
-          <span>Active envelope</span>
-          <strong>25 VUs <i>·</i> 60s</strong>
-          <small>Baseline · p95 &lt; 500ms</small>
-          <div>
-            <i /><i /><i /><i /><i /><i />
           </div>
+
+          {/* Active Test Envelope Context Pill */}
+          <div className="mx-1 p-3 rounded-2xl bg-ink-950/80 border border-white/[0.06] space-y-1.5 font-mono">
+            <div className="flex items-center justify-between text-[10px] text-text-muted uppercase">
+              <span>ACTIVE ENVELOPE</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-signal-teal animate-pulse" />
+            </div>
+            <div className="text-xs font-bold text-text-primary flex items-center gap-1.5">
+              <span>25 VUs</span>
+              <span className="text-text-faint">·</span>
+              <span>60s Ramp</span>
+            </div>
+            <p className="text-[10px] text-text-faint">Baseline · p95 &lt; 500ms</p>
+          </div>
+
+          {/* Navigation Links */}
+          <nav aria-label="Workspace navigation" className="space-y-1 px-1">
+            {navItems.map(item => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  type="button"
+                  key={item.id}
+                  onClick={() => onTabChange?.(item.id)}
+                  className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    isActive
+                      ? "bg-signal-indigo/15 text-white border border-signal-indigo/35 shadow-sm shadow-signal-indigo/20"
+                      : "text-text-muted hover:text-text-primary hover:bg-white/[0.04] border border-transparent"
+                  }`}
+                >
+                  <Icon className={`h-4 w-4 ${isActive ? "text-signal-indigo" : "text-text-muted"}`} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
-        {/* Navigation Links */}
-        <nav aria-label="Workspace navigation" className="rail-nav">
-          {navItems.map(item => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
+        {/* Footer Account Card & Sign Out */}
+        <div className="p-3 rounded-2xl bg-ink-950/90 border border-white/[0.06] space-y-3 mx-1">
+          <div className="flex items-center space-x-2.5">
+            <div className="h-8 w-8 rounded-xl bg-signal-indigo/20 border border-signal-indigo/30 flex items-center justify-center font-mono font-bold text-xs text-signal-indigo uppercase shrink-0">
+              {userEmail.slice(0, 2)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono text-signal-teal font-bold uppercase tracking-wider">
+                  {orgRole || "Member"}
+                </span>
+              </div>
+              <p className="text-xs font-semibold text-text-primary truncate">{userEmail}</p>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            {onGoHome && (
               <button
                 type="button"
-                key={item.id}
-                onClick={() => onTabChange?.(item.id)}
-                className={`rail-link ${isActive ? "active" : ""}`}
+                onClick={onGoHome}
+                title="Go to Homepage"
+                className="flex-1 py-2 px-2.5 bg-white/[0.04] hover:bg-white/[0.08] text-text-muted hover:text-text-primary text-xs font-semibold rounded-xl border border-white/[0.06] transition flex items-center justify-center space-x-1.5 cursor-pointer"
               >
-                <Icon size={18} />
-                <span>{item.label}</span>
+                <Home className="h-3.5 w-3.5" />
+                <span>Home</span>
               </button>
-            );
-          })}
-        </nav>
+            )}
 
-        {/* Account and Sign Out */}
-        <div className="rail-account">
-          <span className="avatar">
-            {userEmail.slice(0, 2).toUpperCase()}
-          </span>
-          <div>
-            <strong>{userEmail.split("@")[0]}</strong>
-            <small>{userEmail}</small>
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                title="Sign out of current workspace"
+                className="flex-1 py-2 px-2.5 bg-white/[0.04] hover:bg-signal-rose/15 hover:text-signal-rose hover:border-signal-rose/30 text-text-muted text-xs font-semibold rounded-xl border border-white/[0.06] transition flex items-center justify-center space-x-1.5 cursor-pointer"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>Sign Out</span>
+              </button>
+            )}
           </div>
-          {onLogout && (
-            <button type="button" onClick={onLogout} aria-label="Sign out" title="Sign out">
-              <LogOut size={16} />
-            </button>
-          )}
         </div>
       </aside>
 
-      {/* Main Evidence Workspace */}
-      <div className="flex-1 flex flex-col min-w-0 bg-canvas">
-        {/* Workspace Topbar */}
-        <header className="workspace-topbar px-8">
-          <div>
-            <span className="breadcrumb">
-              Workspace <b>/</b> {activeOrg?.name || "Acme Engineering"} <b>/</b> <span className="capitalize">{activeTab}</span>
-            </span>
-            <h1 className="text-xl font-black text-ink tracking-tight capitalize">{activeTab} Management</h1>
+      {/* Main Workspace Surface */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-ink-950">
+        {/* Topbar Header */}
+        <header className="h-16 border-b border-white/[0.08] bg-ink-900/60 backdrop-blur-xl px-8 flex items-center justify-between shrink-0 z-10">
+          <div className="flex items-center space-x-2 text-xs font-medium text-text-muted">
+            <span>Workspace</span>
+            <ChevronRight className="h-3.5 w-3.5 text-text-faint" />
+            <span className="text-text-primary font-semibold">{activeOrg?.name || "Acme Engineering Corp"}</span>
+            <ChevronRight className="h-3.5 w-3.5 text-text-faint" />
+            <span className="text-signal-indigo font-bold capitalize">{activeTab}</span>
           </div>
 
-          <div className="topbar-actions">
-            <span className="engine-status">
-              <i /> Engine available
+          <div className="flex items-center space-x-3">
+            {onGoHome && (
+              <button
+                type="button"
+                onClick={onGoHome}
+                className="btn-glass-secondary text-xs py-1.5 px-3 cursor-pointer flex items-center gap-1.5"
+              >
+                <Home className="h-3.5 w-3.5 text-signal-indigo" />
+                <span>Public Home</span>
+              </button>
+            )}
+
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-signal-teal-soft text-signal-teal border border-signal-teal/30">
+              <span className="w-2 h-2 rounded-full bg-signal-teal animate-pulse" />
+              Engine Online
             </span>
           </div>
         </header>
 
-        {/* Main Content Area */}
-        <main className="workspace-main p-8 overflow-y-auto">
+        {/* Scrollable Main Content */}
+        <main className="flex-1 overflow-y-auto p-6 sm:p-8">
           {children}
         </main>
       </div>

@@ -4,43 +4,39 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Manrope', 'sans-serif'],
-        mono: ['"DM Mono"', 'monospace']
+        display: ['"Space Grotesk"', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', 'monospace']
       },
       colors: {
-        canvas: '#F7F7FB',
-        surface: {
-          DEFAULT: '#FFFFFF',
-          muted: '#F1F1F7'
-        },
         ink: {
-          DEFAULT: '#10142A',
-          muted: '#6D7184'
+          950: '#0A0E16',
+          900: '#10151F',
+          800: '#181F2E',
+          700: '#242D40'
         },
-        brand: {
-          DEFAULT: '#6957E8',
-          hover: '#5444D9',
-          soft: '#EEEAFE',
-          glow: '#C3B9FD'
+        signal: {
+          indigo: '#5B5FEF',
+          'indigo-hover': '#4D51E8',
+          'indigo-soft': 'rgba(91, 95, 239, 0.12)',
+          teal: '#2FD4A6',
+          'teal-soft': 'rgba(47, 212, 166, 0.12)',
+          amber: '#F0A63A',
+          'amber-soft': 'rgba(240, 166, 58, 0.12)',
+          rose: '#F2586B',
+          'rose-soft': 'rgba(242, 88, 107, 0.12)'
         },
-        success: {
-          DEFAULT: '#129B78',
-          soft: '#E8F7F1'
-        },
-        warning: {
-          DEFAULT: '#A66F1C',
-          soft: '#FFF7E5'
-        },
-        danger: {
-          DEFAULT: '#C2415A',
-          soft: '#FDECEF'
-        },
-        cardborder: '#E7E7F0'
+        text: {
+          primary: '#F3F5FA',
+          muted: '#8D96AC',
+          faint: '#5C6478'
+        }
       },
       boxShadow: {
-        soft: '0 8px 28px rgba(16, 20, 42, 0.04)',
-        elevated: '0 16px 40px rgba(16, 20, 42, 0.08)',
-        brand: '0 12px 32px rgba(105, 87, 232, 0.22)'
+        glass: '0 20px 60px -20px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
+        'glass-glow': '0 0 30px -5px rgba(91, 95, 239, 0.25)',
+        'teal-glow': '0 0 30px -5px rgba(47, 212, 166, 0.25)',
+        'rose-glow': '0 0 30px -5px rgba(242, 88, 107, 0.25)'
       }
       }
     }

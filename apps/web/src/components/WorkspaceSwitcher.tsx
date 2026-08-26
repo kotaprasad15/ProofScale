@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Building2, ChevronDown, Check, Shield, User, Zap } from "lucide-react";
+import { Building2, ChevronDown, Check } from "lucide-react";
 
 interface WorkspaceSwitcherProps {
   organizations: Array<{ id: string; name: string; slug: string; role: string }>;
@@ -21,35 +21,45 @@ export function WorkspaceSwitcher({
   const getRoleBadge = (role?: string | null) => {
     switch (role) {
       case "owner":
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30">Owner</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30">Owner</span>;
       case "admin":
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Admin</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-signal-indigo-soft text-signal-indigo border border-signal-indigo/30">Admin</span>;
       case "tester":
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">Tester</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-signal-amber-soft text-signal-amber border border-signal-amber/30">Tester</span>;
       default:
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-700 text-slate-300">Member</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-white/[0.06] text-text-muted border border-white/[0.08]">Member</span>;
     }
   };
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition"
+        aria-expanded={isOpen}
+        className="w-full flex items-center justify-between p-2.5 rounded-2xl bg-ink-950/80 border border-white/[0.08] hover:border-signal-indigo/40 transition cursor-pointer select-none"
       >
-        <Building2 className="h-4 w-4 text-indigo-400" />
-        <span className="text-xs font-semibold text-white max-w-[140px] truncate">
-          {activeOrg?.name || "Select Workspace"}
-        </span>
-        {getRoleBadge(orgRole || activeOrg?.role)}
-        <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+        <div className="flex items-center space-x-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-signal-indigo-soft border border-signal-indigo/30 flex items-center justify-center text-signal-indigo shrink-0">
+            <Building2 className="h-4 w-4" />
+          </div>
+          <div className="text-left truncate">
+            <span className="text-xs font-bold text-text-primary block truncate">
+              {activeOrg?.name || "Acme Engineering Corp"}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center space-x-1.5 shrink-0 ml-1">
+          {getRoleBadge(orgRole || activeOrg?.role)}
+          <ChevronDown className={`h-3.5 w-3.5 text-text-muted transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+        </div>
       </button>
 
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50 space-y-1">
-            <span className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+          <div className="absolute left-0 right-0 top-full mt-2 rounded-2xl bg-ink-900 border border-white/[0.12] shadow-2xl p-2 z-50 space-y-1 backdrop-blur-xl">
+            <span className="px-3 py-1.5 text-[10px] font-mono font-bold text-text-muted uppercase tracking-wider block">
               Organizations
             </span>
 
@@ -57,21 +67,22 @@ export function WorkspaceSwitcher({
               const isSelected = org.id === activeOrgId;
               return (
                 <button
+                  type="button"
                   key={org.id}
                   onClick={() => {
                     onSelectOrg(org.id);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition ${
-                    isSelected ? "bg-indigo-600/20 text-white border border-indigo-500/30" : "text-slate-300 hover:bg-slate-800/80"
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    isSelected
+                      ? "bg-signal-indigo/20 text-white border border-signal-indigo/35"
+                      : "text-text-muted hover:text-text-primary hover:bg-white/[0.05] border border-transparent"
                   }`}
                 >
-                  <div className="flex items-center space-x-2 truncate">
-                    <span className="font-semibold truncate">{org.name}</span>
-                  </div>
-                  <div className="flex items-center space-x-1.5 shrink-0">
+                  <span className="truncate">{org.name}</span>
+                  <div className="flex items-center space-x-1.5 shrink-0 ml-2">
                     {getRoleBadge(org.role)}
-                    {isSelected && <Check className="h-3.5 w-3.5 text-indigo-400" />}
+                    {isSelected && <Check className="h-3.5 w-3.5 text-signal-indigo" />}
                   </div>
                 </button>
               );

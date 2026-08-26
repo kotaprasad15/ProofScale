@@ -48,125 +48,124 @@ export function TargetRegistrationView({ projectId }: TargetRegistrationViewProp
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-white tracking-tight">Target Endpoint Registration</h2>
-        <p className="text-sm text-slate-400">
+        <h2 className="text-2xl font-bold text-text-primary tracking-tight">Target Endpoint Registration</h2>
+        <p className="text-xs text-text-muted mt-1">
           Register application HTTP/API targets, set environment labels, and verify testing authorization.
         </p>
       </div>
 
       {/* Registration Form */}
-      <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-6">
-        <h3 className="text-base font-semibold text-slate-200 flex items-center space-x-2">
-          <Plus className="h-5 w-5 text-indigo-400" />
+      <div className="glass-panel p-6 sm:p-8 space-y-6">
+        <h3 className="text-base font-semibold text-text-primary flex items-center space-x-2">
+          <Plus className="h-5 w-5 text-signal-indigo" />
           <span>Register New Target</span>
         </h3>
 
         {errorMsg && (
-          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex items-center space-x-2">
+          <div className="p-4 rounded-xl bg-signal-rose-soft border border-signal-rose/30 text-xs text-signal-rose flex items-center space-x-2">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 flex items-center space-x-2">
+          <div className="p-4 rounded-xl bg-signal-teal-soft border border-signal-teal/30 text-xs text-signal-teal flex items-center space-x-2">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span>{successMsg}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">Base Target URL *</label>
+            <input
+              type="url"
+              value={baseUrl}
+              onChange={e => setBaseUrl(e.target.value)}
+              placeholder="https://api-staging.example.com"
+              required
+              className="w-full px-4 py-2.5 rounded-xl bg-ink-900 border border-white/[0.1] text-sm text-text-primary font-mono focus:outline-none focus:border-signal-indigo"
+            />
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Base Target URL *</label>
+              <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">Health Check URL (Optional)</label>
               <input
-                type="text"
-                value={baseUrl}
-                onChange={e => setBaseUrl(e.target.value)}
-                placeholder="http://localhost:4000"
-                className="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
-                required
+                type="url"
+                value={healthUrl}
+                onChange={e => setHealthUrl(e.target.value)}
+                placeholder="https://api-staging.example.com/health"
+                className="w-full px-4 py-2.5 rounded-xl bg-ink-900 border border-white/[0.1] text-sm text-text-primary font-mono focus:outline-none focus:border-signal-indigo"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Health Check Endpoint (Optional)</label>
-              <input
-                type="text"
-                value={healthUrl}
-                onChange={e => setHealthUrl(e.target.value)}
-                placeholder="http://localhost:4000/health"
-                className="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
-              />
+              <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">Target Environment</label>
+              <select
+                value={environment}
+                onChange={e => setEnvironment(e.target.value as any)}
+                className="w-full px-4 py-2.5 rounded-xl bg-ink-900 border border-white/[0.1] text-sm text-text-primary focus:outline-none focus:border-signal-indigo"
+              >
+                <option value="staging">Staging</option>
+                <option value="development">Development</option>
+                <option value="production">Production</option>
+              </select>
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Environment Profile</label>
-            <select
-              value={environment}
-              onChange={e => setEnvironment(e.target.value as any)}
-              className="w-full md:w-64 px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
-            >
-              <option value="staging">Staging</option>
-              <option value="development">Development</option>
-              <option value="production">Production</option>
-            </select>
-          </div>
-
-          {/* Authorization Checkbox */}
-          <div className="p-4 rounded-xl bg-indigo-900/20 border border-indigo-500/20 space-y-2">
-            <label className="flex items-start space-x-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={authAcknowledged}
-                onChange={e => setAuthAcknowledged(e.target.checked)}
-                className="mt-0.5 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500"
-              />
-              <span className="text-xs text-slate-300">
-                <span className="font-semibold text-indigo-300 block mb-0.5">Authorization Acknowledgement</span>
-                I confirm that I am authorized to execute controlled load validation checks against this target URL and that this target complies with platform acceptable use policies.
-              </span>
+          <div className="p-4 rounded-xl bg-ink-950/80 border border-white/[0.06] flex items-start space-x-3">
+            <input
+              type="checkbox"
+              id="authCheck"
+              checked={authAcknowledged}
+              onChange={e => setAuthAcknowledged(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded bg-ink-900 border-white/[0.2] text-signal-indigo focus:ring-0 cursor-pointer"
+            />
+            <label htmlFor="authCheck" className="text-xs text-text-muted cursor-pointer select-none">
+              <strong className="text-text-primary font-semibold">Ownership Authorization Acknowledgement:</strong> I certify that our organization owns or has explicit written authorization to execute synthetic load tests against this target endpoint.
             </label>
           </div>
 
           <button
             type="submit"
             disabled={createTargetMutation.isPending}
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center space-x-2 disabled:opacity-50"
+            className="btn-solid-primary cursor-pointer"
           >
-            <ShieldCheck className="h-4 w-4" />
-            <span>{createTargetMutation.isPending ? "Validating Target..." : "Register & Verify Target"}</span>
+            {createTargetMutation.isPending ? "Validating SSRF & Registering..." : "Register & Verify Target"}
           </button>
         </form>
       </div>
 
-      {/* Registered Targets List */}
-      <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-        <h3 className="text-base font-bold text-white flex items-center space-x-2">
-          <Target className="h-5 w-5 text-indigo-400" />
-          <span>Registered Endpoints</span>
-        </h3>
+      {/* Target List */}
+      <div className="glass-panel p-6 sm:p-8 space-y-4">
+        <h3 className="text-base font-semibold text-text-primary">Registered Target Endpoints</h3>
 
         {targetsQuery.isLoading ? (
           <div className="p-6 flex justify-center">
             <LoadingDots size="sm" label="Loading target endpoints..." />
           </div>
         ) : (
-          <div className="space-y-3">
-            {targetsQuery.data?.map(target => (
-              <div key={target.id} className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+          <div className="divide-y divide-white/[0.06]">
+            {targetsQuery.data?.map(t => (
+              <div key={t.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
-                  <div className="flex items-center space-x-3">
-                    <span className="font-mono text-sm font-semibold text-indigo-300">{target.baseUrl}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center space-x-1">
-                      <CheckCircle2 className="h-3 w-3" />
-                      <span>{target.authorizationStatus}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-mono text-sm text-text-primary font-semibold">{t.baseUrl}</span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-signal-teal-soft text-signal-teal border border-signal-teal/30">
+                      {t.authorizationStatus}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500">Allowed Host: <span className="font-mono text-slate-400">{target.allowedHost}</span> | Env: {target.environment}</p>
+                  {t.healthUrl && (
+                    <p className="text-xs text-text-muted font-mono">Health: {t.healthUrl}</p>
+                  )}
                 </div>
-                <span className="text-xs text-slate-500 font-mono">ID: {target.id}</span>
+
+                <div className="flex items-center space-x-2">
+                  <span className="px-2.5 py-1 rounded-lg bg-white/[0.04] text-text-muted text-xs font-mono">
+                    {t.environment}
+                  </span>
+                </div>
               </div>
             ))}
           </div>

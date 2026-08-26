@@ -75,91 +75,76 @@ export function TestPlanBuilderView({ projectId, onPlanCreated }: TestPlanBuilde
     }
   };
 
-  const presetIcons = {
-    smoke: Shield,
-    baseline: Zap,
-    ramp: Flame,
-    spike: Flame,
-    short_soak: Clock
-  };
-
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto space-y-8 pb-12">
+      {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-white tracking-tight">Test Plan Builder</h2>
-        <p className="text-sm text-slate-400">
-          Configure structured workload scenarios, apply safe performance presets, and set readiness thresholds.
+        <h2 className="text-2xl font-bold text-text-primary tracking-tight">Test Plan Builder</h2>
+        <p className="text-xs text-text-muted mt-1">
+          Configure structured, authorized HTTP workload scenarios, bounded load presets, and SLA thresholds.
         </p>
       </div>
 
-      {/* Preset Selector Banner */}
-      <div className="space-y-3">
-        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Select Safe Preset Profile</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {(Object.keys(PresetDefinitions) as TestProfile[]).map(key => {
-            const preset = PresetDefinitions[key];
-            const Icon = presetIcons[key];
-            const isSelected = selectedProfile === key;
+      {errorMsg && (
+        <div className="p-4 rounded-xl bg-signal-rose-soft border border-signal-rose/30 text-xs text-signal-rose">
+          {errorMsg}
+        </div>
+      )}
 
+      {/* Preset Selector Grid */}
+      <div className="space-y-3">
+        <span className="text-xs font-mono text-text-muted uppercase">1-Click Test Profile Presets</span>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          {[
+            { id: "smoke", label: "Smoke", icon: Shield, desc: "2 VUs · 10s" },
+            { id: "baseline", label: "Baseline", icon: Zap, desc: "25 VUs · 60s" },
+            { id: "ramp", label: "Ramp-Up", icon: Clock, desc: "50 VUs · 120s" },
+            { id: "spike", label: "Spike", icon: Flame, desc: "100 VUs · 30s" },
+            { id: "soak", label: "Short Soak", icon: PlaySquare, desc: "30 VUs · 300s" }
+          ].map(preset => {
+            const Icon = preset.icon;
+            const isSelected = selectedProfile === preset.id;
             return (
               <button
-                key={key}
+                key={preset.id}
                 type="button"
-                onClick={() => handleApplyPreset(key)}
-                className={`p-3.5 rounded-xl border text-left transition-all ${
+                onClick={() => handleApplyPreset(preset.id as TestProfile)}
+                className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
                   isSelected
-                    ? "bg-indigo-600/20 border-indigo-500/50 ring-2 ring-indigo-500/30"
-                    : "bg-slate-900/60 border-slate-800 hover:border-slate-700"
+                    ? "bg-signal-indigo-soft border-signal-indigo text-white shadow-lg shadow-signal-indigo/20"
+                    : "bg-ink-900/80 border-white/[0.08] text-text-muted hover:text-text-primary hover:border-white/[0.2]"
                 }`}
               >
-                <div className="flex items-center space-x-2 mb-1.5">
-                  <Icon className={`h-4 w-4 ${isSelected ? "text-indigo-400" : "text-slate-400"}`} />
-                  <span className="font-semibold text-xs text-white capitalize">{key.replace("_", " ")}</span>
-                </div>
-                <p className="text-[11px] text-slate-400 line-clamp-2">{preset.description}</p>
+                <Icon className={`h-4 w-4 mb-2 ${isSelected ? "text-signal-indigo" : "text-text-muted"}`} />
+                <div className="font-bold text-xs text-text-primary">{preset.label}</div>
+                <div className="text-[10px] text-text-faint font-mono">{preset.desc}</div>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Plan Form */}
-      <form onSubmit={handleSubmit} className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-          <h3 className="text-base font-semibold text-slate-200 flex items-center space-x-2">
-            <PlaySquare className="h-5 w-5 text-indigo-400" />
-            <span>Configure Workload & Thresholds</span>
-          </h3>
-          <span className="text-xs font-mono text-indigo-400 uppercase bg-indigo-500/10 px-2.5 py-1 rounded-md border border-indigo-500/20">
-            {selectedProfile.replace("_", " ")} Preset
-          </span>
-        </div>
-
-        {errorMsg && (
-          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400">
-            {errorMsg}
-          </div>
-        )}
-
+      {/* Main Configuration Form */}
+      <form onSubmit={handleSubmit} className="glass-panel p-6 sm:p-8 space-y-6">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">Test Plan Name *</label>
+          <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">Test Plan Name *</label>
           <input
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
-            className="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
             required
+            className="w-full px-4 py-2.5 rounded-xl bg-ink-900 border border-white/[0.1] text-sm text-text-primary focus:outline-none focus:border-signal-indigo"
           />
         </div>
 
-        {/* Scenario Steps Editor */}
+        {/* Scenarios Step Builder */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="block text-xs font-semibold text-slate-300">Scenario Steps</label>
+            <span className="text-xs font-mono text-text-muted uppercase">HTTP Request Scenarios</span>
             <button
               type="button"
               onClick={handleAddStep}
-              className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center space-x-1 font-medium"
+              className="text-xs font-semibold text-signal-indigo hover:text-indigo-400 inline-flex items-center space-x-1 cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>Add Step</span>
@@ -167,51 +152,48 @@ export function TestPlanBuilderView({ projectId, onPlanCreated }: TestPlanBuilde
           </div>
 
           <div className="space-y-2">
-            {scenarios.map((step, idx) => (
-              <div key={idx} className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-center space-x-3">
-                <select
-                  value={step.method}
+            {scenarios.map((sc, idx) => (
+              <div key={idx} className="p-3.5 rounded-xl bg-ink-950/80 border border-white/[0.06] flex items-center space-x-3">
+                <input
+                  type="text"
+                  value={sc.name}
                   onChange={e => {
-                    const next = [...scenarios];
-                    next[idx].method = e.target.value as any;
-                    setScenarios(next);
+                    const copy = [...scenarios];
+                    copy[idx].name = e.target.value;
+                    setScenarios(copy);
                   }}
-                  className="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-mono font-semibold text-indigo-400"
+                  placeholder="Step Name"
+                  className="w-1/3 px-3 py-1.5 rounded-lg bg-ink-900 border border-white/[0.1] text-xs text-text-primary"
+                />
+                <select
+                  value={sc.method}
+                  onChange={e => {
+                    const copy = [...scenarios];
+                    copy[idx].method = e.target.value as any;
+                    setScenarios(copy);
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-ink-900 border border-white/[0.1] text-xs text-text-primary font-mono"
                 >
                   <option value="GET">GET</option>
                   <option value="POST">POST</option>
                   <option value="PUT">PUT</option>
                   <option value="DELETE">DELETE</option>
                 </select>
-
                 <input
                   type="text"
-                  value={step.name}
+                  value={sc.path}
                   onChange={e => {
-                    const next = [...scenarios];
-                    next[idx].name = e.target.value;
-                    setScenarios(next);
-                  }}
-                  placeholder="Step Name"
-                  className="w-1/3 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-200"
-                />
-
-                <input
-                  type="text"
-                  value={step.path}
-                  onChange={e => {
-                    const next = [...scenarios];
-                    next[idx].path = e.target.value;
-                    setScenarios(next);
+                    const copy = [...scenarios];
+                    copy[idx].path = e.target.value;
+                    setScenarios(copy);
                   }}
                   placeholder="/path"
-                  className="flex-1 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-mono text-slate-200"
+                  className="flex-1 px-3 py-1.5 rounded-lg bg-ink-900 border border-white/[0.1] text-xs text-text-primary font-mono"
                 />
-
                 <button
                   type="button"
                   onClick={() => handleRemoveStep(idx)}
-                  className="text-slate-500 hover:text-red-400 p-1"
+                  className="text-text-muted hover:text-signal-rose p-1 cursor-pointer"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -220,50 +202,41 @@ export function TestPlanBuilderView({ projectId, onPlanCreated }: TestPlanBuilde
           </div>
         </div>
 
-        {/* Load Envelope & Thresholds Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
+        {/* Load Envelope Parameters */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">Virtual Users (VUs)</label>
+            <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">Concurrency (Virtual Users)</label>
             <input
               type="number"
-              value={virtualUsers}
-              onChange={e => setVirtualUsers(parseInt(e.target.value, 10))}
-              className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm font-mono text-slate-100"
               min={1}
               max={100}
+              value={virtualUsers}
+              onChange={e => setVirtualUsers(Number(e.target.value))}
+              className="w-full px-3.5 py-2 rounded-xl bg-ink-900 border border-white/[0.1] text-xs text-text-primary font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">Duration (Seconds)</label>
+            <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">Duration (Seconds)</label>
             <input
               type="number"
-              value={durationSeconds}
-              onChange={e => setDurationSeconds(parseInt(e.target.value, 10))}
-              className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm font-mono text-slate-100"
               min={5}
               max={600}
+              value={durationSeconds}
+              onChange={e => setDurationSeconds(Number(e.target.value))}
+              className="w-full px-3.5 py-2 rounded-xl bg-ink-900 border border-white/[0.1] text-xs text-text-primary font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">Max p95 Latency (ms)</label>
+            <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">SLA p95 Latency Ceiling (ms)</label>
             <input
               type="number"
+              min={10}
+              max={10000}
               value={maxP95Ms}
-              onChange={e => setMaxP95Ms(parseInt(e.target.value, 10))}
-              className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm font-mono text-slate-100"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">Max Error Rate</label>
-            <input
-              type="number"
-              step="0.005"
-              value={maxErrorRate}
-              onChange={e => setMaxErrorRate(parseFloat(e.target.value))}
-              className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm font-mono text-slate-100"
+              onChange={e => setMaxP95Ms(Number(e.target.value))}
+              className="w-full px-3.5 py-2 rounded-xl bg-ink-900 border border-white/[0.1] text-xs text-text-primary font-mono"
             />
           </div>
         </div>
@@ -271,10 +244,9 @@ export function TestPlanBuilderView({ projectId, onPlanCreated }: TestPlanBuilde
         <button
           type="submit"
           disabled={createPlanMutation.isPending}
-          className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center space-x-2"
+          className="btn-solid-primary cursor-pointer"
         >
-          <PlaySquare className="h-4 w-4" />
-          <span>{createPlanMutation.isPending ? "Creating Plan..." : "Save Test Plan"}</span>
+          {createPlanMutation.isPending ? "Compiling Test Plan..." : "Save Test Plan"}
         </button>
       </form>
     </div>

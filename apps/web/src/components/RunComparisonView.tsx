@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { trpc } from "../utils/trpc";
-import { GitCompare, ArrowUpRight, ArrowDownRight, Minus, CheckCircle2, AlertTriangle } from "lucide-react";
+import { ArrowRight, TrendingUp, TrendingDown, Minus, CheckCircle2, AlertTriangle } from "lucide-react";
 import { LoadingDots } from "./LoadingDots";
 
 interface RunComparisonViewProps {
@@ -8,61 +8,61 @@ interface RunComparisonViewProps {
 }
 
 export function RunComparisonView({ projectId }: RunComparisonViewProps) {
-  const runsQuery = trpc.runs.listByProject.useQuery({ projectId });
-  const completedRuns = runsQuery.data?.filter(r => r.status === "completed") || [];
-
   const [baselineRunId, setBaselineRunId] = useState<string>("");
   const [currentRunId, setCurrentRunId] = useState<string>("");
 
+  const runsQuery = trpc.runs.listByProject.useQuery({ projectId });
+  const completedRuns = runsQuery.data?.filter(r => r.status === "completed") || [];
+
   const comparisonQuery = trpc.reports.compareRuns.useQuery(
     { baselineRunId, currentRunId },
-    { enabled: !!baselineRunId && !!currentRunId && baselineRunId !== currentRunId }
+    { enabled: !!baselineRunId && !!currentRunId }
   );
 
+  const diff = comparisonQuery.data;
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-8 pb-12">
+      {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-white tracking-tight">Run-over-Run Build Comparison</h2>
-        <p className="text-sm text-slate-400">
-          Compare two completed load test runs to evaluate performance regressions, latency improvements, or throughput trends across target builds.
+        <h2 className="text-2xl font-bold text-text-primary tracking-tight">Run-over-Run Performance Comparison</h2>
+        <p className="text-xs text-text-muted mt-1">
+          Select two completed test runs to compute regression diffs ($\Delta$ Score, $\Delta p95$ Latency, $\Delta$ RPS, $\Delta$ Error Rate).
         </p>
       </div>
 
-      {/* Selectors */}
-      <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
-        <h3 className="text-base font-semibold text-slate-200 flex items-center space-x-2">
-          <GitCompare className="h-5 w-5 text-indigo-400" />
-          <span>Select Runs to Compare</span>
-        </h3>
+      {/* Selectors Grid */}
+      <div className="glass-panel p-6 sm:p-8 space-y-6">
+        <h3 className="text-sm font-semibold text-text-primary uppercase font-mono">Select Runs for Differential Analysis</h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">Baseline Run (Before)</label>
+            <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">Baseline Run (Previous)</label>
             <select
               value={baselineRunId}
               onChange={e => setBaselineRunId(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-ink-900 border border-white/[0.1] text-xs font-mono text-text-primary focus:outline-none focus:border-signal-indigo"
             >
-              <option value="">-- Select Baseline Run --</option>
+              <option value="">-- Choose Baseline Run --</option>
               {completedRuns.map(r => (
                 <option key={r.id} value={r.id}>
-                  {r.planName} - Score: {r.score}/100 ({new Date(r.createdAt).toLocaleTimeString()})
+                  {r.planName} ({r.targetVersionLabel}) - Score: {r.score}/100
                 </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">Current Run (After)</label>
+            <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">Candidate Run (Current)</label>
             <select
               value={currentRunId}
               onChange={e => setCurrentRunId(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-ink-900 border border-white/[0.1] text-xs font-mono text-text-primary focus:outline-none focus:border-signal-indigo"
             >
-              <option value="">-- Select Current Run --</option>
+              <option value="">-- Choose Candidate Run --</option>
               {completedRuns.map(r => (
                 <option key={r.id} value={r.id}>
-                  {r.planName} - Score: {r.score}/100 ({new Date(r.createdAt).toLocaleTimeString()})
+                  {r.planName} ({r.targetVersionLabel}) - Score: {r.score}/100
                 </option>
               ))}
             </select>
@@ -70,54 +70,46 @@ export function RunComparisonView({ projectId }: RunComparisonViewProps) {
         </div>
       </div>
 
-      {/* Comparison Results Card */}
-      {comparisonQuery.isLoading && (
-        <div className="p-8 rounded-2xl bg-slate-900 border border-slate-800 flex justify-center">
-          <LoadingDots size="md" label="Comparing test runs & computing regression delta..." />
-        </div>
-      )}
+      {/* Differential Metrics Display */}
+      {diff && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="glass-panel p-5 space-y-2">
+              <span className="text-[10px] text-text-muted font-mono uppercase">Score Delta</span>
+              <div className={`text-2xl font-bold font-mono ${diff.scoreDiff > 0 ? "text-signal-teal" : diff.scoreDiff < 0 ? "text-signal-rose" : "text-text-primary"}`}>
+                {diff.scoreDiff > 0 ? `+${diff.scoreDiff}` : diff.scoreDiff} pts
+              </div>
+              <p className="text-[11px] text-text-muted font-mono capitalize">{diff.regressionStatus}</p>
+            </div>
 
-      {comparisonQuery.data && (
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-            <h3 className="text-base font-bold text-white">Comparison Results</h3>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase flex items-center space-x-1 ${
-              comparisonQuery.data.regressionStatus === "improved" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-              comparisonQuery.data.regressionStatus === "regressed" ? "bg-red-500/10 text-red-400 border border-red-500/20" :
-              "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
-            }`}>
-              {comparisonQuery.data.regressionStatus === "improved" ? <ArrowUpRight className="h-4 w-4" /> :
-               comparisonQuery.data.regressionStatus === "regressed" ? <ArrowDownRight className="h-4 w-4" /> :
-               <Minus className="h-4 w-4" />}
-              <span>{comparisonQuery.data.regressionStatus}</span>
-            </span>
+            <div className="glass-panel p-5 space-y-2">
+              <span className="text-[10px] text-text-muted font-mono uppercase">p95 Latency Delta</span>
+              <div className={`text-2xl font-bold font-mono ${diff.p95DiffMs < 0 ? "text-signal-teal" : diff.p95DiffMs > 0 ? "text-signal-rose" : "text-text-primary"}`}>
+                {diff.p95DiffMs > 0 ? `+${diff.p95DiffMs.toFixed(0)}` : diff.p95DiffMs.toFixed(0)} ms
+              </div>
+              <p className="text-[11px] text-text-muted font-mono">Differential</p>
+            </div>
+
+            <div className="glass-panel p-5 space-y-2">
+              <span className="text-[10px] text-text-muted font-mono uppercase">Throughput Delta</span>
+              <div className={`text-2xl font-bold font-mono ${diff.throughputDiffRps > 0 ? "text-signal-teal" : "text-text-muted"}`}>
+                {diff.throughputDiffRps > 0 ? `+${diff.throughputDiffRps.toFixed(1)}` : diff.throughputDiffRps.toFixed(1)} req/s
+              </div>
+              <p className="text-[11px] text-text-muted font-mono">Sustained RPS</p>
+            </div>
+
+            <div className="glass-panel p-5 space-y-2">
+              <span className="text-[10px] text-text-muted font-mono uppercase">Error Rate Delta</span>
+              <div className={`text-2xl font-bold font-mono ${diff.errorRateDiffPercent < 0 ? "text-signal-teal" : diff.errorRateDiffPercent > 0 ? "text-signal-rose" : "text-text-primary"}`}>
+                {diff.errorRateDiffPercent > 0 ? `+${diff.errorRateDiffPercent.toFixed(2)}` : diff.errorRateDiffPercent.toFixed(2)}%
+              </div>
+              <p className="text-[11px] text-text-muted font-mono">Observed Shift</p>
+            </div>
           </div>
 
-          <p className="text-xs text-slate-300 bg-slate-800/60 p-4 rounded-xl border border-slate-700/50">
-            {comparisonQuery.data.summary}
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/40 space-y-1">
-              <span className="text-xs text-slate-400">Score Change</span>
-              <div className="text-xl font-bold text-white">
-                {comparisonQuery.data.scoreDiff >= 0 ? `+${comparisonQuery.data.scoreDiff}` : comparisonQuery.data.scoreDiff} pts
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/40 space-y-1">
-              <span className="text-xs text-slate-400">p95 Latency Diff</span>
-              <div className="text-xl font-bold text-white">
-                {comparisonQuery.data.p95DiffMs >= 0 ? `+${comparisonQuery.data.p95DiffMs}` : comparisonQuery.data.p95DiffMs} ms
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/40 space-y-1">
-              <span className="text-xs text-slate-400">Throughput Diff</span>
-              <div className="text-xl font-bold text-white">
-                {comparisonQuery.data.throughputDiffRps >= 0 ? `+${comparisonQuery.data.throughputDiffRps}` : comparisonQuery.data.throughputDiffRps} RPS
-              </div>
-            </div>
+          <div className="glass-panel p-6">
+            <h4 className="text-sm font-semibold text-text-primary mb-2">Automated Comparison Finding</h4>
+            <p className="text-xs text-text-muted leading-relaxed font-mono">{diff.summary}</p>
           </div>
         </div>
       )}

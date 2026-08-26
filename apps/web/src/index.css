@@ -5,25 +5,42 @@
 @tailwind utilities;
 
 /* =========================================================================
-   Tidal Ledger: Mineral-white editorial canvas, Proof Violet signal (#6957E8),
-   crisp data typography (Manrope & DM Mono), and measured evidence artifacts.
+   ProofScale — "Signal Field" Dark HUD Design System
+   Stack: Space Grotesk (Headings), IBM Plex Mono (Data/Badges), Inter (Body)
+   Palette: Deep Ink #0A0E16, Glass HUD, Signal Indigo, Teal/Amber/Rose
    ========================================================================= */
 
 :root {
-  --canvas: #F7F7FB;
-  --surface: #FFFFFF;
-  --surface-muted: #F1F1F7;
-  --ink: #10142A;
-  --ink-muted: #6D7184;
-  --brand: #6957E8;
-  --brand-hover: #5444D9;
-  --brand-soft: #EEEAFE;
-  --brand-glow: #C3B9FD;
-  --cardborder: #E7E7F0;
-  --success: #129B78;
-  --success-soft: #E8F7F1;
-  --warning: #A66F1C;
-  --danger: #C2415A;
+  --ink-950: #0A0E16;
+  --ink-900: #10151F;
+  --ink-800: #181F2E;
+  --glass-fill: rgba(16, 21, 31, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --signal-indigo: #5B5FEF;
+  --signal-teal: #2FD4A6;
+  --signal-amber: #F0A63A;
+  --signal-rose: #F2586B;
+  --grid-line: rgba(255, 255, 255, 0.06);
+  --text-primary: #F3F5FA;
+  --text-muted: #8D96AC;
+  --text-faint: #5C6478;
+
+  /* Compatibility bindings for existing modules */
+  --canvas: #0A0E16;
+  --surface: #10151F;
+  --surface-muted: #181F2E;
+  --ink: #F3F5FA;
+  --ink-muted: #8D96AC;
+  --brand: #5B5FEF;
+  --brand-hover: #4D51E8;
+  --brand-soft: rgba(91, 95, 239, 0.15);
+  --cardborder: rgba(255, 255, 255, 0.08);
+  --success: #2FD4A6;
+  --success-soft: rgba(47, 212, 166, 0.15);
+  --warning: #F0A63A;
+  --warning-soft: rgba(240, 166, 58, 0.15);
+  --danger: #F2586B;
+  --danger-soft: rgba(242, 88, 107, 0.15);
 }
 
 @layer base {
@@ -32,254 +49,119 @@
   }
   html {
     scroll-behavior: smooth;
-    background: var(--canvas);
+    background-color: #0A0E16;
+    color: #F3F5FA;
+    color-scheme: dark;
   }
   body {
-    background-color: var(--canvas);
-    color: var(--ink);
-    font-family: 'Manrope', sans-serif;
-    font-synthesis: none;
+    background-color: #0A0E16;
+    color: #F3F5FA;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
     overflow-x: hidden;
+    margin: 0;
+    padding: 0;
   }
-  button, input, select, textarea {
-    font: inherit;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: -0.02em;
+    color: #F3F5FA;
+  }
+  code, kbd, samp, pre, .font-mono {
+    font-family: 'IBM Plex Mono', monospace;
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+  }
+  section[id] {
+    scroll-margin-top: 96px;
   }
   button, a {
     -webkit-tap-highlight-color: transparent;
   }
-  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--brand) 45%, white);
-    outline-offset: 3px;
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--signal-indigo);
+    outline-offset: 2px;
   }
 }
 
-/* Custom scrollbar */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--canvas);
+  background: #0A0E16;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D8D8E5;
+  background: #1F2738;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #B6B6C8;
+  background: #2D374D;
 }
 
-/* Point-Wave Canvas */
-.point-wave {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
+/* Glass HUD Panels */
+.glass-panel {
+  background: var(--glass-fill);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-/* Brand & Logo */
-.brand-logo {
+.glass-panel-subtle {
+  background: rgba(16, 21, 31, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+}
+
+/* Solid CTA Button */
+.btn-solid-primary {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  color: inherit;
-  text-decoration: none;
-}
-.brand-mark {
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #6957E8 0%, #4D3AC7 100%);
-  color: #FFF;
-  box-shadow: 0 8px 18px rgba(105, 87, 232, 0.26);
-  flex-shrink: 0;
-}
-.brand-copy {
-  display: grid;
-  gap: 1px;
-  line-height: 1;
-}
-.brand-copy strong {
-  font-size: 17px;
-  letter-spacing: -0.7px;
-  color: var(--ink);
-}
-.brand-copy small {
-  font-size: 8px;
-  letter-spacing: 0.88px;
-  font-weight: 800;
-  color: #74778A;
-}
-
-/* Public Navigation */
-.public-nav {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: rgba(255, 255, 255, 0.86);
-  border-bottom: 1px solid rgba(231, 231, 240, 0.85);
-  backdrop-filter: blur(18px);
-}
-.public-nav-inner {
-  height: 80px;
-  max-width: 1260px;
-  margin: auto;
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-}
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  margin-left: auto;
-}
-.nav-links a, .sign-in-link {
-  color: #55586A;
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 700;
-  transition: color 0.18s ease;
-}
-.nav-links a:hover, .sign-in-link:hover {
-  color: var(--brand);
-}
-.nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  margin-left: 20px;
-}
-.mobile-menu-trigger, .mobile-nav-panel {
-  display: none;
-}
-
-/* Uiverse / Tidal Ledger Animated Workspace Button */
-.workspace-button {
-  position: relative;
-  isolation: isolate;
-  min-height: 48px;
-  display: inline-flex;
-  align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 0 44px 0 22px;
-  overflow: hidden;
-  border: 2px solid var(--brand);
-  border-radius: 999px;
-  color: var(--brand);
-  text-decoration: none;
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: var(--signal-indigo);
+  color: #FFFFFF;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
   font-size: 13px;
-  font-weight: 800;
-  background: transparent;
-  cursor: pointer;
-  transition: border-radius 0.5s cubic-bezier(0.23, 1, 0.32, 1), color 0.3s ease, transform 0.16s ease, box-shadow 0.4s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px -2px rgba(91, 95, 239, 0.4);
 }
-.workspace-button:hover {
-  color: #FFF;
-  border-radius: 14px;
-  box-shadow: 0 14px 27px rgba(105, 87, 232, 0.22);
+.btn-solid-primary:hover {
+  background: #4D51E8;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px -2px rgba(91, 95, 239, 0.5);
 }
-.workspace-button:active {
-  transform: scale(0.96);
-}
-.workspace-circle {
-  position: absolute;
-  z-index: -1;
-  left: 50%;
-  top: 50%;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  opacity: 0;
-  background: var(--brand);
-  transform: translate(-50%, -50%);
-  transition: width 0.7s cubic-bezier(0.23, 1, 0.32, 1), height 0.7s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.35s ease;
-}
-.workspace-button:hover .workspace-circle {
-  width: 250px;
-  height: 250px;
-  opacity: 1;
-}
-.workspace-arrow {
-  position: absolute;
-  width: 17px;
-  transition: transform 0.65s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.5s ease;
-}
-.workspace-arrow-out {
-  right: 17px;
-}
-.workspace-arrow-in {
-  left: -25px;
-}
-.workspace-button:hover .workspace-arrow-out {
-  transform: translateX(31px);
-  opacity: 0;
-}
-.workspace-button:hover .workspace-arrow-in {
-  transform: translateX(41px);
-  opacity: 1;
-}
-.workspace-button-text {
-  position: relative;
-  transition: transform 0.65s cubic-bezier(0.23, 1, 0.32, 1);
-}
-.workspace-button:hover .workspace-button-text {
-  transform: translateX(10px);
+.btn-solid-primary:active {
+  transform: translateY(0);
 }
 
-/* Animated Go Back Button */
-.go-back-button {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 122px;
-  height: 43px;
-  overflow: hidden;
-  border: 1px solid #DFDDEB;
-  border-radius: 13px;
-  background: #FFF;
-  color: #2C2F43;
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: transform 0.16s ease, box-shadow 0.2s ease;
+.btn-glass-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.2s ease;
 }
-.go-back-button:hover {
-  box-shadow: 0 10px 22px rgba(16, 20, 42, 0.08);
-}
-.go-back-button:active {
-  transform: scale(0.97);
-}
-.go-back-fill {
-  position: absolute;
-  left: 4px;
-  top: 4px;
-  bottom: 4px;
-  width: 28%;
-  display: grid;
-  place-items: center;
-  border-radius: 9px;
-  background: var(--brand);
-  color: #FFF;
-  transition: width 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-}
-.go-back-button:hover .go-back-fill {
-  width: calc(100% - 8px);
-}
-.go-back-label {
-  position: relative;
-  z-index: 2;
-  margin-left: 20px;
-  transition: color 0.35s ease;
-}
-.go-back-button:hover .go-back-label {
-  color: #FFF;
+.btn-glass-secondary:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
 }
 
 /* Three-Dot Pulse Loader */
@@ -287,7 +169,6 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-width: 26px;
   justify-content: center;
 }
 .pulse-loader i, .dot {
@@ -295,27 +176,27 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #8B7EF1;
-  animation: pulse-dot 1.4s infinite ease-in-out;
+  background: var(--signal-indigo);
+  animation: signal-pulse 1.4s infinite ease-in-out;
 }
 .pulse-loader i:nth-child(2), .dot:nth-child(2) {
-  animation-delay: 0.18s;
+  animation-delay: 0.2s;
 }
 .pulse-loader i:nth-child(3), .dot:nth-child(3) {
-  animation-delay: 0.36s;
+  animation-delay: 0.4s;
 }
-@keyframes pulse-dot {
+@keyframes signal-pulse {
   0%, 100% {
     transform: scale(0.75);
-    opacity: 0.45;
-    box-shadow: 0 0 0 0 rgba(105, 87, 232, 0.16);
+    opacity: 0.4;
   }
   50% {
-    transform: scale(1.25);
+    transform: scale(1.2);
     opacity: 1;
-    box-shadow: 0 0 0 5px rgba(105, 87, 232, 0);
+    box-shadow: 0 0 8px rgba(91, 95, 239, 0.6);
   }
 }
+<<<<<<< HEAD
 
 /* Public Hero */
 .home-page {
@@ -2166,13 +2047,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   * {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
   }
-  .point-wave { opacity: 0.45; }
-  .story-step { opacity: 1; }
-  .story-sticky-card { position: relative; top: auto; }
->>>>>>> d84a614 (feat: implement landing page architecture including home view, organization schema, and core UI component library)
 }

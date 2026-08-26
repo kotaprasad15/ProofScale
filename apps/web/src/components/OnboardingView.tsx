@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { trpc } from "../utils/trpc";
-import { Building2, Mail, ShieldAlert, CheckCircle2, ArrowRight, UserPlus, ShieldCheck } from "lucide-react";
+import { Building2, Mail, ShieldAlert, CheckCircle2, ArrowRight, UserPlus, ShieldCheck, ArrowLeft } from "lucide-react";
 import { BrandLogo } from "./BrandLogo";
-import { PointWave } from "./PointWave";
+import { SignalField } from "./SignalField";
 import { LoadingDots } from "./LoadingDots";
 
 interface OnboardingViewProps {
@@ -68,26 +68,33 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
   };
 
   return (
-    <main className="onboarding-page">
-      <PointWave className="onboarding-wave" />
+    <div className="min-h-screen bg-ink-950 text-text-primary flex flex-col justify-between relative selection:bg-signal-indigo/30 selection:text-white">
+      {/* Signature Signal Field Background */}
+      <SignalField />
 
-      <header className="onboarding-header">
+      {/* Top Header */}
+      <header className="relative z-20 max-w-[1240px] w-full mx-auto px-6 sm:px-12 py-8 flex items-center justify-between">
         <BrandLogo />
-        <span className="text-xs font-mono text-[#74778A] font-bold">SETUP WIZARD</span>
+        <span className="font-mono text-xs text-text-muted font-medium">SETUP WIZARD · RBAC SETUP</span>
       </header>
 
-      <div className="onboarding-content">
-        <div className="onboarding-panel">
-          <span className="eyebrow">ProofScale Workspace Setup</span>
-          <h1 className="text-3xl font-extrabold text-ink tracking-tight mt-2 mb-3">
-            Welcome to ProofScale
-          </h1>
-          <p className="text-sm text-[#737687] leading-relaxed mb-6">
-            Choose how you want to configure your identity and active workspace.
-          </p>
+      {/* Main Wizard Form */}
+      <main className="relative z-10 max-w-xl w-full mx-auto px-6 sm:px-12 py-6">
+        <div className="glass-panel p-8 sm:p-10 border border-white/[0.12] space-y-6 shadow-2xl">
+          <div>
+            <span className="font-mono text-[10px] text-signal-indigo font-bold uppercase tracking-wider">
+              WORKSPACE CONFIGURATION
+            </span>
+            <h1 className="font-display font-bold text-2xl sm:text-3xl text-text-primary tracking-tight mt-1">
+              Configure your entry point
+            </h1>
+            <p className="text-text-muted text-xs sm:text-sm leading-relaxed mt-1">
+              Choose how you want to configure your identity and active workspace permissions.
+            </p>
+          </div>
 
-          {/* 3 Choices */}
-          <div className="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-canvas border border-cardborder mb-6">
+          {/* 3 Choice Tabs */}
+          <div className="grid grid-cols-3 gap-2 p-1.5 rounded-xl bg-ink-900/80 border border-white/[0.08]">
             <button
               type="button"
               onClick={() => {
@@ -95,8 +102,8 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                 setErrorMsg(null);
                 setSuccessMsg(null);
               }}
-              className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 ${
-                tab === "create" ? "bg-brand text-white shadow-md" : "text-[#727586] hover:text-ink"
+              className={`py-2 px-3 rounded-lg text-xs font-mono font-medium transition flex flex-col items-center gap-1 cursor-pointer ${
+                tab === "create" ? "bg-signal-indigo text-white shadow" : "text-text-muted hover:text-text-primary"
               }`}
             >
               <Building2 className="h-4 w-4" />
@@ -110,8 +117,8 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                 setErrorMsg(null);
                 setSuccessMsg(null);
               }}
-              className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 ${
-                tab === "invite" ? "bg-brand text-white shadow-md" : "text-[#727586] hover:text-ink"
+              className={`py-2 px-3 rounded-lg text-xs font-mono font-medium transition flex flex-col items-center gap-1 cursor-pointer ${
+                tab === "invite" ? "bg-signal-indigo text-white shadow" : "text-text-muted hover:text-text-primary"
               }`}
             >
               <Mail className="h-4 w-4" />
@@ -125,8 +132,8 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                 setErrorMsg(null);
                 setSuccessMsg(null);
               }}
-              className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 ${
-                tab === "tester" ? "bg-brand text-white shadow-md" : "text-[#727586] hover:text-ink"
+              className={`py-2 px-3 rounded-lg text-xs font-mono font-medium transition flex flex-col items-center gap-1 cursor-pointer ${
+                tab === "tester" ? "bg-signal-indigo text-white shadow" : "text-text-muted hover:text-text-primary"
               }`}
             >
               <UserPlus className="h-4 w-4" />
@@ -135,14 +142,14 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           </div>
 
           {errorMsg && (
-            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-600 flex items-center gap-2 mb-4">
+            <div className="p-3.5 rounded-xl bg-signal-rose-soft border border-signal-rose/30 text-xs text-signal-rose flex items-center gap-2 font-mono">
               <ShieldAlert className="h-4 w-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {successMsg && (
-            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-[#129B78] flex items-center gap-2 mb-4">
+            <div className="p-3.5 rounded-xl bg-signal-teal-soft border border-signal-teal/30 text-xs text-signal-teal flex items-center gap-2 font-mono">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               <span>{successMsg}</span>
             </div>
@@ -152,43 +159,49 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           {tab === "create" && (
             <form onSubmit={handleCreateOrg} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-ink mb-1.5">Organization Name *</label>
+                <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">
+                  Organization Name *
+                </label>
                 <input
                   type="text"
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
                   placeholder="e.g. Acme Engineering Corp"
                   required
-                  className="w-full px-4 py-2.5 rounded-xl bg-canvas border border-cardborder text-sm text-ink focus:outline-none focus:border-brand"
+                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-ink mb-1.5">Your Display Name</label>
+                <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">
+                  Your Display Name
+                </label>
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="e.g. Leah Evans"
-                  className="w-full px-4 py-2.5 rounded-xl bg-canvas border border-cardborder text-sm text-ink focus:outline-none focus:border-brand"
+                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-ink mb-1.5">First Project Name</label>
+                <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">
+                  First Project Name
+                </label>
                 <input
                   type="text"
                   value={initialProject}
                   onChange={(e) => setInitialProject(e.target.value)}
                   placeholder="e.g. Payment Gateway API"
-                  className="w-full px-4 py-2.5 rounded-xl bg-canvas border border-cardborder text-sm text-ink focus:outline-none focus:border-brand"
+                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={createOrgMutation.isPending}
-                className="w-full py-3.5 bg-brand hover:bg-brand-hover text-white font-bold text-xs rounded-xl transition shadow-md flex items-center justify-center space-x-2 disabled:opacity-50 mt-4 cursor-pointer"
+                className="btn-solid-primary w-full py-3.5 mt-4 cursor-pointer justify-center"
               >
                 {createOrgMutation.isPending ? (
                   <LoadingDots size="sm" />
@@ -206,21 +219,23 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           {tab === "invite" && (
             <form onSubmit={handleAcceptInvite} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-ink mb-1.5">Invitation Token / Code *</label>
+                <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">
+                  Invitation Token / Code *
+                </label>
                 <input
                   type="text"
                   value={inviteToken}
                   onChange={(e) => setInviteToken(e.target.value)}
                   placeholder="ps_inv_..."
                   required
-                  className="w-full px-4 py-2.5 rounded-xl bg-canvas border border-cardborder text-sm text-ink font-mono focus:outline-none focus:border-brand"
+                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm font-mono text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={acceptInviteMutation.isPending}
-                className="w-full py-3.5 bg-brand hover:bg-brand-hover text-white font-bold text-xs rounded-xl transition shadow-md flex items-center justify-center space-x-2 disabled:opacity-50 mt-4 cursor-pointer"
+                className="btn-solid-primary w-full py-3.5 mt-4 cursor-pointer justify-center"
               >
                 {acceptInviteMutation.isPending ? (
                   <LoadingDots size="sm" />
@@ -238,26 +253,28 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           {tab === "tester" && (
             <form onSubmit={handleRequestAccess} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-ink mb-1.5">Message to Organization Owner</label>
+                <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">
+                  Message to Organization Owner
+                </label>
                 <textarea
                   value={requestMsg}
                   onChange={(e) => setRequestMsg(e.target.value)}
                   placeholder="e.g. Requesting access to execute load verification checks for Staging QA..."
                   rows={3}
-                  className="w-full px-4 py-2.5 rounded-xl bg-canvas border border-cardborder text-sm text-ink focus:outline-none focus:border-brand"
+                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={requestAccessMutation.isPending}
-                className="w-full py-3.5 bg-brand hover:bg-brand-hover text-white font-bold text-xs rounded-xl transition shadow-md flex items-center justify-center space-x-2 disabled:opacity-50 mt-4 cursor-pointer"
+                className="btn-solid-primary w-full py-3.5 mt-4 cursor-pointer justify-center"
               >
                 {requestAccessMutation.isPending ? (
                   <LoadingDots size="sm" />
                 ) : (
                   <>
-                    <span>Request Tester Access</span>
+                    <span>Submit Tester Request</span>
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
@@ -265,7 +282,12 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
             </form>
           )}
         </div>
-      </div>
-    </main>
+      </main>
+
+      {/* Footer Baseline */}
+      <footer className="relative z-10 py-6 text-center text-xs font-mono text-text-faint">
+        © 2026 ProofScale Instruments · Dual-Scope RBAC Onboarding
+      </footer>
+    </div>
   );
 }

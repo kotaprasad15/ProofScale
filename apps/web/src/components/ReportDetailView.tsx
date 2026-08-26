@@ -30,7 +30,7 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
 
   const reportData = reportQuery.data;
   if (!reportData) {
-    return <div className="p-8 text-center text-sm text-red-400">Report not found.</div>;
+    return <div className="p-8 text-center text-sm text-signal-rose font-mono">Report not found.</div>;
   }
 
   const { run, plan, target, findings } = reportData;
@@ -63,68 +63,55 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
 
   const handleGenerateShare = async () => {
     try {
-      const res = await createShareMutation.mutateAsync({ runId, expiresInDays: 30 });
-      setShareToken(res.rawToken);
+      const res = await createShareMutation.mutateAsync({ runId, expiresInDays: 3 });
+      setShareToken(`${window.location.origin}/share/${res.rawToken}`);
       setShowShareModal(true);
     } catch (err: any) {
-      alert(err?.message || "Failed to generate share link.");
+      alert(err?.message || "Failed to create share link.");
     }
   };
 
-  const handleCopyShareLink = () => {
-    const fullUrl = `${window.location.origin}/report/public?token=${shareToken}`;
-    navigator.clipboard.writeText(fullUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const copyShareLink = () => {
+    if (shareToken) {
+      navigator.clipboard.writeText(shareToken);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
-  const latencyChartData = metrics ? [
-    { name: "p50 (Median)", value: metrics.p50Ms, color: "#6366f1" },
-    { name: "p95 (Target)", value: metrics.p95Ms, color: metrics.p95Ms > (plan.thresholds.maxP95Ms || 2000) ? "#ef4444" : "#10b981" },
-    { name: "p99 (Max)", value: metrics.p99Ms, color: "#f59e0b" }
-  ] : [];
+  const chartData = [
+    { name: "p50", value: metrics?.latencyPercentiles?.p50 || 0 },
+    { name: "p90", value: metrics?.latencyPercentiles?.p90 || 0 },
+    { name: "p95", value: metrics?.latencyPercentiles?.p95 || 0 },
+    { name: "p99", value: metrics?.latencyPercentiles?.p99 || 0 }
+  ];
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-12">
-      {/* Top Header & Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
-        <div>
-          {onBack && (
-            <div className="mb-3">
-              <GoBackButton
-                onClick={onBack}
-                label="Go Back"
-                size="sm"
-                theme="dark"
-              />
-            </div>
-          )}
-          <h2 className="text-2xl font-bold text-white tracking-tight">Application Readiness Report</h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Target: <span className="font-mono text-slate-200">{target.baseUrl}</span> | Plan: <span className="text-slate-200">{plan.name}</span>
-          </p>
-        </div>
+    <div className="max-w-6xl mx-auto space-y-8 pb-12">
+      {/* Top Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+        {onBack && <GoBackButton onClick={onBack} label="Back to Comparison" />}
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
           <button
             onClick={handleDownloadMarkdown}
-            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl transition flex items-center space-x-1.5"
+            className="btn-glass-secondary text-xs py-2 px-3 cursor-pointer"
           >
             <Download className="h-3.5 w-3.5" />
-            <span>Export Markdown</span>
+            <span>Markdown</span>
           </button>
 
           <button
             onClick={handleDownloadJson}
-            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl transition flex items-center space-x-1.5"
+            className="btn-glass-secondary text-xs py-2 px-3 cursor-pointer"
           >
             <Download className="h-3.5 w-3.5" />
-            <span>Export JSON</span>
+            <span>JSON</span>
           </button>
 
           <button
             onClick={handleGenerateShare}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center space-x-1.5"
+            className="btn-solid-primary text-xs py-2 px-3.5 cursor-pointer"
           >
             <Share2 className="h-3.5 w-3.5" />
             <span>Share Report</span>
@@ -132,139 +119,149 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
         </div>
       </div>
 
-      {/* Score Banner Card */}
-      {sb && (
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center space-x-6">
-            <div className={`h-24 w-24 rounded-2xl flex flex-col items-center justify-center border ${
-              sb.overallScore >= 90 ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" :
-              sb.overallScore >= 75 ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-400" :
-              sb.overallScore >= 50 ? "bg-amber-500/10 border-amber-500/30 text-amber-400" :
-              "bg-red-500/10 border-red-500/30 text-red-400"
-            }`}>
-              <span className="text-3xl font-black">{sb.overallScore}</span>
-              <span className="text-[10px] uppercase font-semibold text-slate-400">/ 100</span>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Readiness Assessment</span>
-              <h3 className="text-xl font-bold text-white">{sb.label}</h3>
-              <p className="text-xs text-slate-400">
-                Confidence Grade: <strong className="uppercase text-slate-200">{sb.confidence}</strong> | Scoring Version: <code className="text-indigo-400">{sb.scoringVersion}</code>
-              </p>
-            </div>
+      {/* Score Banner HUD */}
+      <div className="glass-panel p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="space-y-1 text-center md:text-left">
+          <div className="flex items-center justify-center md:justify-start space-x-2">
+            <h2 className="text-2xl font-bold text-text-primary tracking-tight">{plan.name}</h2>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-signal-indigo-soft text-signal-indigo border border-signal-indigo/30">
+              {plan.profile}
+            </span>
           </div>
+          <p className="text-xs text-text-muted font-mono">
+            Target: {target.baseUrl} · Evaluated with Scoring Engine: {plan.scoringVersion}
+          </p>
+        </div>
 
-          <div className="text-xs text-slate-400 space-y-1 text-right">
-            <div>Virtual Users: <strong className="text-slate-200">{plan.loadProfile.virtualUsers} VUs</strong></div>
-            <div>Duration: <strong className="text-slate-200">{plan.loadProfile.durationSeconds}s</strong></div>
-            <div>Region: <strong className="text-slate-200">{run.region}</strong></div>
+        <div className="flex items-center space-x-6">
+          <div className="text-center md:text-right">
+            <span className="text-[10px] uppercase font-mono text-text-muted font-bold">Overall Score</span>
+            <div className="text-4xl sm:text-5xl font-black font-mono text-signal-teal tracking-tight">
+              {run.score} <span className="text-lg text-text-faint">/ 100</span>
+            </div>
+            <div className="text-xs font-bold text-signal-teal font-mono capitalize">{run.readinessLabel}</div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Category Score Breakdown */}
+      {/* 5-Category Breakdown Grid */}
       {sb && (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          {Object.entries(sb.categories).map(([catKey, cat]: [string, any]) => (
-            <div key={catKey} className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block truncate">{catKey}</span>
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-bold text-white">{cat.score} <span className="text-xs text-slate-500 font-normal">/ 100</span></span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${cat.passed ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
-                  {cat.passed ? "PASS" : "FAIL"}
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-500 truncate">{cat.notes || `Weight: ${(cat.weight * 100)}%`}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          {[
+            { label: "Reliability (30%)", score: sb.reliability, color: "text-signal-teal" },
+            { label: "Latency (25%)", score: sb.latency, color: "text-signal-indigo" },
+            { label: "Capacity (20%)", score: sb.capacityBehavior, color: "text-purple-400" },
+            { label: "Stability (15%)", score: sb.stability, color: "text-signal-amber" },
+            { label: "Hygiene (10%)", score: sb.hygiene, color: "text-blue-400" }
+          ].map((cat, i) => (
+            <div key={i} className="glass-panel p-4 text-center space-y-1">
+              <span className="text-[10px] text-text-muted font-mono uppercase truncate block">{cat.label}</span>
+              <div className={`text-2xl font-bold font-mono ${cat.color}`}>{cat.score}</div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Latency Percentiles Visualization */}
-      {metrics && (
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-          <h3 className="text-base font-bold text-white flex items-center space-x-2">
-            <FileText className="h-5 w-5 text-indigo-400" />
-            <span>Response Latency Distribution (ms)</span>
-          </h3>
-
-          <div className="h-64 w-full pt-4">
+      {/* Latency & Key Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="glass-panel p-6 space-y-4">
+          <h3 className="text-sm font-semibold text-text-primary">Response Time Distribution (ms)</h3>
+          <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={latencyChartData}>
-                <XAxis dataKey="name" stroke="#64748b" fontSize={12} />
-                <YAxis stroke="#64748b" fontSize={12} unit="ms" />
-                <Tooltip contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", color: "#f8fafc" }} />
-                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
-                  {latencyChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+              <BarChart data={chartData}>
+                <XAxis dataKey="name" stroke="#8D96AC" fontSize={11} />
+                <YAxis stroke="#8D96AC" fontSize={11} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#10151F", borderColor: "rgba(255,255,255,0.1)", borderRadius: "12px" }}
+                  itemStyle={{ color: "#F3F5FA" }}
+                />
+                <Bar dataKey="value" fill="#5B5FEF" radius={[6, 6, 0, 0]}>
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={index === 3 ? "#F2586B" : index === 2 ? "#F0A63A" : "#2FD4A6"} />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
-      )}
 
-      {/* Prioritized Findings List */}
-      <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-        <h3 className="text-base font-bold text-white flex items-center space-x-2">
-          <AlertTriangle className="h-5 w-5 text-amber-400" />
-          <span>Prioritized Findings & Remediation</span>
-        </h3>
+        <div className="glass-panel p-6 space-y-3">
+          <h3 className="text-sm font-semibold text-text-primary">Observed Telemetry Summary</h3>
+          <div className="divide-y divide-white/[0.06] text-xs font-mono">
+            <div className="py-2.5 flex justify-between">
+              <span className="text-text-muted">Total Requests:</span>
+              <span className="text-text-primary font-bold">{metrics?.totalRequests || 0}</span>
+            </div>
+            <div className="py-2.5 flex justify-between">
+              <span className="text-text-muted">Error Rate:</span>
+              <span className={`font-bold ${metrics?.errorRate > 0.05 ? "text-signal-rose" : "text-signal-teal"}`}>
+                {((metrics?.errorRate || 0) * 100).toFixed(2)}%
+              </span>
+            </div>
+            <div className="py-2.5 flex justify-between">
+              <span className="text-text-muted">Sustained RPS:</span>
+              <span className="text-text-primary font-bold">{metrics?.requestsPerSecond?.toFixed(1) || 0} req/s</span>
+            </div>
+            <div className="py-2.5 flex justify-between">
+              <span className="text-text-muted">p95 Latency:</span>
+              <span className="text-signal-indigo font-bold">{metrics?.latencyPercentiles?.p95 || 0} ms</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Automated Findings */}
+      <div className="glass-panel p-6 sm:p-8 space-y-4">
+        <h3 className="text-base font-semibold text-text-primary">Automated Empirical Findings</h3>
 
         {findings.length === 0 ? (
-          <div className="text-xs text-slate-500">No findings generated.</div>
+          <div className="text-xs text-text-muted font-mono">No findings recorded.</div>
         ) : (
           <div className="space-y-3">
-            {findings.map((f, idx) => (
-              <div key={idx} className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                      f.severity === "critical" ? "bg-red-500/20 text-red-400 border border-red-500/30" :
-                      f.severity === "high" ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" :
-                      "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
-                    }`}>
-                      {f.severity}
-                    </span>
-                    <span className="font-semibold text-sm text-slate-200">{f.title}</span>
-                  </div>
-                  <span className="text-xs text-slate-500 font-mono capitalize">{f.category}</span>
+            {findings.map(f => (
+              <div key={f.id} className="p-4 rounded-xl bg-ink-950/80 border border-white/[0.06] space-y-1.5">
+                <div className="flex items-center space-x-2">
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                    (f.severity as string) === "critical" || (f.severity as string) === "high" ? "bg-signal-rose-soft text-signal-rose border border-signal-rose/30" :
+                    (f.severity as string) === "warning" || (f.severity as string) === "medium" ? "bg-signal-amber-soft text-signal-amber border border-signal-amber/30" :
+                    "bg-signal-teal-soft text-signal-teal border border-signal-teal/30"
+                  }`}>
+                    {f.severity}
+                  </span>
+                  <strong className="text-xs text-text-primary font-semibold">{f.title}</strong>
                 </div>
-
-                <p className="text-xs text-slate-400"><strong>Evidence:</strong> {f.evidence}</p>
-                <p className="text-xs text-indigo-300/90"><strong>Action:</strong> {f.recommendation}</p>
+                <p className="text-xs text-text-muted leading-relaxed">{f.evidence}</p>
+                <div className="text-[11px] text-signal-indigo font-medium pt-1">
+                  💡 Recommendation: {f.recommendation}
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Share Link Modal */}
+      {/* Share Modal */}
       {showShareModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 max-w-md w-full space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white text-base">Share Readiness Report</h3>
-              <button onClick={() => setShowShareModal(false)} className="text-slate-400 hover:text-white">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="glass-panel max-w-md w-full p-6 space-y-4 border border-white/[0.15]">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+              <h3 className="font-bold text-text-primary text-base">Public Report Link</h3>
+              <button onClick={() => setShowShareModal(false)} className="text-text-muted hover:text-text-primary cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400">
-              A secure, token-hashed read-only link has been generated. Anyone with this link can view the report evidence for 30 days.
+            <p className="text-xs text-text-muted">
+              Anyone with this cryptographic token-hashed link can view the read-only readiness report. Link expires in 72 hours.
             </p>
 
-            <div className="p-3 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-between">
-              <span className="text-xs font-mono text-indigo-300 truncate mr-2">
-                {window.location.origin}/report/public?token={shareToken}
-              </span>
+            <div className="p-3 rounded-xl bg-ink-950 border border-white/[0.1] flex items-center justify-between">
+              <span className="text-xs font-mono text-signal-indigo truncate mr-2">{shareToken}</span>
               <button
-                onClick={handleCopyShareLink}
-                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-lg shrink-0 flex items-center space-x-1"
+                onClick={copyShareLink}
+                className="px-3 py-1.5 bg-signal-indigo hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg shrink-0 flex items-center space-x-1 cursor-pointer"
               >
-                <Copy className="h-3.5 w-3.5" />
+                {copied ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                 <span>{copied ? "Copied!" : "Copy"}</span>
               </button>
             </div>

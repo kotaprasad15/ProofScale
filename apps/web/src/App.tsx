@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import { trpc } from "./utils/trpc";
@@ -15,12 +15,44 @@ import { RunComparisonView } from "./components/RunComparisonView";
 import { PointWave } from "./components/PointWave";
 import { LoadingDots } from "./components/LoadingDots";
 import { CustomCursor } from "./components/CustomCursor";
-import { Shield, Play, Target, CheckCircle2, FileText, AlertTriangle, Users, LogOut, ArrowRight, Gauge, Activity, Server, Lock } from "lucide-react";
+import { Shield, Play, Target, CheckCircle2, FileText, AlertTriangle, Users, LogOut, ArrowRight, Activity, Home } from "lucide-react";
 
 interface SessionUser {
   id: string;
   email: string;
   organizationId?: string;
+}
+
+interface RouteState {
+  path: string;
+  tab: string;
+  runId: string | null;
+}
+
+function parseLocationToRoute(): RouteState {
+  const pathname = window.location.pathname || "/";
+  const searchParams = new URLSearchParams(window.location.search);
+  const runId = searchParams.get("runId");
+
+  if (pathname === "/" || pathname === "/home") {
+    return { path: "/home", tab: "projects", runId: null };
+  }
+  if (pathname === "/signin") {
+    return { path: "/signin", tab: "projects", runId: null };
+  }
+  if (pathname === "/signup") {
+    return { path: "/signup", tab: "projects", runId: null };
+  }
+
+  const cleanTab = pathname.replace("/", "");
+  const validTabs = ["projects", "targets", "plans", "runs", "reports", "organization", "settings"];
+  const tab = cleanTab === "dashboard" || !validTabs.includes(cleanTab) ? "projects" : cleanTab;
+
+  return {
+    path: pathname,
+    tab,
+    runId
+  };
 }
 
 function DashboardOverview({
@@ -34,19 +66,19 @@ function DashboardOverview({
   const projectsQuery = trpc.projects.list.useQuery();
 
   return (
-    <div className="ps-view max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-8 pb-12">
       {/* Header Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-cardborder shadow-soft flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1.5">
+      <div className="glass-panel p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2">
           <div className="flex items-center space-x-2">
-            <h2 className="text-2xl font-bold text-ink tracking-tight">Application Readiness Dashboard</h2>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-soft text-brand">
+            <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight">Application Readiness Dashboard</h2>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-signal-indigo-soft text-signal-indigo border border-signal-indigo/30">
               Active Workspace
             </span>
           </div>
-          <p className="text-sm text-ink-muted max-w-2xl">
+          <p className="text-sm text-text-muted max-w-2xl leading-relaxed">
             {isTester
-              ? "Execute approved test scenarios, monitor load validation checks, and inspect empirical report evidence."
+              ? "Execute approved test scenarios, monitor real-time worker telemetry, and inspect empirical report evidence."
               : "Define authorized test scenarios, configure load presets, manage members, and generate evidence-backed reports."}
           </p>
         </div>
@@ -54,7 +86,7 @@ function DashboardOverview({
         {!isTester && (
           <button
             onClick={() => onNavigate("plans")}
-            className="px-5 py-3 bg-brand hover:bg-brand-hover text-white font-bold text-sm rounded-xl transition shadow-brand flex items-center space-x-2 shrink-0 self-start md:self-auto"
+            className="btn-solid-primary shrink-0 cursor-pointer"
           >
             <Play className="h-4 w-4" />
             <span>New Test Plan</span>
@@ -64,63 +96,63 @@ function DashboardOverview({
 
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-cardborder shadow-soft space-y-2">
-          <span className="text-xs text-ink-muted font-bold uppercase tracking-wider">Engine Status</span>
+        <div className="glass-panel p-5 space-y-2">
+          <span className="text-[10px] text-text-muted font-mono font-bold uppercase tracking-wider block">Engine Status</span>
           <div className="flex items-center space-x-2">
-            <CheckCircle2 className="h-5 w-5 text-success" />
-            <span className="text-lg font-bold text-ink">
+            <CheckCircle2 className="h-5 w-5 text-signal-teal" />
+            <span className="text-lg font-bold text-text-primary">
               {healthQuery.data?.status === "ok" ? "Operational" : "Connecting..."}
             </span>
           </div>
-          <p className="text-[11px] font-mono text-ink-muted">Port 3001 · Engine v1</p>
+          <p className="text-[11px] font-mono text-text-muted">Port 3001 · Engine v1</p>
         </div>
 
         <div
-          className="p-5 rounded-2xl bg-white border border-cardborder shadow-soft space-y-2 cursor-pointer hover:border-brand/40 transition"
+          className="glass-panel p-5 space-y-2 cursor-pointer hover:border-signal-indigo/40 transition"
           onClick={() => onNavigate(isTester ? "runs" : "targets")}
         >
-          <span className="text-xs text-ink-muted font-bold uppercase tracking-wider">Registered Targets</span>
+          <span className="text-[10px] text-text-muted font-mono font-bold uppercase tracking-wider block">Registered Targets</span>
           <div className="flex items-center space-x-2">
-            <Target className="h-5 w-5 text-brand" />
-            <span className="text-lg font-bold text-ink">1 Verified Target</span>
+            <Target className="h-5 w-5 text-signal-indigo" />
+            <span className="text-lg font-bold text-text-primary">1 Verified Target</span>
           </div>
-          <p className="text-[11px] font-mono text-ink-muted truncate">Staging API (/v2/checkout)</p>
+          <p className="text-[11px] font-mono text-text-muted truncate">http://localhost:4000</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-cardborder shadow-soft space-y-2">
-          <span className="text-xs text-ink-muted font-bold uppercase tracking-wider">Active Projects</span>
+        <div className="glass-panel p-5 space-y-2">
+          <span className="text-[10px] text-text-muted font-mono font-bold uppercase tracking-wider block">Active Projects</span>
           <div className="flex items-center space-x-2">
-            <Shield className="h-5 w-5 text-purple-600" />
-            <span className="text-lg font-bold text-ink">
+            <Shield className="h-5 w-5 text-purple-400" />
+            <span className="text-lg font-bold text-text-primary">
               {projectsQuery.data?.length || 1} Project
             </span>
           </div>
-          <p className="text-[11px] font-mono text-ink-muted">Staging Environment</p>
+          <p className="text-[11px] font-mono text-text-muted">Staging Environment</p>
         </div>
 
         <div
-          className="p-5 rounded-2xl bg-white border border-cardborder shadow-soft space-y-2 cursor-pointer hover:border-brand/40 transition"
+          className="glass-panel p-5 space-y-2 cursor-pointer hover:border-signal-teal/40 transition"
           onClick={() => onNavigate("reports")}
         >
-          <span className="text-xs text-ink-muted font-bold uppercase tracking-wider">Latest Readiness Score</span>
+          <span className="text-[10px] text-text-muted font-mono font-bold uppercase tracking-wider block">Latest Readiness Score</span>
           <div className="flex items-center space-x-2">
-            <FileText className="h-5 w-5 text-emerald-600" />
-            <span className="text-lg font-bold text-emerald-600 font-mono">100 / 100</span>
+            <FileText className="h-5 w-5 text-signal-teal" />
+            <span className="text-lg font-bold text-signal-teal font-mono">100 / 100</span>
           </div>
-          <p className="text-[11px] font-semibold text-success flex items-center">
+          <p className="text-[11px] font-semibold text-signal-teal flex items-center">
             <CheckCircle2 className="h-3 w-3 mr-1" /> Passes SLA Thresholds
           </p>
         </div>
       </div>
 
       {/* Projects Overview List */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-cardborder shadow-soft space-y-4">
-        <div className="flex items-center justify-between border-b border-cardborder pb-4">
+      <div className="glass-panel p-6 sm:p-8 space-y-4">
+        <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
           <div>
-            <h3 className="text-lg font-bold text-ink">Projects in Active Organization</h3>
-            <p className="text-xs text-ink-muted">Configured targets, active test scenarios, and run archives</p>
+            <h3 className="text-lg font-bold text-text-primary">Projects in Active Organization</h3>
+            <p className="text-xs text-text-muted">Configured targets, active test scenarios, and run archives</p>
           </div>
-          <span className="text-xs font-mono font-bold text-ink-muted px-2.5 py-1 rounded-full bg-surface-muted border border-cardborder">
+          <span className="text-xs font-mono font-bold text-text-muted px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08]">
             {projectsQuery.data?.length || 1} Total
           </span>
         </div>
@@ -130,25 +162,25 @@ function DashboardOverview({
             <LoadingDots size="sm" label="Loading projects..." />
           </div>
         ) : (
-          <div className="divide-y divide-cardborder">
+          <div className="divide-y divide-white/[0.06]">
             {projectsQuery.data?.map(proj => (
               <div key={proj.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
-                    <h4 className="font-bold text-ink text-sm">{proj.name}</h4>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-soft text-brand font-mono">
+                    <h4 className="font-bold text-text-primary text-sm">{proj.name}</h4>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-signal-indigo-soft text-signal-indigo font-mono border border-signal-indigo/30">
                       {proj.environment}
                     </span>
                   </div>
-                  <p className="text-xs text-ink-muted">{proj.description}</p>
+                  <p className="text-xs text-text-muted">{proj.description}</p>
                 </div>
                 <div className="flex items-center space-x-3">
                   <button
                     onClick={() => onNavigate(isTester ? "runs" : "plans")}
-                    className="px-3.5 py-2 bg-surface-muted hover:bg-slate-200 text-ink text-xs font-bold rounded-xl transition flex items-center space-x-1.5"
+                    className="btn-glass-secondary text-xs py-2 px-3.5 cursor-pointer"
                   >
                     <span>{isTester ? "View Runs" : "Configure Plans"}</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
+                    <ArrowRight className="h-3.5 w-3.5 ml-1" />
                   </button>
                 </div>
               </div>
@@ -158,10 +190,10 @@ function DashboardOverview({
       </div>
 
       {/* Assessment Disclaimer Notice */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200 flex items-start space-x-3 text-xs text-amber-900 leading-relaxed">
-        <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+      <div className="p-4 sm:p-5 rounded-2xl bg-signal-amber-soft border border-signal-amber/30 flex items-start space-x-3 text-xs text-signal-amber leading-relaxed font-mono">
+        <AlertTriangle className="h-5 w-5 text-signal-amber shrink-0 mt-0.5" />
         <div>
-          <strong className="text-amber-950 block mb-0.5">Platform Assessment Disclaimer</strong>
+          <strong className="text-text-primary block mb-0.5 uppercase tracking-wide">Platform Assessment Disclaimer</strong>
           ProofScale provides conditional readiness scores based on synthetic load test envelopes. Results reflect observed metrics under specific test parameters and do not serve as a legal guarantee or warranty of live user capacity.
         </div>
       </div>
@@ -171,22 +203,36 @@ function DashboardOverview({
 
 function MainApp({
   currentUser,
-  onLogout
+  route,
+  onNavigate,
+  onLogout,
+  onGoHome
 }: {
   currentUser: SessionUser;
+  route: RouteState;
+  onNavigate: (path: string) => void;
   onLogout: () => void;
+  onGoHome: () => void;
 }) {
-  const [activeTab, setActiveTab] = useState("projects");
-  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(currentUser.organizationId || null);
   const projectId = "proj_demo_01";
 
-  const meQuery = trpc.auth.me.useQuery();
+  const meQuery = trpc.auth.me.useQuery(undefined, {
+    retry: 1,
+    refetchOnWindowFocus: false
+  });
   const selectWorkspaceMutation = trpc.auth.selectWorkspace.useMutation();
 
   const handleSelectRun = (runId: string) => {
-    setSelectedRunId(runId);
-    setActiveTab("reports");
+    onNavigate(`/reports?runId=${runId}`);
+  };
+
+  const handleBackFromReport = () => {
+    onNavigate("/reports");
+  };
+
+  const handleTabChange = (tab: string) => {
+    onNavigate(`/${tab}`);
   };
 
   const handleSelectOrg = async (orgId: string) => {
@@ -197,24 +243,56 @@ function MainApp({
 
   if (meQuery.isLoading) {
     return (
-      <div className="min-h-screen bg-canvas flex items-center justify-center font-sans">
+      <div className="min-h-screen bg-ink-950 text-text-primary flex flex-col items-center justify-center font-sans space-y-4">
         <LoadingDots size="lg" label="Resolving user session & permissions..." />
       </div>
     );
   }
 
-  // If user requires onboarding, show Onboarding View
-  if (meQuery.data?.user?.onboardingStatus === "required" || meQuery.data?.organizations.length === 0) {
-    return <OnboardingView onComplete={() => meQuery.refetch()} />;
+  if (meQuery.isError) {
+    return (
+      <div className="min-h-screen bg-ink-950 text-text-primary flex flex-col items-center justify-center p-6 font-sans">
+        <div className="glass-panel max-w-md w-full p-8 text-center space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-signal-rose-soft border border-signal-rose/30 flex items-center justify-center text-signal-rose mx-auto">
+            <AlertTriangle className="h-6 w-6" />
+          </div>
+          <h2 className="text-xl font-bold text-text-primary">Unable to Resolve Session</h2>
+          <p className="text-xs text-text-muted leading-relaxed">
+            {meQuery.error?.message || "There was a problem communicating with the ProofScale API server."}
+          </p>
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={() => meQuery.refetch()}
+              className="btn-solid-primary flex-1 justify-center cursor-pointer"
+            >
+              Retry Session
+            </button>
+            <button
+              onClick={onLogout}
+              className="btn-glass-secondary flex-1 justify-center cursor-pointer"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const authData = meQuery.data;
+  const isFirstTime = authData?.user?.onboardingStatus === "required" || (authData?.organizations && authData.organizations.length === 0);
+
+  if (isFirstTime) {
+    return <OnboardingView onComplete={() => meQuery.refetch()} />;
+  }
+
   const isTester = authData?.orgRole === "tester" || authData?.projectRole === "tester";
+  const activeTab = route.tab;
 
   return (
     <Layout
       activeTab={activeTab}
-      onTabChange={tab => { setSelectedRunId(null); setActiveTab(tab); }}
+      onTabChange={handleTabChange}
       organizations={authData?.organizations || []}
       activeOrgId={selectedOrgId || authData?.activeOrganizationId}
       orgRole={authData?.orgRole}
@@ -222,41 +300,59 @@ function MainApp({
       userEmail={authData?.user?.email || currentUser.email}
       onSelectOrg={handleSelectOrg}
       onLogout={onLogout}
+      onGoHome={onGoHome}
     >
-      {activeTab === "projects" && <DashboardOverview onNavigate={setActiveTab} isTester={isTester} />}
+      {activeTab === "projects" && <DashboardOverview onNavigate={handleTabChange} isTester={isTester} />}
       {activeTab === "targets" && <TargetRegistrationView projectId={projectId} />}
-      {activeTab === "plans" && <TestPlanBuilderView projectId={projectId} onPlanCreated={() => setActiveTab("runs")} />}
+      {activeTab === "plans" && <TestPlanBuilderView projectId={projectId} onPlanCreated={() => onNavigate("/runs")} />}
       {activeTab === "runs" && <LiveRunMonitorView projectId={projectId} onSelectRun={handleSelectRun} />}
       {activeTab === "organization" && <OrganizationSettingsView organizationId={selectedOrgId || authData?.activeOrganizationId || "org_default_01"} />}
       {activeTab === "reports" && (
-        selectedRunId ? (
-          <ReportDetailView runId={selectedRunId} onBack={() => setSelectedRunId(null)} />
+        route.runId ? (
+          <ReportDetailView runId={route.runId} onBack={handleBackFromReport} />
         ) : (
           <RunComparisonView projectId={projectId} />
         )
       )}
       {activeTab === "settings" && (
-        <div className="max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl bg-white border border-cardborder shadow-soft space-y-6">
-          <div className="flex items-center justify-between border-b border-cardborder pb-4">
+        <div className="max-w-4xl mx-auto glass-panel p-6 sm:p-8 space-y-6 pb-12">
+          <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
             <div>
-              <h2 className="text-xl font-bold text-ink">Account & System Settings</h2>
-              <p className="text-xs text-ink-muted">Manage Control Plane settings, user profile, and active session.</p>
+              <h2 className="text-xl font-bold text-text-primary">Account & System Settings</h2>
+              <p className="text-xs text-text-muted mt-0.5">Manage Control Plane settings, user profile, and active session.</p>
             </div>
             <button
               onClick={onLogout}
-              className="px-4 py-2 bg-red-50 hover:bg-red-100 text-danger text-xs font-bold rounded-xl border border-red-200 transition flex items-center space-x-1.5"
+              className="px-4 h-9 bg-signal-rose-soft hover:bg-signal-rose/20 text-signal-rose text-xs font-semibold rounded-xl border border-signal-rose/30 transition inline-flex items-center space-x-1.5 cursor-pointer"
             >
               <LogOut className="h-3.5 w-3.5" />
               <span>Sign Out</span>
             </button>
           </div>
 
-          <div className="p-5 rounded-2xl bg-surface-muted border border-cardborder text-xs text-ink space-y-3 font-medium">
-            <div>Authenticated User: <span className="font-mono text-brand font-bold">{authData?.user?.email}</span></div>
-            <div>Display Name: <span className="text-ink font-semibold">{authData?.user?.displayName || "Not set"}</span></div>
-            <div>Active Organization: <span className="font-mono text-brand font-bold">{authData?.organizations.find(o => o.id === (selectedOrgId || authData?.activeOrganizationId))?.name || "None"}</span></div>
-            <div>Organization Role: <span className="font-mono text-purple-600 uppercase font-bold">{authData?.orgRole || "Member"}</span></div>
-            <div>Scoring Engine: <span className="font-mono text-brand">mvp-1 (Deterministic)</span></div>
+          <div className="p-5 rounded-2xl bg-ink-950/80 border border-white/[0.06] text-xs space-y-3 font-mono">
+            <div className="flex justify-between py-1 border-b border-white/[0.04]">
+              <span className="text-text-muted">Authenticated User:</span>
+              <span className="text-signal-indigo font-bold">{authData?.user?.email}</span>
+            </div>
+            <div className="flex justify-between py-1 border-b border-white/[0.04]">
+              <span className="text-text-muted">Display Name:</span>
+              <span className="text-text-primary font-medium">{authData?.user?.displayName || "Not set"}</span>
+            </div>
+            <div className="flex justify-between py-1 border-b border-white/[0.04]">
+              <span className="text-text-muted">Active Organization:</span>
+              <span className="text-signal-indigo font-bold">
+                {authData?.organizations?.find(o => o.id === (selectedOrgId || authData?.activeOrganizationId))?.name || "None"}
+              </span>
+            </div>
+            <div className="flex justify-between py-1 border-b border-white/[0.04]">
+              <span className="text-text-muted">Organization Role:</span>
+              <span className="text-purple-300 font-bold uppercase">{authData?.orgRole || "Member"}</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-text-muted">Scoring Engine:</span>
+              <span className="text-signal-teal font-bold">mvp-1 (Deterministic)</span>
+            </div>
           </div>
         </div>
       )}
@@ -270,19 +366,25 @@ export function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [publicView, setPublicView] = useState<"home" | "signin" | "signup">("home");
+  const [route, setRoute] = useState<RouteState>(() => parseLocationToRoute());
 
-  const [queryClient] = useState(() => new QueryClient());
-  const [trpcClient, setTrpcClient] = useState(() =>
-    createTrpcClient(currentUser)
-  );
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+        retry: 1
+      }
+    }
+  }));
 
-  function createTrpcClient(user: SessionUser | null) {
-    return trpc.createClient({
+  const [trpcClient] = useState(() =>
+    trpc.createClient({
       links: [
         httpBatchLink({
           url: "/trpc",
           headers() {
+            const saved = localStorage.getItem("ps_session_user");
+            const user = saved ? JSON.parse(saved) : null;
             if (!user) return {};
             return {
               "x-user-id": user.id,
@@ -292,55 +394,93 @@ export function App() {
           }
         })
       ]
-    });
-  }
+    })
+  );
+
+  // Browser Back / Forward button support (popstate listener)
+  useEffect(() => {
+    const handlePopState = () => {
+      setRoute(parseLocationToRoute());
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const navigateTo = useCallback((newPath: string, options?: { replace?: boolean }) => {
+    if (options?.replace) {
+      window.history.replaceState(null, "", newPath);
+    } else {
+      window.history.pushState(null, "", newPath);
+    }
+    setRoute(parseLocationToRoute());
+  }, []);
 
   const handleLogin = (user: SessionUser) => {
     localStorage.setItem("ps_session_user", JSON.stringify(user));
     setCurrentUser(user);
-    setTrpcClient(createTrpcClient(user));
+    queryClient.invalidateQueries();
+    navigateTo("/dashboard");
   };
 
   const handleLogout = () => {
     localStorage.removeItem("ps_session_user");
     setCurrentUser(null);
-    setPublicView("home");
-    setTrpcClient(createTrpcClient(null));
+    queryClient.clear();
+    navigateTo("/home");
   };
 
-  // If not logged in, render Public Homepage or Login/Signup
-  if (!currentUser) {
-    if (publicView === "home") {
+  // If on home/signin/signup route and user explicitly visits or is logged out
+  const isPublicRoute = route.path === "/home" || route.path === "/" || route.path === "/signin" || route.path === "/signup";
+
+  if (!currentUser || isPublicRoute) {
+    if (route.path === "/signin" || route.path === "/signup") {
       return (
-        <>
-          <CustomCursor />
-          <HomeView
-            onSignIn={() => setPublicView("signin")}
-            onSignUp={() => setPublicView("signup")}
-          />
-        </>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <LoginView
+              initialMode={route.path === "/signup" ? "signup" : "signin"}
+              onBackToHome={() => navigateTo("/home")}
+              onLogin={handleLogin}
+            />
+          </QueryClientProvider>
+        </trpc.Provider>
       );
     }
 
+    // Default to Landing Homepage
     return (
-      <>
-        <CustomCursor />
-        <LoginView
-          initialMode={publicView === "signup" ? "signup" : "signin"}
-          onBackToHome={() => setPublicView("home")}
-          onLogin={handleLogin}
-        />
-      </>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>
+          <HomeView
+            onSignIn={() => navigateTo("/signin")}
+            onSignUp={() => navigateTo("/signup")}
+            isLoggedIn={!!currentUser}
+            onGoToDashboard={() => navigateTo("/dashboard")}
+            onQuickLogin={(role) => {
+              if (role === "owner") {
+                handleLogin({ id: "usr_admin_01", email: "lead@acme.dev", organizationId: "org_default_01" });
+              } else {
+                handleLogin({ id: "usr_tester_01", email: "qa.tester@acme.dev", organizationId: "org_default_01" });
+              }
+            }}
+          />
+        </QueryClientProvider>
+      </trpc.Provider>
     );
   }
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <CustomCursor />
-        <MainApp currentUser={currentUser} onLogout={handleLogout} />
+        <MainApp
+          currentUser={currentUser}
+          route={route}
+          onNavigate={navigateTo}
+          onLogout={handleLogout}
+          onGoHome={() => navigateTo("/home")}
+        />
       </QueryClientProvider>
     </trpc.Provider>
   );
 }
-
