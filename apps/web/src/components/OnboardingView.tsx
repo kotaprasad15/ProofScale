@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { trpc } from "../utils/trpc";
 import { Building2, Mail, ShieldAlert, CheckCircle2, ArrowRight, Sparkles, UserPlus } from "lucide-react";
+import { PointWave } from "./PointWave";
 
 interface OnboardingViewProps {
   onComplete: () => void;
@@ -66,8 +67,9 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-6 text-slate-100">
-      <div className="max-w-xl w-full space-y-8">
+    <div className="ps-onboarding min-h-screen flex flex-col justify-center items-center p-6 text-slate-100">
+      <PointWave className="ps-onboarding-wave" />
+      <div className="ps-onboarding-content max-w-xl w-full space-y-8">
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <div className="h-12 w-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 mx-auto flex items-center justify-center text-indigo-400">
@@ -131,7 +133,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
 
         {/* Tab 1: Create Organization */}
         {tab === "create" && (
-          <form onSubmit={handleCreateOrg} className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4">
+          <form onSubmit={handleCreateOrg} className="ps-onboarding-panel p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4">
             <div className="space-y-1 mb-2">
               <h3 className="font-bold text-white text-base">Create your Organization Workspace</h3>
               <p className="text-xs text-slate-400">You will become the organization owner with full administrative access.</p>
@@ -184,7 +186,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
 
         {/* Tab 2: Accept Invite */}
         {tab === "invite" && (
-          <form onSubmit={handleAcceptInvite} className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4">
+          <form onSubmit={handleAcceptInvite} className="ps-onboarding-panel p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4">
             <div className="space-y-1 mb-2">
               <h3 className="font-bold text-white text-base">Accept an Organization Invitation</h3>
               <p className="text-xs text-slate-400">Enter the invitation token or code provided by your organization owner.</p>
@@ -215,7 +217,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
 
         {/* Tab 3: Request Tester Access */}
         {tab === "tester" && (
-          <form onSubmit={handleRequestAccess} className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4">
+          <form onSubmit={handleRequestAccess} className="ps-onboarding-panel p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4">
             <div className="space-y-1 mb-2">
               <h3 className="font-bold text-white text-base">I'm here to test an application</h3>
               <p className="text-xs text-slate-400">

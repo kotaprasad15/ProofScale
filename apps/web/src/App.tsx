@@ -10,6 +10,7 @@ import { TestPlanBuilderView } from "./components/TestPlanBuilderView";
 import { LiveRunMonitorView } from "./components/LiveRunMonitorView";
 import { ReportDetailView } from "./components/ReportDetailView";
 import { RunComparisonView } from "./components/RunComparisonView";
+import { PointWave } from "./components/PointWave";
 import { Shield, Play, Target, CheckCircle2, FileText, AlertTriangle, Users, Lock } from "lucide-react";
 
 function DashboardOverview({
@@ -23,9 +24,10 @@ function DashboardOverview({
   const projectsQuery = trpc.projects.list.useQuery();
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="ps-view max-w-6xl mx-auto space-y-8">
       {/* Header Banner */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-indigo-900/40 via-slate-900 to-slate-900 border border-indigo-500/20 shadow-xl flex items-center justify-between">
+      <div className="ps-dashboard-hero p-6 rounded-2xl bg-gradient-to-r from-indigo-900/40 via-slate-900 to-slate-900 border border-indigo-500/20 shadow-xl flex items-center justify-between">
+        <PointWave className="ps-overview-wave" />
         <div className="space-y-1">
           <h2 className="text-2xl font-bold text-white tracking-tight">Application Readiness Dashboard</h2>
           <p className="text-sm text-slate-400">
