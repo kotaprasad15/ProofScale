@@ -23,7 +23,7 @@ describe("Phase 3: Execution Plane & Worker Engine", () => {
         server = app.listen(PORT, () => resolve());
       });
 
-      await db.insert(organizations).values({ id: "org_default_01", name: "Acme Engineering Corp", ownerId: "usr_admin_01" }).onConflictDoNothing();
+      await db.insert(organizations).values({ id: "org_default_01", name: "Acme Engineering Corp", slug: "acme-engineering", ownerId: "usr_admin_01" }).onConflictDoNothing();
       await db.insert(projects).values({ id: "proj_demo_01", organizationId: "org_default_01", name: "Payment Gateway API", environment: "staging" }).onConflictDoNothing();
       await db.insert(targets).values({ id: "target_fixture_01", projectId: "proj_demo_01", baseUrl: baseUrl, healthUrl: `${baseUrl}/health`, environment: "staging", authorizationStatus: "verified", allowedHost: "localhost" })
         .onConflictDoUpdate({ target: targets.id, set: { baseUrl: baseUrl, healthUrl: `${baseUrl}/health` } });

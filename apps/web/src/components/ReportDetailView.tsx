@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { trpc } from "../utils/trpc";
 import { FileText, Download, Share2, AlertTriangle, CheckCircle2, Copy, X } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { LoadingDots } from "./LoadingDots";
+import { GoBackButton } from "./GoBackButton";
 
 interface ReportDetailViewProps {
   runId: string;
@@ -19,7 +21,11 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
   const createShareMutation = trpc.reports.createShareLink.useMutation();
 
   if (reportQuery.isLoading) {
-    return <div className="p-8 text-center text-sm text-slate-400">Loading readiness report...</div>;
+    return (
+      <div className="p-12 flex justify-center">
+        <LoadingDots size="md" label="Loading readiness report..." />
+      </div>
+    );
   }
 
   const reportData = reportQuery.data;
@@ -84,9 +90,14 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
         <div>
           {onBack && (
-            <button onClick={onBack} className="text-xs text-indigo-400 hover:underline mb-2 block">
-              ← Back to Run History
-            </button>
+            <div className="mb-3">
+              <GoBackButton
+                onClick={onBack}
+                label="Go Back"
+                size="sm"
+                theme="dark"
+              />
+            </div>
           )}
           <h2 className="text-2xl font-bold text-white tracking-tight">Application Readiness Report</h2>
           <p className="text-xs text-slate-400 mt-1">

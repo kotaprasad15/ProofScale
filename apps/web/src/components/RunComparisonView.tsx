@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { trpc } from "../utils/trpc";
 import { GitCompare, ArrowUpRight, ArrowDownRight, Minus, CheckCircle2, AlertTriangle } from "lucide-react";
+import { LoadingDots } from "./LoadingDots";
 
 interface RunComparisonViewProps {
   projectId: string;
@@ -70,6 +71,12 @@ export function RunComparisonView({ projectId }: RunComparisonViewProps) {
       </div>
 
       {/* Comparison Results Card */}
+      {comparisonQuery.isLoading && (
+        <div className="p-8 rounded-2xl bg-slate-900 border border-slate-800 flex justify-center">
+          <LoadingDots size="md" label="Comparing test runs & computing regression delta..." />
+        </div>
+      )}
+
       {comparisonQuery.data && (
         <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
           <div className="flex items-center justify-between border-b border-slate-800 pb-4">

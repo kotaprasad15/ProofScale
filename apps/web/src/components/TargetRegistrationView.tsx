@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { trpc } from "../utils/trpc";
 import { Target, Plus, ShieldCheck, AlertCircle, CheckCircle2 } from "lucide-react";
+import { LoadingDots } from "./LoadingDots";
 
 interface TargetRegistrationViewProps {
   projectId: string;
@@ -148,7 +149,9 @@ export function TargetRegistrationView({ projectId }: TargetRegistrationViewProp
         </h3>
 
         {targetsQuery.isLoading ? (
-          <div className="text-xs text-slate-400">Loading target endpoints...</div>
+          <div className="p-6 flex justify-center">
+            <LoadingDots size="sm" label="Loading target endpoints..." />
+          </div>
         ) : (
           <div className="space-y-3">
             {targetsQuery.data?.map(target => (

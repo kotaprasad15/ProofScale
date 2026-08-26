@@ -3,19 +3,45 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
-      colors: {
-        slate: {
-          50: "#f8f7fb", 100: "#ebeaf0", 200: "#d4d2db", 300: "#b8b6c2", 400: "#9997a5",
-          500: "#7c7a88", 600: "#5f5d68", 700: "#33313a", 800: "#1a1920", 900: "#111116", 950: "#050507"
-        },
-        indigo: {
-          50: "#f3f1ff", 100: "#e7e3ff", 200: "#d1c9ff", 300: "#b8adff", 400: "#c5bcff",
-          500: "#a99cff", 600: "#8574f4", 700: "#6f5de1", 800: "#5748b7", 900: "#3f347e", 950: "#211c42"
-        }
-      },
       fontFamily: {
-        sans: ["Manrope", "ui-sans-serif", "system-ui", "sans-serif"],
-        mono: ["DM Mono", "ui-monospace", "SFMono-Regular", "monospace"]
+        sans: ['Manrope', 'sans-serif'],
+        mono: ['"DM Mono"', 'monospace']
+      },
+      colors: {
+        canvas: '#F7F7FB',
+        surface: {
+          DEFAULT: '#FFFFFF',
+          muted: '#F1F1F7'
+        },
+        ink: {
+          DEFAULT: '#10142A',
+          muted: '#6D7184'
+        },
+        brand: {
+          DEFAULT: '#6957E8',
+          hover: '#5444D9',
+          soft: '#EEEAFE',
+          glow: '#C3B9FD'
+        },
+        success: {
+          DEFAULT: '#129B78',
+          soft: '#E8F7F1'
+        },
+        warning: {
+          DEFAULT: '#A66F1C',
+          soft: '#FFF7E5'
+        },
+        danger: {
+          DEFAULT: '#C2415A',
+          soft: '#FDECEF'
+        },
+        cardborder: '#E7E7F0'
+      },
+      boxShadow: {
+        soft: '0 8px 28px rgba(16, 20, 42, 0.04)',
+        elevated: '0 16px 40px rgba(16, 20, 42, 0.08)',
+        brand: '0 12px 32px rgba(105, 87, 232, 0.22)'
+      }
       }
     }
   },

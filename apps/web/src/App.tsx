@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import { trpc } from "./utils/trpc";
 import { Layout } from "./components/Layout";
+import { HomeView } from "./components/HomeView";
+import { LoginView } from "./components/LoginView";
 import { OnboardingView } from "./components/OnboardingView";
 import { OrganizationSettingsView } from "./components/OrganizationSettingsView";
 import { TargetRegistrationView } from "./components/TargetRegistrationView";
@@ -11,7 +13,15 @@ import { LiveRunMonitorView } from "./components/LiveRunMonitorView";
 import { ReportDetailView } from "./components/ReportDetailView";
 import { RunComparisonView } from "./components/RunComparisonView";
 import { PointWave } from "./components/PointWave";
-import { Shield, Play, Target, CheckCircle2, FileText, AlertTriangle, Users, Lock } from "lucide-react";
+import { LoadingDots } from "./components/LoadingDots";
+import { CustomCursor } from "./components/CustomCursor";
+import { Shield, Play, Target, CheckCircle2, FileText, AlertTriangle, Users, LogOut, ArrowRight, Gauge, Activity, Server, Lock } from "lucide-react";
+
+interface SessionUser {
+  id: string;
+  email: string;
+  organizationId?: string;
+}
 
 function DashboardOverview({
   onNavigate,
@@ -26,11 +36,15 @@ function DashboardOverview({
   return (
     <div className="ps-view max-w-6xl mx-auto space-y-8">
       {/* Header Banner */}
-      <div className="ps-dashboard-hero p-6 rounded-2xl bg-gradient-to-r from-indigo-900/40 via-slate-900 to-slate-900 border border-indigo-500/20 shadow-xl flex items-center justify-between">
-        <PointWave className="ps-overview-wave" />
-        <div className="space-y-1">
-          <h2 className="text-2xl font-bold text-white tracking-tight">Application Readiness Dashboard</h2>
-          <p className="text-sm text-slate-400">
+      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-cardborder shadow-soft flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1.5">
+          <div className="flex items-center space-x-2">
+            <h2 className="text-2xl font-bold text-ink tracking-tight">Application Readiness Dashboard</h2>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-soft text-brand">
+              Active Workspace
+            </span>
+          </div>
+          <p className="text-sm text-ink-muted max-w-2xl">
             {isTester
               ? "Execute approved test scenarios, monitor load validation checks, and inspect empirical report evidence."
               : "Define authorized test scenarios, configure load presets, manage members, and generate evidence-backed reports."}
@@ -40,7 +54,7 @@ function DashboardOverview({
         {!isTester && (
           <button
             onClick={() => onNavigate("plans")}
-            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center space-x-2"
+            className="px-5 py-3 bg-brand hover:bg-brand-hover text-white font-bold text-sm rounded-xl transition shadow-brand flex items-center space-x-2 shrink-0 self-start md:self-auto"
           >
             <Play className="h-4 w-4" />
             <span>New Test Plan</span>
@@ -50,73 +64,91 @@ function DashboardOverview({
 
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
-          <span className="text-xs text-slate-400 font-medium">System Status</span>
+        <div className="p-5 rounded-2xl bg-white border border-cardborder shadow-soft space-y-2">
+          <span className="text-xs text-ink-muted font-bold uppercase tracking-wider">Engine Status</span>
           <div className="flex items-center space-x-2">
-            <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-            <span className="text-lg font-bold text-white">
+            <CheckCircle2 className="h-5 w-5 text-success" />
+            <span className="text-lg font-bold text-ink">
               {healthQuery.data?.status === "ok" ? "Operational" : "Connecting..."}
             </span>
           </div>
-          <p className="text-[11px] text-slate-500">API Port 3001 | Engine v1</p>
+          <p className="text-[11px] font-mono text-ink-muted">Port 3001 · Engine v1</p>
         </div>
 
         <div
-          className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2 cursor-pointer hover:border-slate-700"
+          className="p-5 rounded-2xl bg-white border border-cardborder shadow-soft space-y-2 cursor-pointer hover:border-brand/40 transition"
           onClick={() => onNavigate(isTester ? "runs" : "targets")}
         >
-          <span className="text-xs text-slate-400 font-medium">Registered Targets</span>
+          <span className="text-xs text-ink-muted font-bold uppercase tracking-wider">Registered Targets</span>
           <div className="flex items-center space-x-2">
-            <Target className="h-5 w-5 text-indigo-400" />
-            <span className="text-lg font-bold text-white">1 Verified Endpoint</span>
+            <Target className="h-5 w-5 text-brand" />
+            <span className="text-lg font-bold text-ink">1 Verified Target</span>
           </div>
-          <p className="text-[11px] text-slate-500">http://localhost:4000</p>
+          <p className="text-[11px] font-mono text-ink-muted truncate">Staging API (/v2/checkout)</p>
         </div>
 
-        <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
-          <span className="text-xs text-slate-400 font-medium">Active Projects</span>
+        <div className="p-5 rounded-2xl bg-white border border-cardborder shadow-soft space-y-2">
+          <span className="text-xs text-ink-muted font-bold uppercase tracking-wider">Active Projects</span>
           <div className="flex items-center space-x-2">
-            <Shield className="h-5 w-5 text-purple-400" />
-            <span className="text-lg font-bold text-white">
+            <Shield className="h-5 w-5 text-purple-600" />
+            <span className="text-lg font-bold text-ink">
               {projectsQuery.data?.length || 1} Project
             </span>
           </div>
-          <p className="text-[11px] text-slate-500">Staging Environment</p>
+          <p className="text-[11px] font-mono text-ink-muted">Staging Environment</p>
         </div>
 
-        <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2 cursor-pointer hover:border-slate-700" onClick={() => onNavigate("reports")}>
-          <span className="text-xs text-slate-400 font-medium">Latest Readiness Score</span>
+        <div
+          className="p-5 rounded-2xl bg-white border border-cardborder shadow-soft space-y-2 cursor-pointer hover:border-brand/40 transition"
+          onClick={() => onNavigate("reports")}
+        >
+          <span className="text-xs text-ink-muted font-bold uppercase tracking-wider">Latest Readiness Score</span>
           <div className="flex items-center space-x-2">
-            <FileText className="h-5 w-5 text-amber-400" />
-            <span className="text-lg font-bold text-amber-400">100 / 100</span>
+            <FileText className="h-5 w-5 text-emerald-600" />
+            <span className="text-lg font-bold text-emerald-600 font-mono">100 / 100</span>
           </div>
-          <p className="text-[11px] text-slate-500">Ready</p>
+          <p className="text-[11px] font-semibold text-success flex items-center">
+            <CheckCircle2 className="h-3 w-3 mr-1" /> Passes SLA Thresholds
+          </p>
         </div>
       </div>
 
       {/* Projects Overview List */}
-      <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-        <h3 className="text-lg font-bold text-white">Projects in Active Organization</h3>
+      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-cardborder shadow-soft space-y-4">
+        <div className="flex items-center justify-between border-b border-cardborder pb-4">
+          <div>
+            <h3 className="text-lg font-bold text-ink">Projects in Active Organization</h3>
+            <p className="text-xs text-ink-muted">Configured targets, active test scenarios, and run archives</p>
+          </div>
+          <span className="text-xs font-mono font-bold text-ink-muted px-2.5 py-1 rounded-full bg-surface-muted border border-cardborder">
+            {projectsQuery.data?.length || 1} Total
+          </span>
+        </div>
 
         {projectsQuery.isLoading ? (
-          <div className="p-4 text-sm text-slate-400">Loading projects...</div>
+          <div className="p-8 flex justify-center">
+            <LoadingDots size="sm" label="Loading projects..." />
+          </div>
         ) : (
-          <div className="divide-y divide-slate-800">
+          <div className="divide-y divide-cardborder">
             {projectsQuery.data?.map(proj => (
-              <div key={proj.id} className="py-4 flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold text-slate-200">{proj.name}</h4>
-                  <p className="text-xs text-slate-400">{proj.description}</p>
+              <div key={proj.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <h4 className="font-bold text-ink text-sm">{proj.name}</h4>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-soft text-brand font-mono">
+                      {proj.environment}
+                    </span>
+                  </div>
+                  <p className="text-xs text-ink-muted">{proj.description}</p>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <span className="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 text-xs font-mono">
-                    {proj.environment}
-                  </span>
                   <button
                     onClick={() => onNavigate(isTester ? "runs" : "plans")}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg transition"
+                    className="px-3.5 py-2 bg-surface-muted hover:bg-slate-200 text-ink text-xs font-bold rounded-xl transition flex items-center space-x-1.5"
                   >
-                    {isTester ? "View Runs" : "View Test Plans"}
+                    <span>{isTester ? "View Runs" : "Configure Plans"}</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
@@ -126,10 +158,10 @@ function DashboardOverview({
       </div>
 
       {/* Assessment Disclaimer Notice */}
-      <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start space-x-3 text-xs text-amber-300/90">
-        <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+      <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200 flex items-start space-x-3 text-xs text-amber-900 leading-relaxed">
+        <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
         <div>
-          <span className="font-semibold text-amber-300 block mb-0.5">Assessment Platform Disclaimer</span>
+          <strong className="text-amber-950 block mb-0.5">Platform Assessment Disclaimer</strong>
           ProofScale provides conditional readiness scores based on synthetic load test envelopes. Results reflect observed metrics under specific test parameters and do not serve as a legal guarantee or warranty of live user capacity.
         </div>
       </div>
@@ -137,10 +169,16 @@ function DashboardOverview({
   );
 }
 
-function MainApp() {
+function MainApp({
+  currentUser,
+  onLogout
+}: {
+  currentUser: SessionUser;
+  onLogout: () => void;
+}) {
   const [activeTab, setActiveTab] = useState("projects");
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
-  const [selectedOrgId, setSelectedOrgId] = useState<string>("org_default_01");
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(currentUser.organizationId || null);
   const projectId = "proj_demo_01";
 
   const meQuery = trpc.auth.me.useQuery();
@@ -159,14 +197,14 @@ function MainApp() {
 
   if (meQuery.isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-sm text-slate-400">
-        Resolving user session & permissions...
+      <div className="min-h-screen bg-canvas flex items-center justify-center font-sans">
+        <LoadingDots size="lg" label="Resolving user session & permissions..." />
       </div>
     );
   }
 
-  // Redirect first-time users to Onboarding
-  if (meQuery.data?.user?.onboardingStatus === "required") {
+  // If user requires onboarding, show Onboarding View
+  if (meQuery.data?.user?.onboardingStatus === "required" || meQuery.data?.organizations.length === 0) {
     return <OnboardingView onComplete={() => meQuery.refetch()} />;
   }
 
@@ -181,14 +219,15 @@ function MainApp() {
       activeOrgId={selectedOrgId || authData?.activeOrganizationId}
       orgRole={authData?.orgRole}
       permissions={authData?.permissions}
-      userEmail={authData?.user?.email || "lead@acme.dev"}
+      userEmail={authData?.user?.email || currentUser.email}
       onSelectOrg={handleSelectOrg}
+      onLogout={onLogout}
     >
       {activeTab === "projects" && <DashboardOverview onNavigate={setActiveTab} isTester={isTester} />}
       {activeTab === "targets" && <TargetRegistrationView projectId={projectId} />}
       {activeTab === "plans" && <TestPlanBuilderView projectId={projectId} onPlanCreated={() => setActiveTab("runs")} />}
       {activeTab === "runs" && <LiveRunMonitorView projectId={projectId} onSelectRun={handleSelectRun} />}
-      {activeTab === "organization" && <OrganizationSettingsView organizationId={selectedOrgId || "org_default_01"} />}
+      {activeTab === "organization" && <OrganizationSettingsView organizationId={selectedOrgId || authData?.activeOrganizationId || "org_default_01"} />}
       {activeTab === "reports" && (
         selectedRunId ? (
           <ReportDetailView runId={selectedRunId} onBack={() => setSelectedRunId(null)} />
@@ -197,14 +236,27 @@ function MainApp() {
         )
       )}
       {activeTab === "settings" && (
-        <div className="max-w-4xl mx-auto p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-          <h2 className="text-xl font-bold text-white">System Settings</h2>
-          <p className="text-xs text-slate-400">Manage Control Plane settings, user profile, and session information.</p>
-          <div className="p-4 rounded-xl bg-slate-800/60 text-xs text-slate-300 space-y-2">
-            <div>Authenticated User: <span className="font-mono text-indigo-400">{authData?.user?.email}</span></div>
-            <div>Active Organization: <span className="font-mono text-indigo-400">{authData?.organizations.find(o => o.id === selectedOrgId)?.name || "Acme Engineering Corp"}</span></div>
-            <div>Organization Role: <span className="font-mono text-purple-400 uppercase font-bold">{authData?.orgRole || "Member"}</span></div>
-            <div>Scoring Engine: <span className="font-mono text-indigo-400">mvp-1</span></div>
+        <div className="max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl bg-white border border-cardborder shadow-soft space-y-6">
+          <div className="flex items-center justify-between border-b border-cardborder pb-4">
+            <div>
+              <h2 className="text-xl font-bold text-ink">Account & System Settings</h2>
+              <p className="text-xs text-ink-muted">Manage Control Plane settings, user profile, and active session.</p>
+            </div>
+            <button
+              onClick={onLogout}
+              className="px-4 py-2 bg-red-50 hover:bg-red-100 text-danger text-xs font-bold rounded-xl border border-red-200 transition flex items-center space-x-1.5"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Sign Out</span>
+            </button>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-surface-muted border border-cardborder text-xs text-ink space-y-3 font-medium">
+            <div>Authenticated User: <span className="font-mono text-brand font-bold">{authData?.user?.email}</span></div>
+            <div>Display Name: <span className="text-ink font-semibold">{authData?.user?.displayName || "Not set"}</span></div>
+            <div>Active Organization: <span className="font-mono text-brand font-bold">{authData?.organizations.find(o => o.id === (selectedOrgId || authData?.activeOrganizationId))?.name || "None"}</span></div>
+            <div>Organization Role: <span className="font-mono text-purple-600 uppercase font-bold">{authData?.orgRole || "Member"}</span></div>
+            <div>Scoring Engine: <span className="font-mono text-brand">mvp-1 (Deterministic)</span></div>
           </div>
         </div>
       )}
@@ -213,29 +265,82 @@ function MainApp() {
 }
 
 export function App() {
+  const [currentUser, setCurrentUser] = useState<SessionUser | null>(() => {
+    const saved = localStorage.getItem("ps_session_user");
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [publicView, setPublicView] = useState<"home" | "signin" | "signup">("home");
+
   const [queryClient] = useState(() => new QueryClient());
-  const [trpcClient] = useState(() =>
-    trpc.createClient({
+  const [trpcClient, setTrpcClient] = useState(() =>
+    createTrpcClient(currentUser)
+  );
+
+  function createTrpcClient(user: SessionUser | null) {
+    return trpc.createClient({
       links: [
         httpBatchLink({
           url: "/trpc",
           headers() {
+            if (!user) return {};
             return {
-              "x-user-id": "usr_admin_01",
-              "x-user-email": "lead@acme.dev",
-              "x-organization-id": "org_default_01"
+              "x-user-id": user.id,
+              "x-user-email": user.email,
+              ...(user.organizationId ? { "x-organization-id": user.organizationId } : {})
             };
           }
         })
       ]
-    })
-  );
+    });
+  }
+
+  const handleLogin = (user: SessionUser) => {
+    localStorage.setItem("ps_session_user", JSON.stringify(user));
+    setCurrentUser(user);
+    setTrpcClient(createTrpcClient(user));
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("ps_session_user");
+    setCurrentUser(null);
+    setPublicView("home");
+    setTrpcClient(createTrpcClient(null));
+  };
+
+  // If not logged in, render Public Homepage or Login/Signup
+  if (!currentUser) {
+    if (publicView === "home") {
+      return (
+        <>
+          <CustomCursor />
+          <HomeView
+            onSignIn={() => setPublicView("signin")}
+            onSignUp={() => setPublicView("signup")}
+          />
+        </>
+      );
+    }
+
+    return (
+      <>
+        <CustomCursor />
+        <LoginView
+          initialMode={publicView === "signup" ? "signup" : "signin"}
+          onBackToHome={() => setPublicView("home")}
+          onLogin={handleLogin}
+        />
+      </>
+    );
+  }
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <MainApp />
+        <CustomCursor />
+        <MainApp currentUser={currentUser} onLogout={handleLogout} />
       </QueryClientProvider>
     </trpc.Provider>
   );
 }
+

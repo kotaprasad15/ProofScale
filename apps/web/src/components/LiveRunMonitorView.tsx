@@ -1,6 +1,7 @@
 import React from "react";
 import { trpc } from "../utils/trpc";
 import { Activity, XCircle, Clock, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
+import { LoadingDots } from "./LoadingDots";
 
 interface LiveRunMonitorViewProps {
   projectId: string;
@@ -81,7 +82,9 @@ export function LiveRunMonitorView({ projectId, onSelectRun }: LiveRunMonitorVie
         </div>
 
         {runsQuery.isLoading ? (
-          <div className="text-xs text-slate-400">Loading run status...</div>
+          <div className="p-6 flex justify-center">
+            <LoadingDots size="sm" label="Loading run status..." />
+          </div>
         ) : runsQuery.data?.length === 0 ? (
           <div className="p-6 text-center text-xs text-slate-500">No test runs executed yet.</div>
         ) : (
