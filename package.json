@@ -1,0 +1,24 @@
+{
+  "name": "proofscale",
+  "private": true,
+  "version": "0.1.0",
+  "description": "ProofScale - Application Readiness and Load Validation Platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:server": "npm run dev --workspace=apps/server",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:worker": "npm run dev --workspace=apps/worker",
+    "dev:fixture": "npm run dev --workspace=apps/fixture-target",
+    "db:push": "npm run db:push --workspace=packages/db",
+    "db:seed": "npm run db:seed --workspace=packages/db",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
