@@ -38,7 +38,6 @@ export default {
         'teal-glow': '0 0 30px -5px rgba(47, 212, 166, 0.25)',
         'rose-glow': '0 0 30px -5px rgba(242, 88, 107, 0.25)'
       }
-      }
     }
   },
   plugins: []
