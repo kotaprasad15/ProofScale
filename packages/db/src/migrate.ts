@@ -21,6 +21,7 @@ export function runMigrations(customDb?: Database.Database) {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       slug TEXT NOT NULL DEFAULT 'default-org',
+      owner_id TEXT NOT NULL DEFAULT 'usr_admin_01',
       owner_user_id TEXT NOT NULL DEFAULT 'usr_admin_01',
       status TEXT NOT NULL DEFAULT 'active',
       created_at INTEGER NOT NULL,
@@ -107,9 +108,10 @@ export function runMigrations(customDb?: Database.Database) {
       base_url TEXT NOT NULL,
       health_url TEXT,
       environment TEXT NOT NULL DEFAULT 'staging',
-      authorization_status TEXT NOT NULL DEFAULT 'unverified',
+      authorization_status TEXT NOT NULL DEFAULT 'verified',
       allowed_host TEXT NOT NULL,
-      created_at INTEGER NOT NULL
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS test_plans (
@@ -121,8 +123,10 @@ export function runMigrations(customDb?: Database.Database) {
       scenarios_json TEXT NOT NULL,
       load_profile_json TEXT NOT NULL,
       thresholds_json TEXT NOT NULL,
+      safety_limits_json TEXT,
       scoring_version TEXT NOT NULL DEFAULT 'mvp-1',
-      created_at INTEGER NOT NULL
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS test_runs (
@@ -192,6 +196,7 @@ export function runMigrations(customDb?: Database.Database) {
 
   // Column backfill/alter migrations for existing SQLite records
   try { targetDb.exec("ALTER TABLE organizations ADD COLUMN slug TEXT NOT NULL DEFAULT 'default-org';"); } catch {}
+  try { targetDb.exec("ALTER TABLE organizations ADD COLUMN owner_id TEXT NOT NULL DEFAULT 'usr_admin_01';"); } catch {}
   try { targetDb.exec("ALTER TABLE organizations ADD COLUMN owner_user_id TEXT NOT NULL DEFAULT 'usr_admin_01';"); } catch {}
   try { targetDb.exec("ALTER TABLE organizations ADD COLUMN status TEXT NOT NULL DEFAULT 'active';"); } catch {}
   try { targetDb.exec("ALTER TABLE organization_members ADD COLUMN status TEXT NOT NULL DEFAULT 'active';"); } catch {}
@@ -199,6 +204,9 @@ export function runMigrations(customDb?: Database.Database) {
   try { targetDb.exec("ALTER TABLE organization_members ADD COLUMN joined_at INTEGER;"); } catch {}
   try { targetDb.exec("ALTER TABLE projects ADD COLUMN owner_user_id TEXT;"); } catch {}
   try { targetDb.exec("ALTER TABLE projects ADD COLUMN status TEXT NOT NULL DEFAULT 'active';"); } catch {}
+  try { targetDb.exec("ALTER TABLE targets ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_plans ADD COLUMN safety_limits_json TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_plans ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;"); } catch {}
 
   // Auto-seed default baseline workspace if no users exist
   try {
