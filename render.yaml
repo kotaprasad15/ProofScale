@@ -1,0 +1,26 @@
+services:
+  # 1. API Web Service
+  - type: web
+    name: proofscale-api
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start --workspace=apps/server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # You will paste your DB URL in the dashboard
+
+  # 2. Execution Background Worker
+  - type: worker
+    name: proofscale-worker
+    runtime: node
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm run start --workspace=apps/worker
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # Same DB URL as above
