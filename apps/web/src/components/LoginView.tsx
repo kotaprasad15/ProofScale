@@ -130,7 +130,35 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
               </button>
             </form>
 
-            <p className="text-center text-xs text-text-muted pt-2">
+            <div className="pt-2 border-t border-white/[0.06] space-y-2">
+              <span className="block text-[10px] font-mono text-text-faint uppercase text-center tracking-wider">
+                Pre-seeded Demo Accounts
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("lead@acme.dev");
+                    setIsSignUp(false);
+                  }}
+                  className="flex-1 py-1.5 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[11px] font-mono text-text-muted hover:text-white transition cursor-pointer text-center"
+                >
+                  👑 lead@acme.dev (Owner)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("qa.tester@acme.dev");
+                    setIsSignUp(false);
+                  }}
+                  className="flex-1 py-1.5 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[11px] font-mono text-text-muted hover:text-white transition cursor-pointer text-center"
+                >
+                  ⚡ qa.tester@acme.dev (Tester)
+                </button>
+              </div>
+            </div>
+
+            <p className="text-center text-xs text-text-muted pt-1">
               {isSignUp ? "Already have a workspace?" : "New to Ratecap?"}{" "}
               <button
                 type="button"

@@ -26,16 +26,17 @@ interface HomeViewProps {
   onSignUp: () => void;
   isLoggedIn?: boolean;
   onGoToDashboard?: () => void;
+  onLogout?: () => void;
 }
 
-export function HomeView({ onSignIn, onSignUp, isLoggedIn, onGoToDashboard }: HomeViewProps) {
+export function HomeView({ onSignIn, onSignUp, isLoggedIn, onGoToDashboard, onLogout }: HomeViewProps) {
   return (
     <div className="min-h-screen bg-ink-950 text-text-primary selection:bg-signal-indigo/30 selection:text-white relative">
       {/* Signature Background: Full-Viewport Signal Field Canvas */}
       <SignalField />
 
       {/* Glass Header Navigation */}
-      <PublicNav onSignIn={onSignIn} onSignUp={onSignUp} isLoggedIn={isLoggedIn} onGoToDashboard={onGoToDashboard} />
+      <PublicNav onSignIn={onSignIn} onSignUp={onSignUp} isLoggedIn={isLoggedIn} onGoToDashboard={onGoToDashboard} onLogout={onLogout} />
 
       <main className="relative z-10">
         

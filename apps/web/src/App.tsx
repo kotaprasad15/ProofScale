@@ -490,6 +490,7 @@ export function App() {
             onSignUp={() => navigateTo("/signup")}
             isLoggedIn={!!currentUser}
             onGoToDashboard={() => navigateTo("/dashboard")}
+            onLogout={handleLogout}
           />
         </QueryClientProvider>
       </trpc.Provider>

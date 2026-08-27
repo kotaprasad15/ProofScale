@@ -14,9 +14,10 @@ interface PublicNavProps {
   onSignUp?: () => void;
   isLoggedIn?: boolean;
   onGoToDashboard?: () => void;
+  onLogout?: () => void;
 }
 
-export function PublicNav({ onSignIn, onSignUp, isLoggedIn, onGoToDashboard }: PublicNavProps) {
+export function PublicNav({ onSignIn, onSignUp, isLoggedIn, onGoToDashboard, onLogout }: PublicNavProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -38,21 +39,32 @@ export function PublicNav({ onSignIn, onSignUp, isLoggedIn, onGoToDashboard }: P
 
         <div className="hidden md:flex items-center gap-4">
           {isLoggedIn ? (
-            <button
-              type="button"
-              onClick={onGoToDashboard}
-              className="btn-solid-primary cursor-pointer"
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              <span>Go to Dashboard</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <>
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="text-sm font-medium text-text-muted hover:text-signal-rose px-3 py-2 transition-colors cursor-pointer bg-transparent border-0"
+                >
+                  Sign Out
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onGoToDashboard}
+                className="btn-solid-primary cursor-pointer"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Go to Dashboard</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </>
           ) : (
             <>
               <button
                 type="button"
                 onClick={onSignIn}
-                className="text-sm font-medium text-text-muted hover:text-text-primary px-3 py-2 transition-colors cursor-pointer bg-transparent border-0"
+                className="text-sm font-medium text-text-muted hover:text-text-primary px-3 py-2 transition-colors cursor-pointer bg-transparent border-0 font-medium"
               >
                 Sign in
               </button>
