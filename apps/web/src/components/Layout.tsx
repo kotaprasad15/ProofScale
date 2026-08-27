@@ -27,7 +27,7 @@ export function Layout({
   activeOrgId,
   orgRole,
   permissions,
-  userEmail = "lead@acme.dev",
+  userEmail = "user@organization.dev",
   onSelectOrg,
   onLogout,
   onGoHome

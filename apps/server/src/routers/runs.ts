@@ -14,7 +14,11 @@ export const runsRouter = router({
         .select({
           run: testRuns,
           planName: testPlans.name,
-          targetBaseUrl: targets.baseUrl
+          planProfile: testPlans.profile,
+          planScenariosJson: testPlans.scenariosJson,
+          planLoadProfileJson: testPlans.loadProfileJson,
+          targetBaseUrl: targets.baseUrl,
+          targetEnvironment: targets.environment
         })
         .from(testRuns)
         .innerJoin(testPlans, eq(testRuns.planId, testPlans.id))
@@ -25,7 +29,11 @@ export const runsRouter = router({
       return runs.map(r => ({
         ...r.run,
         planName: r.planName,
+        planProfile: r.planProfile,
+        scenarios: r.planScenariosJson ? JSON.parse(r.planScenariosJson) : [],
+        loadProfile: r.planLoadProfileJson ? JSON.parse(r.planLoadProfileJson) : null,
         targetBaseUrl: r.targetBaseUrl,
+        targetEnvironment: r.targetEnvironment,
         summaryMetrics: r.run.summaryMetricsJson ? JSON.parse(r.run.summaryMetricsJson) : null,
         scoreBreakdown: r.run.scoreBreakdownJson ? JSON.parse(r.run.scoreBreakdownJson) : null
       }));
@@ -38,7 +46,11 @@ export const runsRouter = router({
         .select({
           run: testRuns,
           planName: testPlans.name,
-          targetBaseUrl: targets.baseUrl
+          planProfile: testPlans.profile,
+          planScenariosJson: testPlans.scenariosJson,
+          planLoadProfileJson: testPlans.loadProfileJson,
+          targetBaseUrl: targets.baseUrl,
+          targetEnvironment: targets.environment
         })
         .from(testRuns)
         .innerJoin(testPlans, eq(testRuns.planId, testPlans.id))
@@ -58,7 +70,11 @@ export const runsRouter = router({
       return {
         ...runData.run,
         planName: runData.planName,
+        planProfile: runData.planProfile,
+        scenarios: runData.planScenariosJson ? JSON.parse(runData.planScenariosJson) : [],
+        loadProfile: runData.planLoadProfileJson ? JSON.parse(runData.planLoadProfileJson) : null,
         targetBaseUrl: runData.targetBaseUrl,
+        targetEnvironment: runData.targetEnvironment,
         summaryMetrics: runData.run.summaryMetricsJson ? JSON.parse(runData.run.summaryMetricsJson) : null,
         scoreBreakdown: runData.run.scoreBreakdownJson ? JSON.parse(runData.run.scoreBreakdownJson) : null,
         events
@@ -118,61 +134,51 @@ export const runsRouter = router({
           targetId: input.targetId,
           status: "queued",
           requestedByUserId: ctx.user.id,
-          targetVersionLabel: input.targetVersionLabel || "v1.0.0",
-          region: input.region || "local-us-east"
+          targetVersionLabel: input.targetVersionLabel || "v1.0.0"
         })
         .returning();
 
-      // 5. Record audit run event with resolved target IP evidence
+      // 5. Emit queue event
       await ctx.db.insert(runEvents).values({
-        id: `evt_${crypto.randomUUID().slice(0, 8)}`,
+        id: `ev_${crypto.randomUUID().slice(0, 8)}`,
         runId,
         eventType: "queued",
-        message: `Run enqueued by user ${ctx.user.email} for target ${target.baseUrl} (Resolved IPs: ${dnsCheck.resolvedIps.join(", ")})`
+        message: `Run ${runId} queued for execution against ${target.baseUrl} by ${ctx.user.email}`
       });
 
       return newRun;
     }),
 
-  cancel: tenantProcedure
+  cancel: requireProjectPermission("createRuns")
     .input(CancelTestRunSchema)
     .mutation(async ({ ctx, input }) => {
       const [run] = await ctx.db.select().from(testRuns).where(eq(testRuns.id, input.runId));
-
       if (!run) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Test run not found." });
       }
 
-      // Check if user is allowed to cancel: must have cancelAnyRun OR (cancelOwnRuns and be creator)
-      const canCancel = ctx.permissions.cancelAnyRun || (ctx.permissions.cancelOwnRuns && run.requestedByUserId === ctx.user.id);
-      if (!canCancel) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You are only permitted to cancel test runs that you initiated." });
-      }
-
-      if (["completed", "failed", "cancelled", "expired"].includes(run.status)) {
+      if (["completed", "cancelled", "failed"].includes(run.status)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Cannot cancel a run with terminal status '${run.status}'.`
+          message: `Cannot cancel test run in terminal status '${run.status}'.`
         });
       }
 
-      const [updatedRun] = await ctx.db
+      await ctx.db
         .update(testRuns)
         .set({
-          status: "cancelling",
-          errorMessage: input.reason || "Cancelled by user request.",
-          updatedAt: new Date()
+          status: "cancelled",
+          errorMessage: input.reason || "Cancelled by user"
         })
-        .where(eq(testRuns.id, input.runId))
-        .returning();
+        .where(eq(testRuns.id, input.runId));
 
       await ctx.db.insert(runEvents).values({
-        id: `evt_${crypto.randomUUID().slice(0, 8)}`,
+        id: `ev_${crypto.randomUUID().slice(0, 8)}`,
         runId: input.runId,
-        eventType: "cancelling",
-        message: `Cancellation requested: ${input.reason || "User initiated cancel"}`
+        eventType: "cancelled",
+        message: `Run cancelled by ${ctx.user.email}: ${input.reason || "No reason provided"}`
       });
 
-      return updatedRun;
+      return { success: true, id: input.runId };
     })
 });

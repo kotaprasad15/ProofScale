@@ -24,12 +24,11 @@ import { PublicFooter } from "./PublicFooter";
 interface HomeViewProps {
   onSignIn: () => void;
   onSignUp: () => void;
-  onQuickLogin?: (role: "owner" | "tester") => void;
   isLoggedIn?: boolean;
   onGoToDashboard?: () => void;
 }
 
-export function HomeView({ onSignIn, onSignUp, onQuickLogin, isLoggedIn, onGoToDashboard }: HomeViewProps) {
+export function HomeView({ onSignIn, onSignUp, isLoggedIn, onGoToDashboard }: HomeViewProps) {
   return (
     <div className="min-h-screen bg-ink-950 text-text-primary selection:bg-signal-indigo/30 selection:text-white relative">
       {/* Signature Background: Full-Viewport Signal Field Canvas */}

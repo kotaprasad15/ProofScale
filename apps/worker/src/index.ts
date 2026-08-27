@@ -1,3 +1,9 @@
+import dotenv from "dotenv";
+import path from "node:path";
+
+dotenv.config({ path: path.resolve(process.cwd(), "../../.env") });
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+
 import { QueueManager } from "./queue/QueueManager.js";
 import { executeLoadTest } from "./runner/k6Runner.js";
 import { WorkerCallbackClient } from "./services/WorkerCallbackClient.js";

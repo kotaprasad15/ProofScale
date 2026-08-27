@@ -5,7 +5,10 @@ import path from "node:path";
 import fs from "node:fs";
 
 const getDbPath = () => {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  if (process.env.SQLITE_PATH) return process.env.SQLITE_PATH;
+  if (process.env.DATABASE_URL && (process.env.DATABASE_URL.endsWith(".sqlite") || process.env.DATABASE_URL.endsWith(".db"))) {
+    return process.env.DATABASE_URL;
+  }
 
   // Walk up directory tree until we locate root tsconfig.base.json
   let curr = process.cwd();

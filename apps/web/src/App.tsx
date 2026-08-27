@@ -12,9 +12,7 @@ import { TestPlanBuilderView } from "./components/TestPlanBuilderView";
 import { LiveRunMonitorView } from "./components/LiveRunMonitorView";
 import { ReportDetailView } from "./components/ReportDetailView";
 import { RunComparisonView } from "./components/RunComparisonView";
-import { PointWave } from "./components/PointWave";
 import { LoadingDots } from "./components/LoadingDots";
-import { CustomCursor } from "./components/CustomCursor";
 import { Shield, Play, Target, CheckCircle2, FileText, AlertTriangle, Users, LogOut, ArrowRight, Activity, Home } from "lucide-react";
 
 interface SessionUser {
@@ -27,21 +25,23 @@ interface RouteState {
   path: string;
   tab: string;
   runId: string | null;
+  planId: string | null;
 }
 
 function parseLocationToRoute(): RouteState {
   const pathname = window.location.pathname || "/";
   const searchParams = new URLSearchParams(window.location.search);
   const runId = searchParams.get("runId");
+  const planId = searchParams.get("planId");
 
   if (pathname === "/" || pathname === "/home") {
-    return { path: "/home", tab: "projects", runId: null };
+    return { path: "/home", tab: "projects", runId: null, planId: null };
   }
   if (pathname === "/signin") {
-    return { path: "/signin", tab: "projects", runId: null };
+    return { path: "/signin", tab: "projects", runId: null, planId: null };
   }
   if (pathname === "/signup") {
-    return { path: "/signup", tab: "projects", runId: null };
+    return { path: "/signup", tab: "projects", runId: null, planId: null };
   }
 
   const cleanTab = pathname.replace("/", "");
@@ -51,19 +51,27 @@ function parseLocationToRoute(): RouteState {
   return {
     path: pathname,
     tab,
-    runId
+    runId,
+    planId
   };
 }
 
 function DashboardOverview({
+  projectId,
   onNavigate,
   isTester
 }: {
+  projectId: string;
   onNavigate: (tab: string) => void;
   isTester: boolean;
 }) {
   const healthQuery = trpc.system.health.useQuery();
   const projectsQuery = trpc.projects.list.useQuery();
+  const targetsQuery = trpc.targets.listByProject.useQuery({ projectId });
+  const runsQuery = trpc.runs.listByProject.useQuery({ projectId });
+
+  const completedRuns = runsQuery.data?.filter(r => r.status === "completed") || [];
+  const latestRun = completedRuns[0];
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
@@ -114,9 +122,13 @@ function DashboardOverview({
           <span className="text-[10px] text-text-muted font-mono font-bold uppercase tracking-wider block">Registered Targets</span>
           <div className="flex items-center space-x-2">
             <Target className="h-5 w-5 text-signal-indigo" />
-            <span className="text-lg font-bold text-text-primary">1 Verified Target</span>
+            <span className="text-lg font-bold text-text-primary">
+              {targetsQuery.data?.length || 0} Target{targetsQuery.data?.length === 1 ? "" : "s"}
+            </span>
           </div>
-          <p className="text-[11px] font-mono text-text-muted truncate">http://localhost:4000</p>
+          <p className="text-[11px] font-mono text-text-muted truncate">
+            {targetsQuery.data?.[0]?.baseUrl || "Configure target URL"}
+          </p>
         </div>
 
         <div className="glass-panel p-5 space-y-2">
@@ -137,10 +149,13 @@ function DashboardOverview({
           <span className="text-[10px] text-text-muted font-mono font-bold uppercase tracking-wider block">Latest Readiness Score</span>
           <div className="flex items-center space-x-2">
             <FileText className="h-5 w-5 text-signal-teal" />
-            <span className="text-lg font-bold text-signal-teal font-mono">100 / 100</span>
+            <span className="text-lg font-bold text-signal-teal font-mono">
+              {latestRun?.score !== undefined && latestRun?.score !== null ? `${latestRun.score} / 100` : "100 / 100"}
+            </span>
           </div>
           <p className="text-[11px] font-semibold text-signal-teal flex items-center">
-            <CheckCircle2 className="h-3 w-3 mr-1" /> Passes SLA Thresholds
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            {latestRun?.readinessLabel ? `Status: ${latestRun.readinessLabel}` : "Passes SLA Thresholds"}
           </p>
         </div>
       </div>
@@ -215,12 +230,12 @@ function MainApp({
   onGoHome: () => void;
 }) {
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(currentUser.organizationId || null);
-  const projectId = "proj_demo_01";
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: 1,
     refetchOnWindowFocus: false
   });
+  const projectsQuery = trpc.projects.list.useQuery();
   const selectWorkspaceMutation = trpc.auth.selectWorkspace.useMutation();
 
   const handleSelectRun = (runId: string) => {
@@ -239,6 +254,7 @@ function MainApp({
     setSelectedOrgId(orgId);
     await selectWorkspaceMutation.mutateAsync({ organizationId: orgId });
     meQuery.refetch();
+    projectsQuery.refetch();
   };
 
   if (meQuery.isLoading) {
@@ -289,6 +305,9 @@ function MainApp({
   const isTester = authData?.orgRole === "tester" || authData?.projectRole === "tester";
   const activeTab = route.tab;
 
+  // Dynamically resolve active project ID
+  const projectId = authData?.activeProjectId || authData?.projects?.[0]?.id || projectsQuery.data?.[0]?.id || "proj_demo_01";
+
   return (
     <Layout
       activeTab={activeTab}
@@ -302,10 +321,23 @@ function MainApp({
       onLogout={onLogout}
       onGoHome={onGoHome}
     >
-      {activeTab === "projects" && <DashboardOverview onNavigate={handleTabChange} isTester={isTester} />}
+      {activeTab === "projects" && <DashboardOverview projectId={projectId} onNavigate={handleTabChange} isTester={isTester} />}
       {activeTab === "targets" && <TargetRegistrationView projectId={projectId} />}
-      {activeTab === "plans" && <TestPlanBuilderView projectId={projectId} onPlanCreated={() => onNavigate("/runs")} />}
-      {activeTab === "runs" && <LiveRunMonitorView projectId={projectId} onSelectRun={handleSelectRun} />}
+      {activeTab === "plans" && (
+        <TestPlanBuilderView
+          projectId={projectId}
+          initialPlanId={route.planId || undefined}
+          onPlanCreated={() => onNavigate("/runs")}
+          onLaunchRun={() => onNavigate("/runs")}
+        />
+      )}
+      {activeTab === "runs" && (
+        <LiveRunMonitorView
+          projectId={projectId}
+          onSelectRun={handleSelectRun}
+          onNavigateToBuilder={(planId) => onNavigate(planId ? `/plans?planId=${planId}` : "/plans")}
+        />
+      )}
       {activeTab === "organization" && <OrganizationSettingsView organizationId={selectedOrgId || authData?.activeOrganizationId || "org_default_01"} />}
       {activeTab === "reports" && (
         route.runId ? (
@@ -430,7 +462,6 @@ export function App() {
     navigateTo("/home");
   };
 
-  // If on home/signin/signup route and user explicitly visits or is logged out
   const isPublicRoute = route.path === "/home" || route.path === "/" || route.path === "/signin" || route.path === "/signup";
 
   if (!currentUser || isPublicRoute) {
@@ -457,13 +488,6 @@ export function App() {
             onSignUp={() => navigateTo("/signup")}
             isLoggedIn={!!currentUser}
             onGoToDashboard={() => navigateTo("/dashboard")}
-            onQuickLogin={(role) => {
-              if (role === "owner") {
-                handleLogin({ id: "usr_admin_01", email: "lead@acme.dev", organizationId: "org_default_01" });
-              } else {
-                handleLogin({ id: "usr_tester_01", email: "qa.tester@acme.dev", organizationId: "org_default_01" });
-              }
-            }}
           />
         </QueryClientProvider>
       </trpc.Provider>

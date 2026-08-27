@@ -1,3 +1,9 @@
+import dotenv from "dotenv";
+import path from "node:path";
+
+dotenv.config({ path: path.resolve(process.cwd(), "../../.env") });
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+
 import { createApp } from "./app.js";
 
 const PORT = process.env.PORT || 3001;

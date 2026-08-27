@@ -70,5 +70,21 @@ export const targetsRouter = router({
         .returning();
 
       return newTarget;
+    }),
+
+  delete: requireProjectPermission("manageTargets")
+    .input(z.object({ id: z.string(), projectId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const [existing] = await ctx.db
+        .select()
+        .from(targets)
+        .where(eq(targets.id, input.id));
+
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Target endpoint not found." });
+      }
+
+      await ctx.db.delete(targets).where(eq(targets.id, input.id));
+      return { success: true, id: input.id };
     })
 });

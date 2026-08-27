@@ -1,4 +1,4 @@
-import { db } from "./client.js";
+import { db, sqliteDb } from "./client.js";
 import { runMigrations } from "./migrate.js";
 import { users, organizations, organizationMembers, projects, projectMembers, targets, testPlans } from "./schema/index.js";
 import { PresetDefinitions } from "@proofscale/shared";
@@ -92,33 +92,45 @@ async function seed() {
     status: "active"
   }).onConflictDoNothing();
 
-  // 7. Seed Target Endpoint
-  await db.insert(targets).values({
-    id: defaultTargetId,
-    projectId: defaultProjectId,
-    baseUrl: "http://localhost:4000",
-    healthUrl: "http://localhost:4000/health",
-    environment: "staging",
-    authorizationStatus: "verified",
-    allowedHost: "localhost:4000"
-  }).onConflictDoNothing();
+  // 7. Seed Target Endpoint (guarantee target_fixture_01 exists)
+  try {
+    sqliteDb.prepare("INSERT OR REPLACE INTO targets (id, project_id, base_url, health_url, environment, authorization_status, allowed_host, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").run(
+      defaultTargetId,
+      defaultProjectId,
+      "http://localhost:4000",
+      "http://localhost:4000/health",
+      "staging",
+      "verified",
+      "localhost:4000",
+      Date.now(),
+      Date.now()
+    );
+  } catch (e: any) {
+    console.error("Target insert warning:", e.message);
+  }
 
   // 8. Seed Default Smoke Test Plan
   const smokePreset = PresetDefinitions.smoke;
-  await db.insert(testPlans).values({
-    id: defaultPlanId,
-    projectId: defaultProjectId,
-    name: "Checkout API Smoke Check",
-    version: 1,
-    profile: "smoke",
-    scenariosJson: JSON.stringify([
-      { name: "Health Check", method: "GET", path: "/health", weight: 1 },
-      { name: "List Products", method: "GET", path: "/api/v1/products", weight: 2 }
-    ]),
-    loadProfileJson: JSON.stringify(smokePreset.loadProfile),
-    thresholdsJson: JSON.stringify(smokePreset.thresholds),
-    scoringVersion: "mvp-1"
-  }).onConflictDoNothing();
+  try {
+    sqliteDb.prepare("INSERT OR REPLACE INTO test_plans (id, project_id, name, version, profile, scenarios_json, load_profile_json, thresholds_json, scoring_version, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").run(
+      defaultPlanId,
+      defaultProjectId,
+      "Checkout API Smoke Check",
+      1,
+      "smoke",
+      JSON.stringify([
+        { name: "Health Check", method: "GET", path: "/health", weight: 1 },
+        { name: "List Products", method: "GET", path: "/api/v1/products", weight: 2 }
+      ]),
+      JSON.stringify(smokePreset.loadProfile),
+      JSON.stringify(smokePreset.thresholds),
+      "mvp-1",
+      Date.now(),
+      Date.now()
+    );
+  } catch (e: any) {
+    console.error("Test plan insert warning:", e.message);
+  }
 
   console.log("✅ Database schema initialization and RBAC seeding completed successfully!");
 }

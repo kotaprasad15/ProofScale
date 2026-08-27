@@ -16,6 +16,7 @@
     "dev:fixture": "npm run dev --workspace=apps/fixture-target",
     "db:push": "npm run db:push --workspace=packages/db",
     "db:seed": "npm run db:seed --workspace=packages/db",
+    "db:migrate:pg": "npm run db:migrate:pg --workspace=@proofscale/db",
     "test": "npm run test --workspaces --if-present"
   },
   "devDependencies": {

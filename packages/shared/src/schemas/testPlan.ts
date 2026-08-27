@@ -49,6 +49,17 @@ export const CreateTestPlanSchema = z.object({
 });
 export type CreateTestPlanInput = z.infer<typeof CreateTestPlanSchema>;
 
+export const UpdateTestPlanSchema = z.object({
+  id: z.string(),
+  name: z.string().min(2, "Plan name must be at least 2 characters").max(100).optional(),
+  profile: TestProfileEnum.optional(),
+  scenarios: z.array(ScenarioStepSchema).min(1).optional(),
+  loadProfile: LoadProfileSchema.optional(),
+  thresholds: ThresholdsSchema.optional(),
+  safetyLimits: SafetyLimitsSchema.optional()
+});
+export type UpdateTestPlanInput = z.infer<typeof UpdateTestPlanSchema>;
+
 export const PresetDefinitions: Record<z.infer<typeof TestProfileEnum>, {
   name: string;
   description: string;
