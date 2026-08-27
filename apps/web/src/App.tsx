@@ -410,24 +410,26 @@ export function App() {
   }));
 
   const [trpcClient] = useState(() =>
-    trpc.createClient({
-      links: [
-        httpBatchLink({
-          url: "/trpc",
-          headers() {
-            const saved = localStorage.getItem("ps_session_user");
-            const user = saved ? JSON.parse(saved) : null;
-            if (!user) return {};
-            return {
-              "x-user-id": user.id,
-              "x-user-email": user.email,
-              ...(user.organizationId ? { "x-organization-id": user.organizationId } : {})
-            };
-          }
-        })
-      ]
-    })
-  );
+  trpc.createClient({
+    links: [
+      httpBatchLink({
+        url: import.meta.env.VITE_API_URL
+          ? `${import.meta.env.VITE_API_URL.replace(/\/$/, "")}/trpc`
+          : "/trpc",
+        headers() {
+          const saved = localStorage.getItem("ps_session_user");
+          const user = saved ? JSON.parse(saved) : null;
+          if (!user) return {};
+          return {
+            "x-user-id": user.id,
+            "x-user-email": user.email,
+            ...(user.organizationId ? { "x-organization-id": user.organizationId } : {})
+          };
+        }
+      })
+    ]
+  })
+);
 
   // Browser Back / Forward button support (popstate listener)
   useEffect(() => {
