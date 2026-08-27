@@ -128,7 +128,7 @@ export function PublicFooter({ onSignIn, onSignUp }: PublicFooterProps) {
         {/* Bottom Baseline Bar */}
         <div className="pt-8 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-mono text-text-faint">
           <div>
-            © 2026 ProofScale Instruments. All assessments conditional on declared test envelope.
+            © 2026 Ratecap Instruments. All assessments conditional on declared test envelope.
           </div>
           <div>
             ENGINE SPEC: v1.4 · AES-256 · SHA-256 EVIDENCE

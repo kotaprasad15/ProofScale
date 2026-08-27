@@ -74,7 +74,7 @@ export function RolePathwaysSection({ onSelectRole }: RolePathwaysSectionProps) 
             Designed for Your Entire Engineering Team
           </h2>
           <p className="text-base sm:text-lg text-ink-muted leading-relaxed">
-            ProofScale isolates permissions so testers can execute approved scenarios safely without administrative risk, while organization owners maintain complete safety governance.
+            Ratecap isolates permissions so testers can execute approved scenarios safely without administrative risk, while organization owners maintain complete safety governance.
           </p>
         </div>
 

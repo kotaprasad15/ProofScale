@@ -118,7 +118,7 @@ export function HomeView({ onSignIn, onSignUp, isLoggedIn, onGoToDashboard }: Ho
         <section className="border-y border-white/[0.06] bg-ink-900/50 py-8 relative">
           <div className="max-w-[1240px] mx-auto px-6 sm:px-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <p className="text-sm sm:text-base text-text-muted max-w-xl">
-              ProofScale replaces uncertain launch conversations with{" "}
+              Ratecap replaces uncertain launch conversations with{" "}
               <strong className="text-text-primary font-semibold">
                 observed behavior under a declared workload.
               </strong>
@@ -138,12 +138,12 @@ export function HomeView({ onSignIn, onSignUp, isLoggedIn, onGoToDashboard }: Ho
 
         {/* =========================================================================
             3. SCROLLYTELLING PIPELINE ("How an assessment actually runs")
-           ========================================================================= */}
+            ========================================================================= */}
         <Scrollytelling />
 
         {/* =========================================================================
             4. METHODOLOGY & SCORING SPEC SECTION
-           ========================================================================= */}
+            ========================================================================= */}
         <section id="methodology" className="py-16 sm:py-32 border-t border-white/[0.06] bg-ink-900/30">
           <div className="max-w-[1240px] mx-auto px-6 sm:px-12">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
@@ -160,7 +160,7 @@ export function HomeView({ onSignIn, onSignUp, isLoggedIn, onGoToDashboard }: Ho
                 </h2>
 
                 <p className="text-text-muted text-base leading-relaxed">
-                  ProofScale keeps the workload, thresholds, target, run conditions, and confidence context next to the number. The result is defensible across engineering teams and executive stakeholders.
+                  Ratecap keeps the workload, thresholds, target, run conditions, and confidence context next to the number. The result is defensible across engineering teams and executive stakeholders.
                 </p>
 
                 {/* Score Status Tiers Matrix */}

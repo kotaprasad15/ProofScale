@@ -44,7 +44,7 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `proofscale_report_${run.id}.md`;
+      a.download = `ratecap_report_${run.id}.md`;
       a.click();
     }
   };
@@ -56,7 +56,7 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `proofscale_report_${run.id}.json`;
+      a.download = `ratecap_report_${run.id}.json`;
       a.click();
     }
   };

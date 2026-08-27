@@ -10,7 +10,7 @@ export function BrandLogo({ compact = false, onClick }: BrandLogoProps) {
     <div
       onClick={onClick}
       className="inline-flex items-center gap-3 cursor-pointer select-none group"
-      aria-label="ProofScale home"
+      aria-label="Ratecap home"
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -49,7 +49,7 @@ export function BrandLogo({ compact = false, onClick }: BrandLogoProps) {
       {!compact && (
         <div className="flex flex-col">
           <span className="font-display font-bold text-base tracking-tight text-[#F3F5FA] leading-none group-hover:text-white">
-            ProofScale
+            Ratecap
           </span>
           <span className="font-mono text-[9px] font-medium tracking-wider text-[#8D96AC] uppercase mt-1 leading-none">
             READINESS INSTRUMENT

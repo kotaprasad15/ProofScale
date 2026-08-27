@@ -44,10 +44,10 @@ export function MethodologySection() {
             <span>Deterministic Scoring Formula</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-ink tracking-tight">
-            How ProofScale Calculates Application Readiness
+            How Ratecap Calculates Application Readiness
           </h2>
           <p className="text-base sm:text-lg text-ink-muted leading-relaxed">
-            ProofScale does not give arbitrary pass/fail stamps. Every assessment produces a mathematical 0–100 score strictly bounded within your test configuration envelope.
+            Ratecap does not give arbitrary pass/fail stamps. Every assessment produces a mathematical 0–100 score strictly bounded within your test configuration envelope.
           </p>
         </div>
 

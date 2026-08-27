@@ -25,7 +25,7 @@ export function createApp() {
 
   // REST Health Check
   app.get("/health", (req, res) => {
-    res.json({ status: "ok", service: "ProofScale Control Plane API" });
+    res.json({ status: "ok", service: "Ratecap Control Plane API" });
   });
 
   return app;

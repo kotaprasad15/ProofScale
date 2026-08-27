@@ -7,7 +7,7 @@ export const systemRouter = router({
     return {
       status: "ok",
       timestamp: new Date().toISOString(),
-      service: "ProofScale Control Plane API",
+      service: "Ratecap Control Plane API",
       scoringVersion: SCORING_VERSION,
       killSwitchActive: KillSwitch.isActivated()
     };

@@ -1,9 +1,11 @@
+import type Database from "better-sqlite3";
 import { sqliteDb } from "./client.js";
 
-export function runMigrations() {
+export function runMigrations(customDb?: Database.Database) {
+  const targetDb = customDb || sqliteDb;
   console.log("⚡ Running automatic database table initialization...");
 
-  sqliteDb.exec(`
+  targetDb.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT NOT NULL UNIQUE,
@@ -189,14 +191,77 @@ export function runMigrations() {
   `);
 
   // Column backfill/alter migrations for existing SQLite records
-  try { sqliteDb.exec("ALTER TABLE organizations ADD COLUMN slug TEXT NOT NULL DEFAULT 'default-org';"); } catch {}
-  try { sqliteDb.exec("ALTER TABLE organizations ADD COLUMN owner_user_id TEXT NOT NULL DEFAULT 'usr_admin_01';"); } catch {}
-  try { sqliteDb.exec("ALTER TABLE organizations ADD COLUMN status TEXT NOT NULL DEFAULT 'active';"); } catch {}
-  try { sqliteDb.exec("ALTER TABLE organization_members ADD COLUMN status TEXT NOT NULL DEFAULT 'active';"); } catch {}
-  try { sqliteDb.exec("ALTER TABLE organization_members ADD COLUMN invited_by_user_id TEXT;"); } catch {}
-  try { sqliteDb.exec("ALTER TABLE organization_members ADD COLUMN joined_at INTEGER;"); } catch {}
-  try { sqliteDb.exec("ALTER TABLE projects ADD COLUMN owner_user_id TEXT;"); } catch {}
-  try { sqliteDb.exec("ALTER TABLE projects ADD COLUMN status TEXT NOT NULL DEFAULT 'active';"); } catch {}
+  try { targetDb.exec("ALTER TABLE organizations ADD COLUMN slug TEXT NOT NULL DEFAULT 'default-org';"); } catch {}
+  try { targetDb.exec("ALTER TABLE organizations ADD COLUMN owner_user_id TEXT NOT NULL DEFAULT 'usr_admin_01';"); } catch {}
+  try { targetDb.exec("ALTER TABLE organizations ADD COLUMN status TEXT NOT NULL DEFAULT 'active';"); } catch {}
+  try { targetDb.exec("ALTER TABLE organization_members ADD COLUMN status TEXT NOT NULL DEFAULT 'active';"); } catch {}
+  try { targetDb.exec("ALTER TABLE organization_members ADD COLUMN invited_by_user_id TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE organization_members ADD COLUMN joined_at INTEGER;"); } catch {}
+  try { targetDb.exec("ALTER TABLE projects ADD COLUMN owner_user_id TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE projects ADD COLUMN status TEXT NOT NULL DEFAULT 'active';"); } catch {}
+
+  // Auto-seed default baseline workspace if no users exist
+  try {
+    const userCount = targetDb.prepare("SELECT count(*) as count FROM users").get() as { count: number };
+    if (!userCount || userCount.count === 0) {
+      const defaultOrgId = "org_default_01";
+      const defaultUserId = "usr_admin_01";
+      const defaultTesterId = "usr_tester_01";
+      const defaultProjectId = "proj_demo_01";
+      const defaultTargetId = "target_fixture_01";
+      const defaultPlanId = "plan_smoke_01";
+      const now = Date.now();
+
+      targetDb.prepare(`
+        INSERT OR IGNORE INTO users (id, email, display_name, role, onboarding_status, last_workspace_id, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(defaultUserId, "lead@acme.dev", "Alex Rivera (Org Owner)", "admin", "completed", defaultOrgId, now, now);
+
+      targetDb.prepare(`
+        INSERT OR IGNORE INTO users (id, email, display_name, role, onboarding_status, last_workspace_id, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(defaultTesterId, "qa.tester@acme.dev", "Sam Taylor (Tester)", "member", "completed", defaultOrgId, now, now);
+
+      targetDb.prepare(`
+        INSERT OR IGNORE INTO organizations (id, name, slug, owner_user_id, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(defaultOrgId, "Acme Engineering Corp", "acme-engineering", defaultUserId, "active", now, now);
+
+      targetDb.prepare(`
+        INSERT OR IGNORE INTO organization_members (id, organization_id, user_id, user_email, role, status, invited_by_user_id, joined_at, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run("mem_admin_01", defaultOrgId, defaultUserId, "lead@acme.dev", "owner", "active", null, now, now);
+
+      targetDb.prepare(`
+        INSERT OR IGNORE INTO organization_members (id, organization_id, user_id, user_email, role, status, invited_by_user_id, joined_at, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run("mem_tester_01", defaultOrgId, defaultTesterId, "qa.tester@acme.dev", "tester", "active", null, now, now);
+
+      targetDb.prepare(`
+        INSERT OR IGNORE INTO projects (id, organization_id, owner_user_id, name, description, environment, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(defaultProjectId, defaultOrgId, defaultUserId, "Payment Gateway API", "Production readiness load validation for Checkout API v2", "staging", "active", now, now);
+
+      targetDb.prepare(`
+        INSERT OR IGNORE INTO project_members (id, project_id, user_id, role, status, invited_by_user_id, joined_at, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run("pmem_admin_01", defaultProjectId, defaultUserId, "owner", "active", null, now, now);
+
+      targetDb.prepare(`
+        INSERT OR IGNORE INTO project_members (id, project_id, user_id, role, status, invited_by_user_id, joined_at, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run("pmem_tester_01", defaultProjectId, defaultTesterId, "tester", "active", null, now, now);
+
+      targetDb.prepare(`
+        INSERT OR IGNORE INTO targets (id, project_id, base_url, health_url, environment, authorization_status, allowed_host, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(defaultTargetId, defaultProjectId, "http://localhost:4000", "http://localhost:4000/health", "staging", "verified", "localhost:4000", now);
+
+      console.log("🌱 Auto-seeded initial default workspace and admin users.");
+    }
+  } catch (seedErr: any) {
+    console.warn("⚠️ Auto-seed note:", seedErr.message);
+  }
 
   console.log("✅ Database tables verified and initialized successfully.");
 }

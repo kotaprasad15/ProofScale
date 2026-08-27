@@ -92,7 +92,7 @@ export function Scrollytelling() {
             From workload to evidence: the 4-stage pipeline.
           </h2>
           <p className="text-text-muted text-base sm:text-lg leading-relaxed">
-            ProofScale operates as a sandboxed testing instrument. Every run executes under strict safety boundaries and produces an audit-defensible assessment.
+            Ratecap operates as a sandboxed testing instrument. Every run executes under strict safety boundaries and produces an audit-defensible assessment.
           </p>
         </div>
 
@@ -331,7 +331,7 @@ export function Scrollytelling() {
                       </span>
                     </div>
                     <div className="p-2.5 rounded bg-black/40 border border-white/[0.06] text-text-primary text-[11px] break-all">
-                      https://proofscale.dev/share/0x4f88e2c91b70a931...
+                      https://ratecap.dev/share/0x4f88e2c91b70a931...
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-[10px]">
                       <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
@@ -365,7 +365,7 @@ export function Scrollytelling() {
               {/* Sticky Card Bottom Baseline */}
               <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between text-[11px] font-mono text-text-muted">
                 <span>STAGE {STAGES[activeStage].step} AUDIT LOG</span>
-                <span className="text-signal-indigo">PROOFSCALE INSTRUMENT</span>
+                <span className="text-signal-indigo">RATECAP INSTRUMENT</span>
               </div>
             </div>
           </div>

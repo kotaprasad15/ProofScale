@@ -91,7 +91,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
                 {isSignUp ? "NEW ACCOUNT" : "AUTHENTICATION"}
               </span>
               <h1 className="font-display font-bold text-2xl sm:text-3xl text-text-primary tracking-tight mt-1">
-                {isSignUp ? "Create your account" : "Sign in to ProofScale"}
+                {isSignUp ? "Create your account" : "Sign in to Ratecap"}
               </h1>
             </div>
 
@@ -131,7 +131,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
             </form>
 
             <p className="text-center text-xs text-text-muted pt-2">
-              {isSignUp ? "Already have a workspace?" : "New to ProofScale?"}{" "}
+              {isSignUp ? "Already have a workspace?" : "New to Ratecap?"}{" "}
               <button
                 type="button"
                 onClick={() => setIsSignUp(!isSignUp)}
@@ -146,7 +146,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
 
       {/* Footer Baseline */}
       <footer className="relative z-10 py-6 text-center text-xs font-mono text-text-faint">
-        © 2026 ProofScale Instruments · Deterministic Application Readiness
+        © 2026 Ratecap Instruments · Deterministic Application Readiness
       </footer>
     </div>
   );

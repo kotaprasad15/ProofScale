@@ -209,7 +209,7 @@ function DashboardOverview({
         <AlertTriangle className="h-5 w-5 text-signal-amber shrink-0 mt-0.5" />
         <div>
           <strong className="text-text-primary block mb-0.5 uppercase tracking-wide">Platform Assessment Disclaimer</strong>
-          ProofScale provides conditional readiness scores based on synthetic load test envelopes. Results reflect observed metrics under specific test parameters and do not serve as a legal guarantee or warranty of live user capacity.
+          Ratecap provides conditional readiness scores based on synthetic load test envelopes. Results reflect observed metrics under specific test parameters and do not serve as a legal guarantee or warranty of live user capacity.
         </div>
       </div>
     </div>
@@ -274,7 +274,7 @@ function MainApp({
           </div>
           <h2 className="text-xl font-bold text-text-primary">Unable to Resolve Session</h2>
           <p className="text-xs text-text-muted leading-relaxed">
-            {meQuery.error?.message || "There was a problem communicating with the ProofScale API server."}
+            {meQuery.error?.message || "There was a problem communicating with the Ratecap API server."}
           </p>
           <div className="flex gap-3 pt-2">
             <button

@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import * as schema from "./schema/index.js";
+import { runMigrations } from "./migrate.js";
 import path from "node:path";
 import fs from "node:fs";
 
@@ -27,6 +28,13 @@ export const sqliteDb: Database.Database = new Database(dbPath);
 
 // Enable WAL mode for high performance concurrent writes
 sqliteDb.pragma("journal_mode = WAL");
+
+// Automatically ensure all tables and baseline seed exist
+try {
+  runMigrations(sqliteDb);
+} catch (err: any) {
+  console.warn("Auto-migration notice:", err.message);
+}
 
 export const db = drizzle(sqliteDb, { schema });
 export type DbClient = typeof db;

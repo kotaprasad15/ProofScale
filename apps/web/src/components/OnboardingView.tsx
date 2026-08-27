@@ -286,7 +286,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
 
       {/* Footer Baseline */}
       <footer className="relative z-10 py-6 text-center text-xs font-mono text-text-faint">
-        © 2026 ProofScale Instruments · Dual-Scope RBAC Onboarding
+        © 2026 Ratecap Instruments · Dual-Scope RBAC Onboarding
       </footer>
     </div>
   );
