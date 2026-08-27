@@ -8,7 +8,7 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspace=packages/shared && npm run build --workspace=packages/db && npm run build --workspace=apps/fixture-target && npm run build --workspace=apps/server && npm run build --workspace=apps/worker && npm run build --workspace=apps/web",
     "dev": "npm run dev --workspaces --if-present",
     "dev:server": "npm run dev --workspace=apps/server",
     "dev:web": "npm run dev --workspace=apps/web",

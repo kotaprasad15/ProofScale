@@ -6,7 +6,7 @@ import { LoadingDots } from "./LoadingDots";
 interface LiveRunMonitorViewProps {
   projectId: string;
   onSelectRun?: (runId: string) => void;
-  onNavigateToBuilder?: () => void;
+  onNavigateToBuilder?: (planId?: string) => void;
 }
 
 function RunProgressBar({
@@ -262,7 +262,7 @@ export function LiveRunMonitorView({ projectId, onSelectRun, onNavigateToBuilder
           {onNavigateToBuilder && (
             <button
               type="button"
-              onClick={onNavigateToBuilder}
+              onClick={() => onNavigateToBuilder()}
               className="btn-glass-secondary text-xs py-1.5 px-3 cursor-pointer flex items-center gap-1"
             >
               <Plus className="h-3.5 w-3.5" />
@@ -281,7 +281,7 @@ export function LiveRunMonitorView({ projectId, onSelectRun, onNavigateToBuilder
             {onNavigateToBuilder && (
               <button
                 type="button"
-                onClick={onNavigateToBuilder}
+                onClick={() => onNavigateToBuilder()}
                 className="btn-solid-primary text-xs py-2 px-4 cursor-pointer inline-flex"
               >
                 <Plus className="h-4 w-4 mr-1.5" />
@@ -308,7 +308,7 @@ export function LiveRunMonitorView({ projectId, onSelectRun, onNavigateToBuilder
                         {onNavigateToBuilder && (
                           <button
                             type="button"
-                            onClick={onNavigateToBuilder}
+                            onClick={() => onNavigateToBuilder(plan.id)}
                             className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-signal-indigo-soft hover:text-signal-indigo text-text-muted border border-white/[0.06] transition cursor-pointer"
                             title="Edit this test plan in Builder"
                           >
