@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { trpc } from "../utils/trpc";
-import { PlaySquare, Plus, Trash2, Edit3, Shield, Zap, Flame, Clock, Play, CheckCircle2, AlertTriangle, ArrowRight, X, RotateCcw, Globe, Sliders, Layers } from "lucide-react";
+import { Plus, Trash2, Edit3, Shield, Zap, Flame, Clock, Play, CheckCircle2, AlertTriangle, ArrowRight, X, RotateCcw, Globe, Sliders, Layers } from "lucide-react";
 import { TestProfile, PresetDefinitions } from "@proofscale/shared";
 import { LoadingDots } from "./LoadingDots";
 
@@ -338,13 +338,12 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
       {/* Preset Selector Grid */}
       <div className="space-y-3">
         <span className="text-xs font-mono text-text-muted uppercase">1-Click Test Profile Presets</span>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { id: "smoke", label: "Smoke", icon: Shield, desc: "2 VUs · 10s" },
-            { id: "baseline", label: "Baseline", icon: Zap, desc: "25 VUs · 60s" },
-            { id: "ramp", label: "Ramp-Up", icon: Clock, desc: "50 VUs · 120s" },
-            { id: "spike", label: "Spike", icon: Flame, desc: "100 VUs · 30s" },
-            { id: "soak", label: "Short Soak", icon: PlaySquare, desc: "30 VUs · 300s" }
+            { id: "smoke", label: "Smoke", icon: Shield, desc: "2 VUs · 30s" },
+            { id: "baseline", label: "Baseline", icon: Zap, desc: "10 VUs · 120s" },
+            { id: "spike", label: "Stress", icon: Flame, desc: "50 VUs · 60s" },
+            { id: "short_soak", label: "Soak", icon: Clock, desc: "15 VUs · 600s" }
           ].map(preset => {
             const Icon = preset.icon;
             const isSelected = selectedProfile === preset.id;
@@ -379,7 +378,7 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
               onChange={e => setName(e.target.value)}
               required
               placeholder="e.g. Checkout API Smoke Check"
-              className="w-full px-4 py-2.5 rounded-xl bg-ink-900 border border-white/[0.1] text-sm text-text-primary focus:outline-none focus:border-signal-indigo"
+              className="field-input"
             />
           </div>
 
@@ -388,7 +387,7 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
             <select
               value={effectiveTargetId}
               onChange={e => setSelectedTargetId(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-ink-900 border border-white/[0.1] text-sm text-text-primary font-mono focus:outline-none focus:border-signal-indigo cursor-pointer"
+              className="field-input field-input--mono cursor-pointer"
             >
               {targetsList.length === 0 ? (
                 <option value="">No targets registered yet</option>
@@ -531,7 +530,7 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
               max={100}
               value={virtualUsers}
               onChange={e => setVirtualUsers(Number(e.target.value))}
-              className="w-full px-3.5 py-2 rounded-xl bg-ink-900 border border-white/[0.1] text-xs text-text-primary font-mono focus:outline-none focus:border-signal-indigo"
+              className="field-input field-input--mono"
             />
           </div>
 
@@ -543,7 +542,7 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
               max={600}
               value={durationSeconds}
               onChange={e => setDurationSeconds(Number(e.target.value))}
-              className="w-full px-3.5 py-2 rounded-xl bg-ink-900 border border-white/[0.1] text-xs text-text-primary font-mono focus:outline-none focus:border-signal-indigo"
+              className="field-input field-input--mono"
             />
           </div>
 
@@ -555,7 +554,7 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
               max={10000}
               value={maxP95Ms}
               onChange={e => setMaxP95Ms(Number(e.target.value))}
-              className="w-full px-3.5 py-2 rounded-xl bg-ink-900 border border-white/[0.1] text-xs text-text-primary font-mono focus:outline-none focus:border-signal-indigo"
+              className="field-input field-input--mono"
             />
           </div>
         </div>
@@ -676,8 +675,8 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
 
       {/* Test Plan Deletion Confirmation Modal */}
       {planToDelete && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="glass-panel max-w-md w-full p-6 space-y-5 border border-white/[0.15] shadow-2xl">
+        <div className="modal-backdrop">
+          <div className="modal-panel--destructive max-w-md w-full p-6 space-y-5">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-xl bg-signal-rose-soft border border-signal-rose/30 flex items-center justify-center text-signal-rose shrink-0">
                 <AlertTriangle className="h-5 w-5" />
@@ -709,7 +708,7 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
                 type="button"
                 onClick={handleConfirmDeletePlan}
                 disabled={deletePlanMutation.isPending}
-                className="px-4 py-2.5 bg-signal-rose hover:bg-red-600 text-white font-semibold text-xs rounded-xl transition flex-1 justify-center flex items-center space-x-1.5 cursor-pointer shadow-lg shadow-signal-rose/20"
+                className="btn-destructive flex-1"
               >
                 {deletePlanMutation.isPending ? (
                   <span>Removing...</span>

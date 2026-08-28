@@ -21,7 +21,7 @@ export function LoadingDots({
         <div className={`dot ${dotSizeClass}`} />
       </div>
       {label && (
-        <span className="text-xs font-semibold text-ink-muted tracking-wide animate-pulse">
+        <span className="text-xs font-semibold text-text-muted tracking-wide animate-pulse">
           {label}
         </span>
       )}

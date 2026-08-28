@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { trpc } from "../utils/trpc";
-import { Activity, XCircle, Clock, CheckCircle2, AlertTriangle, Loader2, Filter, Target, Play, Plus, ChevronRight, Globe, Layers, ArrowUpRight, Timer, Trash2, Edit3 } from "lucide-react";
+import { Activity, XCircle, Clock, CheckCircle2, AlertTriangle, Loader2, Filter, Target, Play, Plus, ChevronRight, Globe, Layers, ArrowUpRight, Timer, Trash2, Edit3, ShieldCheck } from "lucide-react";
 import { LoadingDots } from "./LoadingDots";
 
 interface LiveRunMonitorViewProps {
@@ -212,6 +212,23 @@ export function LiveRunMonitorView({ projectId, onSelectRun, onNavigateToBuilder
     }
   };
 
+  // Left-accent bar color for the table-row hover, keyed to run status
+  const statusAccent = (status: string): string => {
+    switch (status) {
+      case "completed":
+        return "#2FD4A6";
+      case "starting":
+      case "running":
+        return "#5B5FEF";
+      case "queued":
+        return "#F0A63A";
+      case "failed":
+        return "#F2586B";
+      default:
+        return "#5C6478";
+    }
+  };
+
   const allRuns = runsQuery.data || [];
   const targetsList = targetsQuery.data || [];
   const testPlansList = testPlansQuery.data || [];
@@ -220,6 +237,11 @@ export function LiveRunMonitorView({ projectId, onSelectRun, onNavigateToBuilder
   const filteredRuns = selectedTargetFilter === "all"
     ? allRuns
     : allRuns.filter(r => r.targetId === selectedTargetFilter || r.targetBaseUrl === selectedTargetFilter);
+
+  // Primary metric tiles derive from the freshest run that carries telemetry
+  const recording = allRuns.some(r => ["running", "starting"].includes(r.status));
+  const metricRun = allRuns.find(r => r.summaryMetrics) || null;
+  const sm = metricRun?.summaryMetrics;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
@@ -233,8 +255,58 @@ export function LiveRunMonitorView({ projectId, onSelectRun, onNavigateToBuilder
         </div>
 
         <div className="flex items-center space-x-2">
-          <span className="h-2 w-2 rounded-full bg-signal-teal animate-ping" />
-          <span className="text-xs font-mono text-text-muted">Live Polling (2s)</span>
+          {recording ? (
+            <>
+              <span className="recording-dot" />
+              <span className="text-xs font-mono text-signal-rose font-bold uppercase tracking-wider">Recording</span>
+            </>
+          ) : (
+            <>
+              <span className="h-2 w-2 rounded-full bg-signal-teal" />
+              <span className="text-xs font-mono text-text-muted">Live Polling (2s)</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Primary metric tiles — flat panels, no glass blur, max legibility */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="flat-instrument p-5 space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">p95 Latency</span>
+            <Activity className="w-3.5 h-3.5 text-signal-indigo" />
+          </div>
+          <div className="font-mono text-3xl font-bold text-text-primary">
+            {sm?.p95Ms != null ? sm.p95Ms : "—"}
+            <span className="text-sm text-text-faint font-medium"> ms</span>
+          </div>
+          <div className="text-[10px] font-mono text-text-faint">
+            {recording ? "updating in place" : "latest telemetry"}
+          </div>
+        </div>
+
+        <div className="flat-instrument p-5 space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">Throughput</span>
+            <Activity className="w-3.5 h-3.5 text-signal-teal" />
+          </div>
+          <div className="font-mono text-3xl font-bold text-text-primary">
+            {sm?.throughputRps != null ? sm.throughputRps.toFixed(1) : "—"}
+            <span className="text-sm text-text-faint font-medium"> RPS</span>
+          </div>
+          <div className="text-[10px] font-mono text-text-faint">sustained requests/sec</div>
+        </div>
+
+        <div className="flat-instrument p-5 space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">Error Rate</span>
+            <ShieldCheck className="w-3.5 h-3.5 text-signal-rose" />
+          </div>
+          <div className={`font-mono text-3xl font-bold ${sm && sm.errorRate > 0.05 ? "text-signal-rose" : "text-text-primary"}`}>
+            {sm?.errorRate != null ? (sm.errorRate * 100).toFixed(2) : "—"}
+            <span className="text-sm text-text-faint font-medium"> %</span>
+          </div>
+          <div className="text-[10px] font-mono text-text-faint">hard-cap at 5.00%</div>
         </div>
       </div>
 
@@ -438,7 +510,11 @@ export function LiveRunMonitorView({ projectId, onSelectRun, onNavigateToBuilder
         ) : (
           <div className="divide-y divide-white/[0.06]">
             {filteredRuns.map(r => (
-              <div key={r.id} className="py-5 space-y-3">
+              <div
+                key={r.id}
+                className="data-row py-5 px-2 space-y-3"
+                style={{ "--accent": statusAccent(r.status) } as React.CSSProperties}
+              >
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                   <div className="space-y-1.5 min-w-0 flex-1">
                     {/* Test Plan Name + Status + Profile */}
@@ -526,8 +602,8 @@ export function LiveRunMonitorView({ projectId, onSelectRun, onNavigateToBuilder
 
       {/* Plan Removal Confirmation Modal */}
       {planToDelete && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="glass-panel max-w-md w-full p-6 space-y-5 border border-white/[0.15] shadow-2xl">
+        <div className="modal-backdrop">
+          <div className="modal-panel--destructive max-w-md w-full p-6 space-y-5">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-xl bg-signal-rose-soft border border-signal-rose/30 flex items-center justify-center text-signal-rose shrink-0">
                 <AlertTriangle className="h-5 w-5" />
@@ -559,7 +635,7 @@ export function LiveRunMonitorView({ projectId, onSelectRun, onNavigateToBuilder
                 type="button"
                 onClick={handleConfirmDeletePlan}
                 disabled={deletePlanMutation.isPending}
-                className="px-4 py-2.5 bg-signal-rose hover:bg-red-600 text-white font-semibold text-xs rounded-xl transition flex-1 justify-center flex items-center space-x-1.5 cursor-pointer shadow-lg shadow-signal-rose/20"
+                className="btn-destructive flex-1"
               >
                 {deletePlanMutation.isPending ? (
                   <span>Removing...</span>

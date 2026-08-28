@@ -29,9 +29,9 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
   };
 
   return (
-    <div className="min-h-screen bg-ink-950 text-text-primary flex flex-col justify-between relative selection:bg-signal-indigo/30 selection:text-white">
-      {/* Signature Signal Field Background */}
-      <SignalField />
+    <div data-motion="calm" className="min-h-screen bg-ink-950 text-text-primary flex flex-col justify-between relative selection:bg-signal-indigo/30 selection:text-white">
+      {/* Signature Signal Field Background (full motion, calm interactions) */}
+      <SignalField variant="auth" />
 
       {/* Top Bar */}
       <header className="relative z-20 max-w-[1240px] w-full mx-auto px-6 sm:px-12 py-8 flex items-center justify-between">
@@ -108,7 +108,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
                     placeholder="name@company.com"
                     required
                     autoFocus
-                    className="w-full px-4 py-3 pl-10 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo font-mono"
+                    className="field-input field-input--mono pl-10"
                   />
                   <Mail className="w-4 h-4 text-text-faint absolute left-3.5 top-3.5" />
                 </div>

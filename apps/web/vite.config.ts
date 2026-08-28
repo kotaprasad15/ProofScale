@@ -6,6 +6,17 @@ export default defineConfig({
   define: {
     "process.env": {}
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ["three", "@react-three/fiber", "@react-three/drei"],
+          motion: ["framer-motion"],
+          charts: ["recharts"]
+        }
+      }
+    }
+  },
   server: {
     port: 3000,
     proxy: {

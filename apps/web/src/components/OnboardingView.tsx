@@ -68,9 +68,9 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
   };
 
   return (
-    <div className="min-h-screen bg-ink-950 text-text-primary flex flex-col justify-between relative selection:bg-signal-indigo/30 selection:text-white">
-      {/* Signature Signal Field Background */}
-      <SignalField />
+    <div data-motion="calm" className="min-h-screen bg-ink-950 text-text-primary flex flex-col justify-between relative selection:bg-signal-indigo/30 selection:text-white">
+      {/* Signature Signal Field Background (full motion, calm interactions) */}
+      <SignalField variant="auth" />
 
       {/* Top Header */}
       <header className="relative z-20 max-w-[1240px] w-full mx-auto px-6 sm:px-12 py-8 flex items-center justify-between">
@@ -168,7 +168,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                   onChange={(e) => setOrgName(e.target.value)}
                   placeholder="e.g. Acme Engineering Corp"
                   required
-                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
+                  className="field-input"
                 />
               </div>
 
@@ -181,7 +181,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="e.g. Leah Evans"
-                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
+                  className="field-input"
                 />
               </div>
 
@@ -194,7 +194,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                   value={initialProject}
                   onChange={(e) => setInitialProject(e.target.value)}
                   placeholder="e.g. Payment Gateway API"
-                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
+                  className="field-input"
                 />
               </div>
 
@@ -228,7 +228,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                   onChange={(e) => setInviteToken(e.target.value)}
                   placeholder="ps_inv_..."
                   required
-                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm font-mono text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
+                  className="field-input field-input--mono"
                 />
               </div>
 
@@ -261,7 +261,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                   onChange={(e) => setRequestMsg(e.target.value)}
                   placeholder="e.g. Requesting access to execute load verification checks for Staging QA..."
                   rows={3}
-                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
+                  className="field-input"
                 />
               </div>
 

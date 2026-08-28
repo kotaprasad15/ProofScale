@@ -1,9 +1,52 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { trpc } from "../utils/trpc";
-import { FileText, Download, Share2, AlertTriangle, CheckCircle2, Copy, X } from "lucide-react";
+import { FileText, Download, Share2, AlertTriangle, CheckCircle2, Copy, X, ShieldOff, Clock } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { LoadingDots } from "./LoadingDots";
 import { GoBackButton } from "./GoBackButton";
+
+function scoreColor(score: number): string {
+  if (score >= 90) return "#2FD4A6";
+  if (score >= 75) return "#F0A63A";
+  return "#F2586B";
+}
+
+/* Radial readiness gauge — teal→amber→rose arc matching the label thresholds. */
+function RadialGauge({ score }: { score: number }) {
+  const r = 54;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, score)) / 100;
+  const color = scoreColor(score);
+  return (
+    <svg viewBox="0 0 140 140" className="w-32 h-32 sm:w-36 sm:h-36" aria-hidden="true">
+      <circle cx="70" cy="70" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="12" />
+      <circle
+        cx="70"
+        cy="70"
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth="12"
+        strokeLinecap="round"
+        strokeDasharray={`${c * pct} ${c}`}
+        transform="rotate(-90 70 70)"
+        style={{ transition: "stroke-dasharray 0.8s ease" }}
+      />
+      <text
+        x="70"
+        y="70"
+        textAnchor="middle"
+        dominantBaseline="central"
+        fill="#F3F5FA"
+        fontSize="30"
+        fontFamily="'IBM Plex Mono', monospace"
+        fontWeight="700"
+      >
+        {score}
+      </text>
+    </svg>
+  );
+}
 
 interface ReportDetailViewProps {
   runId: string;
@@ -12,6 +55,8 @@ interface ReportDetailViewProps {
 
 export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
   const [shareToken, setShareToken] = useState<string | null>(null);
+  const [shareId, setShareId] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -19,6 +64,19 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
   const exportMarkdownQuery = trpc.reports.exportMarkdown.useQuery({ runId }, { enabled: false });
   const exportJsonQuery = trpc.reports.exportJson.useQuery({ runId }, { enabled: false });
   const createShareMutation = trpc.reports.createShareLink.useMutation();
+  const revokeShareMutation = trpc.reports.revokeShareLink.useMutation();
+
+  // Live expiry countdown for the open share link
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!expiresAt) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [expiresAt]);
+  const remainingMs = expiresAt ? Math.max(0, new Date(expiresAt).getTime() - now) : 0;
+  const remainingH = Math.floor(remainingMs / 3_600_000);
+  const remainingM = Math.floor((remainingMs % 3_600_000) / 60_000);
+  const remainingS = Math.floor((remainingMs % 60_000) / 1000);
 
   if (reportQuery.isLoading) {
     return (
@@ -65,9 +123,24 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
     try {
       const res = await createShareMutation.mutateAsync({ runId, expiresInDays: 3 });
       setShareToken(`${window.location.origin}/share/${res.rawToken}`);
+      setShareId(res.shareId);
+      setExpiresAt(res.expiresAt);
       setShowShareModal(true);
     } catch (err: any) {
       alert(err?.message || "Failed to create share link.");
+    }
+  };
+
+  const handleRevokeShare = async () => {
+    if (!shareId) return;
+    try {
+      await revokeShareMutation.mutateAsync({ shareId });
+      setShareToken(null);
+      setShareId(null);
+      setExpiresAt(null);
+      setShowShareModal(false);
+    } catch (err: any) {
+      alert(err?.message || "Failed to revoke share link.");
     }
   };
 
@@ -133,30 +206,49 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
           </p>
         </div>
 
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center gap-6">
+          <RadialGauge score={run.score ?? 0} />
           <div className="text-center md:text-right">
             <span className="text-[10px] uppercase font-mono text-text-muted font-bold">Overall Score</span>
-            <div className="text-4xl sm:text-5xl font-black font-mono text-signal-teal tracking-tight">
+            <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight" style={{ color: scoreColor(run.score ?? 0) }}>
               {run.score} <span className="text-lg text-text-faint">/ 100</span>
             </div>
-            <div className="text-xs font-bold text-signal-teal font-mono capitalize">{run.readinessLabel}</div>
+            <div className="text-xs font-bold font-mono capitalize" style={{ color: scoreColor(run.score ?? 0) }}>{run.readinessLabel}</div>
           </div>
         </div>
       </div>
 
-      {/* 5-Category Breakdown Grid */}
+      {/* 5-Category Weighted Breakdown (mirrors the Methodology page) */}
       {sb && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="glass-panel p-6 sm:p-8 space-y-4">
+          <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+            <h3 className="text-sm font-semibold text-text-primary">Weighted Readiness Breakdown</h3>
+            <span className="font-mono text-[10px] text-text-muted uppercase tracking-wider">Scoring engine v1.4</span>
+          </div>
           {[
-            { label: "Reliability (30%)", score: sb.reliability, color: "text-signal-teal" },
-            { label: "Latency (25%)", score: sb.latency, color: "text-signal-indigo" },
-            { label: "Capacity (20%)", score: sb.capacityBehavior, color: "text-purple-400" },
-            { label: "Stability (15%)", score: sb.stability, color: "text-signal-amber" },
-            { label: "Hygiene (10%)", score: sb.hygiene, color: "text-blue-400" }
-          ].map((cat, i) => (
-            <div key={i} className="glass-panel p-4 text-center space-y-1">
-              <span className="text-[10px] text-text-muted font-mono uppercase truncate block">{cat.label}</span>
-              <div className={`text-2xl font-bold font-mono ${cat.color}`}>{cat.score}</div>
+            { label: "Reliability & Errors", weight: "30%", score: sb.reliability, color: "#2FD4A6" },
+            { label: "Latency Percentiles", weight: "25%", score: sb.latency, color: "#5B5FEF" },
+            { label: "Capacity Behavior", weight: "20%", score: sb.capacityBehavior, color: "#8D96AC" },
+            { label: "Stability & Jitter", weight: "15%", score: sb.stability, color: "#F0A63A" },
+            { label: "Readiness Hygiene", weight: "10%", score: sb.hygiene, color: "#5C6478" }
+          ].map(cat => (
+            <div key={cat.label}>
+              <div className="flex items-baseline justify-between mb-1.5">
+                <span className="text-sm font-semibold text-text-primary">
+                  {cat.label} <span className="text-[10px] font-mono text-text-muted">({cat.weight})</span>
+                </span>
+                <span className="font-mono text-sm font-bold text-text-primary">{cat.score}</span>
+              </div>
+              <div className="weight-bar-track">
+                <div
+                  className="weight-bar-fill"
+                  style={{
+                    width: `${cat.score}%`,
+                    background: `linear-gradient(90deg, ${cat.color}66, ${cat.color})`,
+                    transition: "width 0.8s cubic-bezier(0.22, 1, 0.36, 1)"
+                  }}
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -242,8 +334,8 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
 
       {/* Share Modal */}
       {showShareModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="glass-panel max-w-md w-full p-6 space-y-4 border border-white/[0.15]">
+        <div className="modal-backdrop">
+          <div className="modal-panel max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
               <h3 className="font-bold text-text-primary text-base">Public Report Link</h3>
               <button onClick={() => setShowShareModal(false)} className="text-text-muted hover:text-text-primary cursor-pointer">
@@ -252,7 +344,7 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
             </div>
 
             <p className="text-xs text-text-muted">
-              Anyone with this cryptographic token-hashed link can view the read-only readiness report. Link expires in 72 hours.
+              Anyone with this cryptographic token-hashed link can view the read-only readiness report.
             </p>
 
             <div className="p-3 rounded-xl bg-ink-950 border border-white/[0.1] flex items-center justify-between">
@@ -265,6 +357,27 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
                 <span>{copied ? "Copied!" : "Copy"}</span>
               </button>
             </div>
+
+            <div className="flex items-center justify-between text-[11px] font-mono text-text-muted">
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-signal-amber" />
+                Expires in
+              </span>
+              <span className="text-text-primary font-bold">
+                {remainingH > 0 ? `${remainingH}h ` : ""}
+                {remainingM}m {remainingS}s
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleRevokeShare}
+              disabled={revokeShareMutation.isPending}
+              className="btn-destructive w-full"
+            >
+              <ShieldOff className="w-4 h-4" />
+              <span>Revoke share link now</span>
+            </button>
           </div>
         </div>
       )}

@@ -1,7 +1,8 @@
 import React from "react";
+import { motion } from "framer-motion";
 import { LayoutDashboard, Target, PlaySquare, FileText, Settings, ShieldCheck, Activity, Users, LogOut, ChevronRight, Home, Globe } from "lucide-react";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
-import { PointWave } from "./PointWave";
+import { SignalField } from "./SignalField";
 import { UserPermissions } from "@proofscale/shared";
 import { BrandLogo } from "./BrandLogo";
 
@@ -45,7 +46,12 @@ export function Layout({
   ].filter((item) => item.visible);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-ink-950 text-text-primary font-sans">
+    <div data-motion="calm" className="relative flex h-screen w-screen overflow-hidden bg-ink-950 text-text-primary font-sans">
+      {/* Data-first background: faint static texture + reduced ambient field */}
+      <SignalField variant="dashboard" />
+      <div aria-hidden="true" className="fixed inset-0 z-0 pointer-events-none dashboard-texture" />
+      <div aria-hidden="true" className="fixed inset-0 pointer-events-none dashboard-vignette" />
+
       {/* Sidebar Rail */}
       <aside className="w-64 min-w-[260px] bg-ink-900 border-r border-white/[0.08] flex flex-col justify-between p-4 z-20 select-none">
         <div className="space-y-6">
@@ -178,8 +184,15 @@ export function Layout({
         </header>
 
         {/* Scrollable Main Content */}
-        <main className="flex-1 overflow-y-auto p-6 sm:p-8">
-          {children}
+        <main className="flex-1 overflow-y-auto p-6 sm:p-8 relative z-10">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+          >
+            {children}
+          </motion.div>
         </main>
       </div>
     </div>

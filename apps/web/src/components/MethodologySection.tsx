@@ -1,111 +1,120 @@
 import React from "react";
-import { Gauge, Shield, Cpu, Scale, AlertCircle, CheckCircle2, Sliders, BarChart3 } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useInView } from "../hooks/useInView";
+import { Eyebrow } from "./ui/Eyebrow";
+
+/* =========================================================================
+   Methodology — the weighted scoring bars fill in one at a time on scroll,
+   then the sequence closes on the hard-cap rule in the brutalist treatment
+   (the one moment that should feel like a wall, not a card).
+   ========================================================================= */
+
+const WEIGHTS = [
+  { label: "Reliability & Error Rate", weight: 30, color: "#2FD4A6", note: "HTTP 5xx, socket drops, resets" },
+  { label: "Latency Percentiles", weight: 25, color: "#5B5FEF", note: "p50 / p95 / p99 vs SLA" },
+  { label: "Capacity Behavior", weight: 20, color: "#8D96AC", note: "sustained RPS scaling" },
+  { label: "Stability & Jitter", weight: 15, color: "#F0A63A", note: "variance over duration" },
+  { label: "Readiness Hygiene", weight: 10, color: "#5C6478", note: "health check + config safety" }
+];
+
+const MAX_WEIGHT = 30;
 
 export function MethodologySection() {
-  const pillars = [
-    {
-      title: "Latency SLA Compliance",
-      weight: "35%",
-      description: "Calculates the gap between observed p95/p99 latency against declared SLA thresholds. Penalizes exponential degradation curves.",
-      icon: Gauge,
-      color: "bg-indigo-50 text-indigo-600 border-indigo-100"
-    },
-    {
-      title: "Error-Free Delivery",
-      weight: "30%",
-      description: "Measures 4xx and 5xx status rates under load. Even minor 500 error rates heavily lower the readiness score.",
-      icon: Shield,
-      color: "bg-emerald-50 text-emerald-600 border-emerald-100"
-    },
-    {
-      title: "Throughput Linearity",
-      weight: "20%",
-      description: "Checks whether response throughput scales linearly as virtual users ramp up, detecting thread starvation bottlenecks early.",
-      icon: Cpu,
-      color: "bg-purple-50 text-purple-600 border-purple-100"
-    },
-    {
-      title: "Stability & Variance Index",
-      weight: "15%",
-      description: "Evaluates standard deviation and jitter during steady-state plateaus to ensure consistent, predictable performance.",
-      icon: Scale,
-      color: "bg-amber-50 text-amber-600 border-amber-100"
-    }
-  ];
+  const { ref, inView } = useInView<HTMLDivElement>({ threshold: 0.25 });
 
   return (
-    <section id="methodology" className="py-20 lg:py-28 bg-white border-b border-cardborder">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Section Title */}
-        <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-surface-muted text-ink border border-cardborder uppercase tracking-wider">
-            <BarChart3 className="h-3.5 w-3.5 text-brand" />
-            <span>Deterministic Scoring Formula</span>
+    <section id="methodology" className="py-16 sm:py-32 border-t border-white/[0.06] bg-ink-900/30 relative">
+      <div className="max-w-[1240px] mx-auto px-6 sm:px-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+          {/* Left: explanation */}
+          <div className="lg:col-span-5 space-y-6">
+            <Eyebrow color="teal" dot={false}>
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Methodology made visible
+            </Eyebrow>
+            <h2 className="type-h2 text-text-primary tracking-tight">
+              A score should be understandable, not just impressive.
+            </h2>
+            <p className="text-text-muted text-base leading-relaxed">
+              Every assessment decomposes into five weighted signals. Scroll and watch each weight resolve — then read the one rule that overrides them all.
+            </p>
+
+            {/* Readiness tiers */}
+            <div className="space-y-2 pt-2">
+              {[
+                { label: "Ready (90–100)", desc: "Passes declared SLA thresholds", tone: "text-signal-teal" },
+                { label: "Conditionally ready (75–89)", desc: "Passing with latency drift notes", tone: "text-signal-amber" },
+                { label: "Needs investigation (50–74)", desc: "Approaching capacity limit", tone: "text-signal-amber" },
+                { label: "Not ready (0–49)", desc: "Error spike or hard-cap tripped", tone: "text-signal-rose" }
+              ].map((tier) => (
+                <div
+                  key={tier.label}
+                  className="p-3 rounded-xl bg-ink-900/90 border border-white/[0.06] flex items-center justify-between gap-3 font-mono text-xs"
+                >
+                  <span className="text-text-primary font-medium">{tier.label}</span>
+                  <span className={`${tier.tone} font-semibold text-right`}>{tier.desc}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-ink tracking-tight">
-            How Ratecap Calculates Application Readiness
-          </h2>
-          <p className="text-base sm:text-lg text-ink-muted leading-relaxed">
-            Ratecap does not give arbitrary pass/fail stamps. Every assessment produces a mathematical 0–100 score strictly bounded within your test configuration envelope.
-          </p>
-        </div>
 
-        {/* 4 Pillars Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {pillars.map((pillar, idx) => {
-            const Icon = pillar.icon;
-            return (
-              <div
-                key={idx}
-                className="p-6 rounded-3xl bg-surface-muted border border-cardborder shadow-soft flex flex-col justify-between space-y-4 hover:border-brand/40 transition"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className={`p-2.5 rounded-2xl border ${pillar.color}`}>
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-white border border-cardborder text-ink">
-                      Weight: {pillar.weight}
-                    </span>
-                  </div>
-
-                  <h3 className="font-bold text-ink text-lg">{pillar.title}</h3>
-                  <p className="text-xs text-ink-muted leading-relaxed">
-                    {pillar.description}
-                  </p>
-                </div>
-
-                <div className="pt-3 border-t border-slate-200/60 flex items-center text-[11px] font-semibold text-brand">
-                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                  Deterministic Metric
-                </div>
+          {/* Right: weighted bars + hard-cap wall */}
+          <div className="lg:col-span-7" id="scoring" ref={ref}>
+            <div className="glass-panel p-6 sm:p-8 space-y-7">
+              <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+                <span className="font-mono text-xs font-bold text-text-primary uppercase tracking-wider">
+                  Deterministic scoring engine · v1.4
+                </span>
+                <span className="font-mono text-[10px] text-signal-indigo uppercase px-2 py-0.5 rounded bg-signal-indigo-soft border border-signal-indigo/30">
+                  strict weighting
+                </span>
               </div>
-            );
-          })}
-        </div>
 
-        {/* Validity Envelope & Safety Guardrail Banner */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-amber-50/70 border border-amber-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-start space-x-4">
-            <div className="p-3 rounded-2xl bg-amber-100 text-amber-800 shrink-0">
-              <AlertCircle className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-bold text-amber-950 text-base">The Test Envelope Principle</h4>
-              <p className="text-xs sm:text-sm text-amber-900/80 leading-relaxed max-w-3xl">
-                A 100/100 readiness score indicates that your application passed all declared SLAs under the specified workload parameters (e.g., 50 VUs for 60 seconds). It is not an unconditional guarantee of unconstrained live capacity.
-              </p>
+              {/* Weighted bars, filling one at a time */}
+              <div className="space-y-5">
+                {WEIGHTS.map((w, i) => {
+                  const widthPct = Math.round((w.weight / MAX_WEIGHT) * 100);
+                  return (
+                    <div key={w.label}>
+                      <div className="flex items-baseline justify-between mb-1.5">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-sm font-semibold text-text-primary">{w.label}</span>
+                          <span className="text-[10px] font-mono text-text-muted uppercase tracking-wide hidden sm:inline">
+                            {w.note}
+                          </span>
+                        </div>
+                        <span className="font-mono text-xs font-bold text-text-primary">{w.weight}%</span>
+                      </div>
+                      <div className="weight-bar-track">
+                        <div
+                          className="weight-bar-fill"
+                          style={{
+                            width: inView ? `${widthPct}%` : "0%",
+                            background: `linear-gradient(90deg, ${w.color}66, ${w.color})`,
+                            transitionDelay: `${i * 180}ms`
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Hard-cap rule — the wall */}
+              <div className="brutalist p-5 space-y-2">
+                <div className="flex items-center gap-2 text-signal-rose text-xs font-bold uppercase tracking-wider">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span>Hard-cap rule enforcement</span>
+                </div>
+                <p className="text-[12px] leading-relaxed text-text-muted">
+                  If the overall error rate exceeds{" "}
+                  <strong className="text-signal-rose">5.00%</strong>, the total score is capped at a maximum of{" "}
+                  <strong className="text-signal-rose">49 / 100</strong> — regardless of latency or throughput.
+                </p>
+              </div>
             </div>
           </div>
-
-          <div className="shrink-0">
-            <span className="px-3.5 py-2 rounded-xl bg-white border border-amber-300 text-xs font-bold text-amber-900 font-mono inline-block">
-              Safety Envelope Protected
-            </span>
-          </div>
         </div>
-
       </div>
     </section>
   );

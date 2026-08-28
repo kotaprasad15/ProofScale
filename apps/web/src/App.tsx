@@ -13,6 +13,8 @@ import { LiveRunMonitorView } from "./components/LiveRunMonitorView";
 import { ReportDetailView } from "./components/ReportDetailView";
 import { RunComparisonView } from "./components/RunComparisonView";
 import { LoadingDots } from "./components/LoadingDots";
+import { StatusChip, readinessTone } from "./components/ui/StatusChip";
+import { KillSwitchView } from "./components/KillSwitchView";
 import { Shield, Play, Target, CheckCircle2, FileText, AlertTriangle, Users, LogOut, ArrowRight, Activity, Home } from "lucide-react";
 
 interface SessionUser {
@@ -73,6 +75,14 @@ function DashboardOverview({
   const completedRuns = runsQuery.data?.filter(r => r.status === "completed") || [];
   const latestRun = completedRuns[0];
 
+  // Latest completed run per target, for readiness chips + p95 + last-run time
+  const latestRunByTarget: Record<string, (typeof completedRuns)[number]> = {};
+  for (const r of completedRuns) {
+    if (r.targetId && !latestRunByTarget[r.targetId]) {
+      latestRunByTarget[r.targetId] = r;
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       {/* Header Banner */}
@@ -116,7 +126,7 @@ function DashboardOverview({
         </div>
 
         <div
-          className="glass-panel p-5 space-y-2 cursor-pointer hover:border-signal-indigo/40 transition"
+          className="glass-panel glass-hover p-5 space-y-2 cursor-pointer"
           onClick={() => onNavigate(isTester ? "runs" : "targets")}
         >
           <span className="text-[10px] text-text-muted font-mono font-bold uppercase tracking-wider block">Registered Targets</span>
@@ -143,7 +153,7 @@ function DashboardOverview({
         </div>
 
         <div
-          className="glass-panel p-5 space-y-2 cursor-pointer hover:border-signal-teal/40 transition"
+          className="glass-panel glass-hover p-5 space-y-2 cursor-pointer"
           onClick={() => onNavigate("reports")}
         >
           <span className="text-[10px] text-text-muted font-mono font-bold uppercase tracking-wider block">Latest Readiness Score</span>
@@ -158,6 +168,70 @@ function DashboardOverview({
             {latestRun?.readinessLabel ? `Status: ${latestRun.readinessLabel}` : "Passes SLA Thresholds"}
           </p>
         </div>
+      </div>
+
+      {/* Target Endpoints — readiness at a glance */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold text-text-primary">Target Endpoints</h3>
+          <button
+            onClick={() => onNavigate("targets")}
+            className="text-xs font-mono text-signal-indigo hover:text-white transition cursor-pointer bg-transparent border-0 font-semibold"
+          >
+            Manage →
+          </button>
+        </div>
+
+        {targetsQuery.data && targetsQuery.data.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {targetsQuery.data.map(t => {
+              const last = t.id ? latestRunByTarget[t.id] : undefined;
+              const tone = last?.score != null ? readinessTone(last.score) : null;
+              const p95 = last?.summaryMetrics?.p95Ms;
+              return (
+                <div
+                  key={t.id}
+                  className="glass-panel glass-hover p-5 space-y-3 cursor-pointer"
+                  onClick={() => onNavigate("reports")}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs font-semibold text-text-primary truncate">{t.baseUrl}</span>
+                    <span className="px-2 py-0.5 rounded bg-white/[0.04] text-[10px] font-mono uppercase text-text-muted border border-white/[0.08] shrink-0">
+                      {t.environment}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    {tone ? (
+                      <StatusChip tone={tone.tone} label={tone.label} />
+                    ) : (
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-text-faint">Not yet scored</span>
+                    )}
+                    {last?.score != null && (
+                      <span className="font-mono text-base font-bold text-text-primary">
+                        {last.score}
+                        <span className="text-text-faint text-[10px] font-medium">/100</span>
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] font-mono text-text-muted border-t border-white/[0.06] pt-2">
+                    <span>p95 {p95 != null ? `${p95}ms` : "—"}</span>
+                    <span>
+                      {last
+                        ? new Date(last.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="glass-panel p-8 text-center text-xs text-text-muted font-mono">
+            No target endpoints registered yet.
+          </div>
+        )}
       </div>
 
       {/* Projects Overview List */}
@@ -386,6 +460,8 @@ function MainApp({
               <span className="text-signal-teal font-bold">mvp-1 (Deterministic)</span>
             </div>
           </div>
+
+          <KillSwitchView />
         </div>
       )}
     </Layout>
