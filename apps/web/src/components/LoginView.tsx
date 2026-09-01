@@ -123,7 +123,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="lead@company.dev"
                     required
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
+                    className="field-input pl-10 pr-4 py-3"
                   />
                 </div>
               </div>

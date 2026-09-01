@@ -163,10 +163,10 @@ export function TargetRegistrationView({ projectId }: TargetRegistrationViewProp
                     key={env}
                     type="button"
                     onClick={() => setEnvironment(env)}
-                    className={`p-4 rounded-xl border text-left transition cursor-pointer ${
+                    className={`p-4 rounded-xl text-left transition cursor-pointer ${
                       environment === env
-                        ? "bg-signal-indigo-soft border-signal-indigo text-white shadow-lg shadow-signal-indigo/20"
-                        : "bg-ink-900/80 border-white/[0.08] text-text-muted hover:text-text-primary hover:border-white/[0.2]"
+                        ? "bg-signal-indigo-soft border-2 border-signal-indigo text-signal-indigo shadow-md shadow-signal-indigo/15"
+                        : "bg-[var(--color-surface)] border-2 border-[var(--border)] hover:border-signal-indigo/50 text-text-muted hover:text-text-primary hover:bg-[var(--white-fill-sm)]"
                     }`}
                   >
                     <div className="font-bold text-xs text-text-primary capitalize">{env}</div>

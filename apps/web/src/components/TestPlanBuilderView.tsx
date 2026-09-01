@@ -352,10 +352,10 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
                 key={preset.id}
                 type="button"
                 onClick={() => handleApplyPreset(preset.id as TestProfile)}
-                className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                className={`p-3.5 rounded-2xl text-left transition cursor-pointer ${
                   isSelected
-                    ? "bg-signal-indigo-soft border-signal-indigo text-white shadow-lg shadow-signal-indigo/20"
-                    : "bg-ink-900/80 border-white/[0.08] text-text-muted hover:text-text-primary hover:border-white/[0.2]"
+                    ? "bg-signal-indigo-soft border-2 border-signal-indigo text-signal-indigo shadow-md shadow-signal-indigo/15"
+                    : "bg-[var(--color-surface)] border-2 border-[var(--border)] hover:border-signal-indigo/50 text-text-muted hover:text-text-primary hover:bg-[var(--white-fill-sm)]"
                 }`}
               >
                 <Icon className={`h-4 w-4 mb-2 ${isSelected ? "text-signal-indigo" : "text-text-muted"}`} />
@@ -404,7 +404,7 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
 
         {/* Scenarios Step & Endpoints Builder */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
+          <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
             <div>
               <span className="text-xs font-mono text-text-muted uppercase font-bold">
                 HTTP Request Endpoints ({scenarios.length} {scenarios.length === 1 ? "Endpoint" : "Endpoints"})
@@ -427,7 +427,7 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
             {scenarios.map((sc, idx) => (
               <div
                 key={idx}
-                className="p-4 rounded-xl bg-ink-950/90 border border-white/[0.08] flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
+                className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--border)] shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
               >
                 {/* Step Index & Name */}
                 <div className="w-full sm:w-1/3 min-w-0">
@@ -443,7 +443,7 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
                       setScenarios(copy);
                     }}
                     placeholder={`e.g. Get Products`}
-                    className="w-full px-3 py-1.5 rounded-lg bg-ink-900 border border-white/[0.1] text-xs text-text-primary focus:outline-none focus:border-signal-indigo"
+                    className="field-input py-1.5 text-xs"
                   />
                 </div>
 
@@ -457,7 +457,7 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
                       copy[idx].method = e.target.value as any;
                       setScenarios(copy);
                     }}
-                    className={`w-full px-2.5 py-1.5 rounded-lg bg-ink-900 border text-xs font-mono font-bold focus:outline-none focus:border-signal-indigo cursor-pointer ${getMethodBadgeStyle(
+                    className={`field-input py-1.5 text-xs font-mono font-bold cursor-pointer ${getMethodBadgeStyle(
                       sc.method
                     )}`}
                   >
@@ -483,7 +483,7 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
                       setScenarios(copy);
                     }}
                     placeholder="/api/v1/resource"
-                    className="w-full px-3 py-1.5 rounded-lg bg-ink-900 border border-white/[0.1] text-xs text-text-primary font-mono focus:outline-none focus:border-signal-indigo"
+                    className="field-input field-input--mono py-1.5 text-xs"
                   />
                 </div>
 
@@ -500,7 +500,7 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
                       copy[idx].weight = Number(e.target.value) || 1;
                       setScenarios(copy);
                     }}
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-ink-900 border border-white/[0.1] text-xs text-text-primary font-mono focus:outline-none focus:border-signal-indigo"
+                    className="field-input field-input--mono py-1.5 text-xs"
                   />
                 </div>
 

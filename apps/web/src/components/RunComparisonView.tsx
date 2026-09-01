@@ -41,7 +41,7 @@ export function RunComparisonView({ projectId }: RunComparisonViewProps) {
             <select
               value={baselineRunId}
               onChange={e => setBaselineRunId(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-ink-900 border border-white/[0.1] text-xs font-mono text-text-primary focus:outline-none focus:border-signal-indigo"
+              className="field-input field-input--mono text-xs cursor-pointer"
             >
               <option value="">-- Choose Baseline Run --</option>
               {completedRuns.map(r => (
@@ -57,7 +57,7 @@ export function RunComparisonView({ projectId }: RunComparisonViewProps) {
             <select
               value={currentRunId}
               onChange={e => setCurrentRunId(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-ink-900 border border-white/[0.1] text-xs font-mono text-text-primary focus:outline-none focus:border-signal-indigo"
+              className="field-input field-input--mono text-xs cursor-pointer"
             >
               <option value="">-- Choose Candidate Run --</option>
               {completedRuns.map(r => (

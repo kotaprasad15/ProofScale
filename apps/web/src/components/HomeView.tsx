@@ -19,6 +19,7 @@ interface HomeViewProps {
   isLoggedIn?: boolean;
   onGoToDashboard?: () => void;
   onLogout?: () => void;
+  userEmail?: string;
 }
 
 export function HomeView({
@@ -26,7 +27,8 @@ export function HomeView({
   onSignUp,
   isLoggedIn,
   onGoToDashboard,
-  onLogout
+  onLogout,
+  userEmail
 }: HomeViewProps) {
   return (
     <ThemeProvider>
@@ -45,6 +47,7 @@ export function HomeView({
             isLoggedIn={isLoggedIn}
             onGoToDashboard={onGoToDashboard}
             onLogout={onLogout}
+            userEmail={userEmail}
           />
 
           <main className="relative z-10">

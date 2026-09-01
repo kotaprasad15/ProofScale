@@ -366,7 +366,7 @@ export function LiveRunMonitorView({ projectId, onSelectRun, onNavigateToBuilder
             {testPlansList.map(plan => {
               const currentTargetId = selectedTargetByPlan[plan.id] || targetsList[0]?.id || "";
               return (
-                <div key={plan.id} className="p-4 rounded-2xl bg-ink-950/80 border border-white/[0.06] space-y-3 flex flex-col justify-between hover:border-signal-indigo/30 transition">
+                <div key={plan.id} className="p-4 rounded-2xl bg-[var(--color-surface)] border border-[var(--border)] space-y-3 flex flex-col justify-between hover:border-signal-indigo/40 shadow-sm transition">
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
@@ -381,7 +381,7 @@ export function LiveRunMonitorView({ projectId, onSelectRun, onNavigateToBuilder
                           <button
                             type="button"
                             onClick={() => onNavigateToBuilder(plan.id)}
-                            className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-signal-indigo-soft hover:text-signal-indigo text-text-muted border border-white/[0.06] transition cursor-pointer"
+                            className="p-1.5 rounded-lg bg-[var(--white-fill-sm)] hover:bg-signal-indigo-soft hover:text-signal-indigo text-text-muted border border-[var(--border)] transition cursor-pointer"
                             title="Edit this test plan in Builder"
                           >
                             <Edit3 className="h-3.5 w-3.5" />
@@ -391,7 +391,7 @@ export function LiveRunMonitorView({ projectId, onSelectRun, onNavigateToBuilder
                         <button
                           type="button"
                           onClick={() => setPlanToDelete({ id: plan.id, name: plan.name })}
-                          className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-signal-rose-soft hover:text-signal-rose text-text-muted border border-white/[0.06] transition cursor-pointer"
+                          className="p-1.5 rounded-lg bg-[var(--white-fill-sm)] hover:bg-signal-rose-soft hover:text-signal-rose text-text-muted border border-[var(--border)] transition cursor-pointer"
                           title="Remove this test plan"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -414,13 +414,13 @@ export function LiveRunMonitorView({ projectId, onSelectRun, onNavigateToBuilder
                     )}
                   </div>
 
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-white/[0.04]">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-[var(--border)]">
                     <div className="flex-1 min-w-0">
                       <label className="block text-[10px] font-mono text-text-muted uppercase mb-1">Target Endpoint:</label>
                       <select
                         value={currentTargetId}
                         onChange={e => setSelectedTargetByPlan({ ...selectedTargetByPlan, [plan.id]: e.target.value })}
-                        className="w-full px-3 py-1.5 rounded-xl bg-ink-900 border border-white/[0.1] text-xs font-mono text-text-primary focus:outline-none focus:border-signal-indigo cursor-pointer"
+                        className="field-input field-input--mono py-1.5 text-xs cursor-pointer"
                       >
                         {targetsList.length === 0 ? (
                           <option value="">No targets registered</option>
@@ -462,7 +462,7 @@ export function LiveRunMonitorView({ projectId, onSelectRun, onNavigateToBuilder
           <select
             value={selectedTargetFilter}
             onChange={e => setSelectedTargetFilter(e.target.value)}
-            className="w-full sm:w-72 px-3.5 py-2 rounded-xl bg-ink-900 border border-white/[0.1] text-xs font-mono text-text-primary focus:outline-none focus:border-signal-indigo cursor-pointer"
+            className="w-full sm:w-72 field-input field-input--mono text-xs cursor-pointer"
           >
             <option value="all">All Target Endpoints ({allRuns.length} runs)</option>
             {targetsList.map(t => (

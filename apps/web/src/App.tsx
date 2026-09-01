@@ -571,6 +571,7 @@ export function App() {
               isLoggedIn={!!currentUser}
               onGoToDashboard={() => navigateTo("/dashboard")}
               onLogout={handleLogout}
+              userEmail={currentUser?.email}
             />
           </QueryClientProvider>
         </trpc.Provider>

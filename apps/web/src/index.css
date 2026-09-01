@@ -40,17 +40,17 @@ html.light,
   --color-warning-soft: rgba(212, 123, 14, 0.08);
   --color-critical-soft: rgba(226, 56, 77, 0.08);
 
-  --border: rgba(16, 21, 31, 0.08);
-  --border-strong: rgba(16, 21, 31, 0.18);
+  --border: rgba(16, 21, 31, 0.16);
+  --border-strong: rgba(16, 21, 31, 0.30);
   --overlay-bg: rgba(244, 246, 251, 0.97);
   --panel-inset: rgba(232, 237, 248, 0.9);
-  --white-fill-sm: rgba(16, 21, 31, 0.04);
-  --white-fill-md: rgba(16, 21, 31, 0.08);
+  --white-fill-sm: rgba(16, 21, 31, 0.05);
+  --white-fill-md: rgba(16, 21, 31, 0.10);
 
   --scrollbar-thumb: #C5CCD9;
   --scrollbar-thumb-hover: #A4B0C2;
 
-  --field-fill: rgba(238, 242, 248, 0.8);
+  --field-fill: #FFFFFF;
   --color-on-brand: #FFFFFF;
   color-scheme: light;
 }
@@ -419,11 +419,14 @@ html.light .modal-panel--destructive {
   padding: 10px 14px;
   border-radius: 12px;
   background-color: var(--field-fill);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   color: var(--text-primary);
   font-size: 14px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   outline: none;
+}
+.field-input:hover {
+  border-color: var(--border-strong);
 }
 .field-input:focus {
   border-color: var(--signal-indigo);

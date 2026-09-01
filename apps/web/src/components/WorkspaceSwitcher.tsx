@@ -37,7 +37,7 @@ export function WorkspaceSwitcher({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
-        className="w-full flex items-center justify-between p-2.5 rounded-2xl bg-ink-950/80 border border-white/[0.08] hover:border-signal-indigo/40 transition cursor-pointer select-none"
+        className="w-full flex items-center justify-between p-2.5 rounded-2xl bg-ink-950/80 border border-[var(--border-strong)] hover:border-signal-indigo/50 transition cursor-pointer select-none"
       >
         <div className="flex items-center space-x-2.5 min-w-0">
           <div className="w-7 h-7 rounded-lg bg-signal-indigo-soft border border-signal-indigo/30 flex items-center justify-center text-signal-indigo shrink-0">
@@ -58,7 +58,7 @@ export function WorkspaceSwitcher({
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute left-0 right-0 top-full mt-2 rounded-2xl bg-ink-900 border border-white/[0.12] shadow-2xl p-2 z-50 space-y-1 backdrop-blur-xl">
+          <div className="absolute left-0 right-0 top-full mt-2 rounded-2xl bg-[var(--color-surface)] border border-[var(--border-strong)] shadow-2xl p-2 z-50 space-y-1 backdrop-blur-xl">
             <span className="px-3 py-1.5 text-[10px] font-mono font-bold text-text-muted uppercase tracking-wider block">
               Organizations
             </span>
@@ -75,8 +75,8 @@ export function WorkspaceSwitcher({
                   }}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
                     isSelected
-                      ? "bg-signal-indigo/20 text-white border border-signal-indigo/35"
-                      : "text-text-muted hover:text-text-primary hover:bg-white/[0.05] border border-transparent"
+                      ? "bg-signal-indigo/20 text-signal-indigo font-bold border border-signal-indigo/35"
+                      : "text-text-muted hover:text-text-primary hover:bg-[var(--white-fill-sm)] border border-transparent"
                   }`}
                 >
                   <span className="truncate">{org.name}</span>

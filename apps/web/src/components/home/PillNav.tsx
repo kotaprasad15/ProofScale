@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import { X, ArrowRight, ShieldCheck, Sparkles, User, ChevronDown, LayoutDashboard, LogOut } from "lucide-react";
 import { BrandLogo } from "../BrandLogo";
 import { MaskedReveal } from "./MaskedReveal";
 import { MagneticElement } from "./MagneticElement";
@@ -12,6 +12,7 @@ interface PillNavProps {
   isLoggedIn?: boolean;
   onGoToDashboard?: () => void;
   onLogout?: () => void;
+  userEmail?: string;
 }
 
 const NAV_LINKS = [
@@ -27,10 +28,12 @@ export function PillNav({
   onSignUp,
   isLoggedIn,
   onGoToDashboard,
-  onLogout
+  onLogout,
+  userEmail
 }: PillNavProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -97,15 +100,67 @@ export function PillNav({
           {/* Light / Dark Theme Switcher Button */}
           <ThemeToggle />
 
-          {/* Quick Action Button */}
+          {/* Quick Action Button: Profile Menu when signed in, Workspace when signed out */}
           {isLoggedIn ? (
-            <button
-              type="button"
-              onClick={onGoToDashboard}
-              className="px-3.5 py-1.5 rounded-full bg-signal-indigo hover:bg-signal-indigo-hover text-white text-xs font-medium transition cursor-pointer font-sans"
+            <div
+              className="relative"
+              onMouseEnter={() => setProfileOpen(true)}
+              onMouseLeave={() => setProfileOpen(false)}
             >
-              Dashboard
-            </button>
+              <button
+                type="button"
+                onClick={() => setProfileOpen(prev => !prev)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-signal-indigo hover:bg-signal-indigo-hover text-white text-xs font-medium transition cursor-pointer font-sans shadow-sm shadow-signal-indigo/25"
+                aria-expanded={profileOpen}
+              >
+                <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[9px] font-bold uppercase shrink-0">
+                  {userEmail ? userEmail.slice(0, 1) : <User className="w-2.5 h-2.5" />}
+                </div>
+                <span>Profile</span>
+                <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              <AnimatePresence>
+                {profileOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 mt-2 w-48 py-1.5 rounded-2xl bg-[var(--color-surface)] border border-[var(--border-strong)] shadow-2xl shadow-black/25 backdrop-blur-xl z-50 overflow-hidden"
+                  >
+                    {userEmail && (
+                      <div className="px-3.5 py-2 border-b border-[var(--border)]">
+                        <p className="text-[10px] font-mono text-text-muted uppercase tracking-wider">Signed in as</p>
+                        <p className="text-xs font-semibold text-text-primary truncate">{userEmail}</p>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        onGoToDashboard?.();
+                      }}
+                      className="w-full px-3.5 py-2.5 text-xs text-text-primary hover:text-signal-indigo hover:bg-[var(--white-fill-sm)] transition flex items-center gap-2.5 text-left cursor-pointer"
+                    >
+                      <LayoutDashboard className="w-3.5 h-3.5 text-signal-indigo shrink-0" />
+                      <span className="font-semibold">Dashboard</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        onLogout?.();
+                      }}
+                      className="w-full px-3.5 py-2.5 text-xs text-text-muted hover:text-signal-rose hover:bg-signal-rose-soft transition flex items-center gap-2.5 text-left cursor-pointer border-t border-[var(--border)]"
+                    >
+                      <LogOut className="w-3.5 h-3.5 text-signal-rose shrink-0" />
+                      <span className="font-semibold">Sign Out</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           ) : (
             <button
               type="button"
