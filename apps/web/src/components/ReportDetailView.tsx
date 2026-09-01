@@ -341,11 +341,20 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
 
       {/* Share Modal */}
       {showShareModal && (
-        <div className="modal-backdrop">
-          <div className="modal-panel max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+        <div
+          className="modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowShareModal(false);
+          }}
+        >
+          <div className="modal-panel max-w-md w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
               <h3 className="font-bold text-text-primary text-base">Public Report Link</h3>
-              <button onClick={() => setShowShareModal(false)} className="text-text-muted hover:text-text-primary cursor-pointer">
+              <button
+                type="button"
+                onClick={() => setShowShareModal(false)}
+                className="text-text-muted hover:text-text-primary p-1 rounded-lg hover:bg-[var(--white-fill-sm)] transition cursor-pointer"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -354,7 +363,7 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
               Anyone with this cryptographic token-hashed link can view the read-only readiness report.
             </p>
 
-            <div className="p-3 rounded-xl bg-ink-950 border border-white/[0.1] flex items-center justify-between">
+            <div className="p-3 rounded-xl bg-ink-950 border border-[var(--border)] flex items-center justify-between">
               <span className="text-xs font-mono text-signal-indigo truncate mr-2">{shareToken}</span>
               <button
                 onClick={copyShareLink}

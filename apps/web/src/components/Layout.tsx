@@ -51,7 +51,7 @@ export function Layout({
       <div aria-hidden="true" className="fixed inset-0 pointer-events-none dashboard-vignette" />
 
       {/* Sidebar Rail */}
-      <aside className="w-64 min-w-[260px] bg-ink-900 border-r border-white/[0.08] flex flex-col justify-between p-4 z-20 select-none">
+      <aside className="w-64 min-w-[260px] bg-ink-900 border-r border-[var(--border)] flex flex-col justify-between p-4 z-20 select-none">
         <div className="space-y-6">
           {/* Brand Header with Home click */}
           <div className="px-2 pt-1">
@@ -69,7 +69,7 @@ export function Layout({
           </div>
 
           {/* Active Test Envelope Context Pill */}
-          <div className="mx-1 p-3 rounded-2xl bg-ink-950/80 border border-white/[0.06] space-y-1.5 font-mono">
+          <div className="mx-1 p-3 rounded-2xl bg-ink-950/80 border border-[var(--border)] space-y-1.5 font-mono">
             <div className="flex items-center justify-between text-[10px] text-text-muted uppercase">
               <span>ACTIVE ENVELOPE</span>
               <span className="w-1.5 h-1.5 rounded-full bg-signal-teal animate-pulse" />
@@ -94,12 +94,12 @@ export function Layout({
                   onClick={() => onTabChange?.(item.id)}
                   className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                     isActive
-                      ? "bg-signal-indigo/15 text-white border border-signal-indigo/35 shadow-sm shadow-signal-indigo/20"
-                      : "text-text-muted hover:text-text-primary hover:bg-white/[0.04] border border-transparent"
+                      ? "bg-signal-indigo/15 text-signal-indigo font-bold border border-signal-indigo/35 shadow-sm shadow-signal-indigo/15"
+                      : "text-text-muted hover:text-text-primary hover:bg-[var(--white-fill-sm)] border border-transparent"
                   }`}
                 >
-                  <Icon className={`h-4 w-4 ${isActive ? "text-signal-indigo" : "text-text-muted"}`} />
-                  <span>{item.label}</span>
+                  <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-signal-indigo" : "text-text-muted"}`} />
+                  <span className="truncate">{item.label}</span>
                 </button>
               );
             })}
@@ -107,7 +107,7 @@ export function Layout({
         </div>
 
         {/* Footer Account Card & Sign Out */}
-        <div className="p-3 rounded-2xl bg-ink-950/90 border border-white/[0.06] space-y-3 mx-1">
+        <div className="p-3 rounded-2xl bg-ink-950/90 border border-[var(--border)] space-y-3 mx-1">
           <div className="flex items-center space-x-2.5">
             <div className="h-8 w-8 rounded-xl bg-signal-indigo/20 border border-signal-indigo/30 flex items-center justify-center font-mono font-bold text-xs text-signal-indigo uppercase shrink-0">
               {userEmail.slice(0, 2)}
@@ -128,7 +128,7 @@ export function Layout({
                 type="button"
                 onClick={onGoHome}
                 title="Go to Homepage"
-                className="flex-1 py-2 px-2.5 bg-white/[0.04] hover:bg-white/[0.08] text-text-muted hover:text-text-primary text-xs font-semibold rounded-xl border border-white/[0.06] transition flex items-center justify-center space-x-1.5 cursor-pointer"
+                className="flex-1 py-2 px-2.5 bg-[var(--white-fill-sm)] hover:bg-[var(--white-fill-md)] text-text-muted hover:text-text-primary text-xs font-semibold rounded-xl border border-[var(--border)] transition flex items-center justify-center space-x-1.5 cursor-pointer"
               >
                 <Home className="h-3.5 w-3.5" />
                 <span>Home</span>
@@ -140,7 +140,7 @@ export function Layout({
                 type="button"
                 onClick={onLogout}
                 title="Sign out of current workspace"
-                className="flex-1 py-2 px-2.5 bg-white/[0.04] hover:bg-signal-rose/15 hover:text-signal-rose hover:border-signal-rose/30 text-text-muted text-xs font-semibold rounded-xl border border-white/[0.06] transition flex items-center justify-center space-x-1.5 cursor-pointer"
+                className="flex-1 py-2 px-2.5 bg-[var(--white-fill-sm)] hover:bg-signal-rose/15 hover:text-signal-rose hover:border-signal-rose/30 text-text-muted text-xs font-semibold rounded-xl border border-[var(--border)] transition flex items-center justify-center space-x-1.5 cursor-pointer"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 <span>Sign Out</span>
@@ -153,7 +153,7 @@ export function Layout({
       {/* Main Workspace Surface */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-ink-950">
         {/* Topbar Header */}
-        <header className="h-16 border-b border-white/[0.08] bg-ink-900/60 backdrop-blur-xl px-8 flex items-center justify-between shrink-0 z-10">
+        <header className="h-16 border-b border-[var(--border)] bg-ink-900/60 backdrop-blur-xl px-8 flex items-center justify-between shrink-0 z-10">
           <div className="flex items-center space-x-2 text-xs font-medium text-text-muted">
             <span>Workspace</span>
             <ChevronRight className="h-3.5 w-3.5 text-text-faint" />

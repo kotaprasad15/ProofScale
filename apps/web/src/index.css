@@ -333,6 +333,118 @@ html.light .brutalist-card {
 }
 
 /* =========================================================================
+   MODAL & DIALOGUE SYSTEM
+   ========================================================================= */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(10, 14, 22, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: modal-fade-in 0.2s ease-out;
+}
+
+html.light .modal-backdrop {
+  background-color: rgba(12, 16, 26, 0.55);
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 20px;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    0 0 0 1px var(--border);
+  color: var(--text-primary);
+  animation: modal-scale-up 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+
+.modal-panel--destructive {
+  background: var(--color-surface);
+  border: 1px solid rgba(242, 88, 107, 0.35);
+  border-radius: 20px;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    0 0 35px -8px rgba(242, 88, 107, 0.25);
+  color: var(--text-primary);
+  animation: modal-scale-up 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+
+html.light .modal-panel {
+  box-shadow:
+    0 20px 50px -10px rgba(16, 21, 31, 0.15),
+    0 0 0 1px rgba(16, 21, 31, 0.08);
+}
+
+html.light .modal-panel--destructive {
+  box-shadow:
+    0 20px 50px -10px rgba(16, 21, 31, 0.15),
+    0 0 30px -6px rgba(226, 56, 77, 0.15);
+}
+
+@keyframes modal-scale-up {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* =========================================================================
+   FORM INPUTS & PREREQUISITES
+   ========================================================================= */
+
+.field-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background-color: var(--field-fill);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+}
+.field-input:focus {
+  border-color: var(--signal-indigo);
+  box-shadow: 0 0 0 3px var(--color-brand-soft);
+}
+.field-input::placeholder {
+  color: var(--text-faint);
+}
+.field-input--mono {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+}
+
+.brutalist {
+  background: var(--color-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-primary);
+}
+
+/* =========================================================================
    BUTTONS
    ========================================================================= */
 
@@ -377,6 +489,37 @@ html.light .brutalist-card {
   background: var(--ink-900);
   border-color: var(--signal-indigo);
   transform: translateY(-2px);
+}
+
+.btn-destructive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  background: var(--signal-rose);
+  color: #FFFFFF;
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 16px -2px rgba(242, 88, 107, 0.4);
+}
+.btn-destructive:hover {
+  background: #E0384D;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px -2px rgba(242, 88, 107, 0.6);
+}
+.btn-destructive:active {
+  transform: translateY(0);
+}
+.btn-destructive:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* =========================================================================

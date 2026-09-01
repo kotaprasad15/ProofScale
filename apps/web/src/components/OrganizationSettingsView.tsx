@@ -300,11 +300,26 @@ export function OrganizationSettingsView({ organizationId }: OrganizationSetting
 
       {/* Invite Member Modal */}
       {showInviteModal && (
-        <div className="modal-backdrop">
-          <div className="modal-panel max-w-md w-full p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+        <div
+          className="modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowInviteModal(false);
+              setGeneratedInviteToken(null);
+            }
+          }}
+        >
+          <div className="modal-panel max-w-md w-full p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
               <h3 className="font-bold text-text-primary text-base">Invite Organization Member</h3>
-              <button onClick={() => setShowInviteModal(false)} className="text-text-muted hover:text-text-primary cursor-pointer">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowInviteModal(false);
+                  setGeneratedInviteToken(null);
+                }}
+                className="text-text-muted hover:text-text-primary p-1 rounded-lg hover:bg-[var(--white-fill-sm)] transition cursor-pointer"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -334,7 +349,7 @@ export function OrganizationSettingsView({ organizationId }: OrganizationSetting
                   <select
                     value={inviteRole}
                     onChange={e => setInviteRole(e.target.value as OrgRole)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-ink-900 border border-white/[0.1] text-sm text-text-primary focus:outline-none focus:border-signal-indigo"
+                    className="field-input text-sm cursor-pointer"
                   >
                     <option value="admin">Admin (Can manage projects and members)</option>
                     <option value="member">Member (Standard project access)</option>
@@ -345,7 +360,7 @@ export function OrganizationSettingsView({ organizationId }: OrganizationSetting
                 <button
                   type="submit"
                   disabled={inviteMemberMutation.isPending}
-                  className="btn-solid-primary w-full py-3 justify-center"
+                  className="btn-solid-primary w-full py-3 justify-center cursor-pointer"
                 >
                   {inviteMemberMutation.isPending ? "Generating Invitation..." : "Generate Invitation Token"}
                 </button>
@@ -356,9 +371,10 @@ export function OrganizationSettingsView({ organizationId }: OrganizationSetting
                   Invitation created! Share this secure token with <strong className="text-text-primary font-mono">{inviteEmail}</strong>:
                 </p>
 
-                <div className="p-3 rounded-xl bg-ink-950 border border-white/[0.1] flex items-center justify-between">
+                <div className="p-3 rounded-xl bg-ink-950 border border-[var(--border)] flex items-center justify-between">
                   <span className="text-xs font-mono text-signal-indigo truncate mr-2">{generatedInviteToken}</span>
                   <button
+                    type="button"
                     onClick={copyInvite}
                     className="px-3 py-1.5 bg-signal-indigo hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg shrink-0 flex items-center space-x-1 cursor-pointer"
                   >
@@ -368,8 +384,9 @@ export function OrganizationSettingsView({ organizationId }: OrganizationSetting
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => { setShowInviteModal(false); setGeneratedInviteToken(null); setInviteEmail(""); }}
-                  className="w-full py-2.5 bg-white/[0.06] hover:bg-white/[0.1] text-text-primary text-xs font-semibold rounded-xl border border-white/[0.08] transition cursor-pointer"
+                  className="btn-glass-secondary w-full justify-center cursor-pointer"
                 >
                   Done
                 </button>

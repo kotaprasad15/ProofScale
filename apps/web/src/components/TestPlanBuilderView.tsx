@@ -675,19 +675,33 @@ export function TestPlanBuilderView({ projectId, initialPlanId, onPlanCreated, o
 
       {/* Test Plan Deletion Confirmation Modal */}
       {planToDelete && (
-        <div className="modal-backdrop">
-          <div className="modal-panel--destructive max-w-md w-full p-6 space-y-5">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-signal-rose-soft border border-signal-rose/30 flex items-center justify-center text-signal-rose shrink-0">
-                <AlertTriangle className="h-5 w-5" />
+        <div
+          className="modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setPlanToDelete(null);
+          }}
+        >
+          <div className="modal-panel--destructive max-w-md w-full p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-signal-rose-soft border border-signal-rose/30 flex items-center justify-center text-signal-rose shrink-0">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-text-primary text-base">Remove Test Plan?</h3>
+                  <p className="text-xs text-text-muted">This action cannot be undone.</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-text-primary text-base">Remove Test Plan?</h3>
-                <p className="text-xs text-text-muted">This action cannot be undone.</p>
-              </div>
+              <button
+                type="button"
+                onClick={() => setPlanToDelete(null)}
+                className="text-text-muted hover:text-text-primary p-1 rounded-lg hover:bg-[var(--white-fill-sm)] transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-ink-950 border border-white/[0.08] text-xs font-mono text-text-primary font-semibold">
+            <div className="p-3.5 rounded-xl bg-ink-950 border border-[var(--border)] text-xs font-mono text-text-primary font-semibold">
               {planToDelete.name}
             </div>
 
