@@ -7,6 +7,7 @@ export default defineConfig({
     "process.env": {}
   },
   build: {
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
         manualChunks: {

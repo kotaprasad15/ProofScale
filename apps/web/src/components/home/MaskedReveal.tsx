@@ -6,21 +6,19 @@ interface MaskedRevealProps {
   delay?: number;
   duration?: number;
   className?: string;
-  as?: keyof JSX.IntrinsicElements;
 }
 
 export function MaskedReveal({
   children,
   delay = 0,
   duration = 0.7,
-  className = "",
-  as: Component = "div"
+  className = ""
 }: MaskedRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-10% 0px -10% 0px" });
 
   return (
-    <Component className={`masked-line ${className}`} ref={ref}>
+    <div className={`masked-line ${className}`} ref={ref}>
       <motion.div
         initial={{ y: "105%", opacity: 0 }}
         animate={isInView ? { y: 0, opacity: 1 } : { y: "105%", opacity: 0 }}
@@ -33,6 +31,6 @@ export function MaskedReveal({
       >
         {children}
       </motion.div>
-    </Component>
+    </div>
   );
 }
