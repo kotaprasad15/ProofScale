@@ -3,7 +3,7 @@ import React from "react";
 type EyebrowColor = "indigo" | "teal" | "amber" | "rose";
 
 const COLORS: Record<EyebrowColor, string> = {
-  indigo: "text-signal-indigo bg-signal-indigo-soft border-signal-indigo/25",
+  indigo: "text-brand bg-brand-soft border-brand-soft",
   teal: "text-signal-teal bg-signal-teal-soft border-signal-teal/20",
   amber: "text-signal-amber bg-signal-amber-soft border-signal-amber/25",
   rose: "text-signal-rose bg-signal-rose-soft border-signal-rose/25"

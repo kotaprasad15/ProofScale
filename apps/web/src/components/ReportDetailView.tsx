@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { trpc } from "../utils/trpc";
-import { FileText, Download, Share2, AlertTriangle, CheckCircle2, Copy, X, ShieldOff, Clock } from "lucide-react";
+import { FileText, Download, Share2, AlertTriangle, CheckCircle2, Copy, X, ShieldOff, Clock, ArrowLeft } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { LoadingDots } from "./LoadingDots";
-import { GoBackButton } from "./GoBackButton";
 
 function scoreColor(score: number): string {
   if (score >= 90) return "#2FD4A6";
@@ -163,7 +162,15 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       {/* Top Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
-        {onBack && <GoBackButton onClick={onBack} label="Back to Comparison" />}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="btn-glass-secondary text-xs py-2 px-3.5 cursor-pointer flex items-center gap-1.5"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Comparison</span>
+          </button>
+        )}
 
         <div className="flex items-center space-x-2">
           <button

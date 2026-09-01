@@ -2,7 +2,6 @@ import React from "react";
 import { motion } from "framer-motion";
 import { LayoutDashboard, Target, PlaySquare, FileText, Settings, ShieldCheck, Activity, Users, LogOut, ChevronRight, Home, Globe } from "lucide-react";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
-import { SignalField } from "./SignalField";
 import { UserPermissions } from "@proofscale/shared";
 import { BrandLogo } from "./BrandLogo";
 
@@ -48,7 +47,6 @@ export function Layout({
   return (
     <div data-motion="calm" className="relative flex h-screen w-screen overflow-hidden bg-ink-950 text-text-primary font-sans">
       {/* Data-first background: faint static texture + reduced ambient field */}
-      <SignalField variant="dashboard" />
       <div aria-hidden="true" className="fixed inset-0 z-0 pointer-events-none dashboard-texture" />
       <div aria-hidden="true" className="fixed inset-0 pointer-events-none dashboard-vignette" />
 

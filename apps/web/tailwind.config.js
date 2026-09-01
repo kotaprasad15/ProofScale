@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  darkMode: ["class", '[data-theme="dark"]'],
   theme: {
     extend: {
       fontFamily: {
@@ -10,27 +11,38 @@ export default {
       },
       colors: {
         ink: {
-          950: '#0A0E16',
-          900: '#10151F',
-          800: '#181F2E',
-          700: '#242D40'
+          950: 'var(--ink-950)',
+          900: 'var(--ink-900)',
+          800: 'var(--ink-800)',
+          700: 'var(--ink-800)'
         },
         signal: {
-          indigo: '#5B5FEF',
+          indigo: 'var(--signal-indigo)',
           'indigo-hover': '#4D51E8',
-          'indigo-soft': 'rgba(91, 95, 239, 0.12)',
-          teal: '#2FD4A6',
-          'teal-soft': 'rgba(47, 212, 166, 0.12)',
-          amber: '#F0A63A',
-          'amber-soft': 'rgba(240, 166, 58, 0.12)',
-          rose: '#F2586B',
-          'rose-soft': 'rgba(242, 88, 107, 0.12)'
+          'indigo-soft': 'var(--color-brand-soft)',
+          teal: 'var(--signal-teal)',
+          'teal-soft': 'var(--color-success-soft)',
+          amber: 'var(--signal-amber)',
+          'amber-soft': 'var(--color-warning-soft)',
+          rose: 'var(--signal-rose)',
+          'rose-soft': 'var(--color-critical-soft)'
         },
         text: {
-          primary: '#F3F5FA',
-          muted: '#8D96AC',
-          faint: '#5C6478'
-        }
+          primary: 'var(--text-primary)',
+          muted: 'var(--text-muted)',
+          faint: 'var(--text-faint)'
+        },
+        border: {
+          DEFAULT: 'var(--border)',
+          strong: 'var(--border-strong)'
+        },
+        surface: {
+          DEFAULT: 'var(--color-surface)',
+          inset: 'var(--panel-inset)'
+        },
+        overlay: 'var(--overlay-bg)',
+        'fill-sm': 'var(--white-fill-sm)',
+        'fill-md': 'var(--white-fill-md)'
       },
       boxShadow: {
         glass: '0 20px 60px -20px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06)',

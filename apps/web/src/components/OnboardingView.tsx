@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { trpc } from "../utils/trpc";
 import { Building2, Mail, ShieldAlert, CheckCircle2, ArrowRight, UserPlus, ShieldCheck, ArrowLeft } from "lucide-react";
 import { BrandLogo } from "./BrandLogo";
-import { SignalField } from "./SignalField";
 import { LoadingDots } from "./LoadingDots";
 
 interface OnboardingViewProps {
@@ -68,14 +67,21 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
   };
 
   return (
-    <div data-motion="calm" className="min-h-screen bg-ink-950 text-text-primary flex flex-col justify-between relative selection:bg-signal-indigo/30 selection:text-white">
-      {/* Signature Signal Field Background (full motion, calm interactions) */}
-      <SignalField variant="auth" />
+    <div className="min-h-screen bg-ink-950 text-text-primary flex flex-col justify-between relative selection:bg-signal-indigo/30 selection:text-white">
+      {/* Background ambient gradient glow */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none z-0 overflow-hidden"
+      >
+        <div className="absolute top-[20%] -left-[10%] w-[50vw] h-[50vw] rounded-full bg-signal-indigo/10 blur-[140px]" />
+        <div className="absolute bottom-[10%] -right-[10%] w-[50vw] h-[50vw] rounded-full bg-signal-teal/8 blur-[140px]" />
+        <div className="absolute inset-0 grain-bg opacity-30" />
+      </div>
 
       {/* Top Header */}
       <header className="relative z-20 max-w-[1240px] w-full mx-auto px-6 sm:px-12 py-8 flex items-center justify-between">
         <BrandLogo />
-        <span className="font-mono text-xs text-text-muted font-medium">SETUP WIZARD · RBAC SETUP</span>
+        <span className="font-mono text-xs text-text-muted font-medium">SETUP WIZARD · RBAC INITIALIZATION</span>
       </header>
 
       {/* Main Wizard Form */}
@@ -88,7 +94,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
             <h1 className="font-display font-bold text-2xl sm:text-3xl text-text-primary tracking-tight mt-1">
               Configure your entry point
             </h1>
-            <p className="text-text-muted text-xs sm:text-sm leading-relaxed mt-1">
+            <p className="text-text-muted text-xs sm:text-sm leading-relaxed mt-1 font-sans">
               Choose how you want to configure your identity and active workspace permissions.
             </p>
           </div>
@@ -168,7 +174,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                   onChange={(e) => setOrgName(e.target.value)}
                   placeholder="e.g. Acme Engineering Corp"
                   required
-                  className="field-input"
+                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
                 />
               </div>
 
@@ -181,7 +187,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="e.g. Leah Evans"
-                  className="field-input"
+                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
                 />
               </div>
 
@@ -194,7 +200,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                   value={initialProject}
                   onChange={(e) => setInitialProject(e.target.value)}
                   placeholder="e.g. Payment Gateway API"
-                  className="field-input"
+                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
                 />
               </div>
 
@@ -228,7 +234,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                   onChange={(e) => setInviteToken(e.target.value)}
                   placeholder="ps_inv_..."
                   required
-                  className="field-input field-input--mono"
+                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm font-mono text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
                 />
               </div>
 
@@ -261,7 +267,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                   onChange={(e) => setRequestMsg(e.target.value)}
                   placeholder="e.g. Requesting access to execute load verification checks for Staging QA..."
                   rows={3}
-                  className="field-input"
+                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo font-sans"
                 />
               </div>
 

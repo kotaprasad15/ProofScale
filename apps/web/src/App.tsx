@@ -15,6 +15,7 @@ import { RunComparisonView } from "./components/RunComparisonView";
 import { LoadingDots } from "./components/LoadingDots";
 import { StatusChip, readinessTone } from "./components/ui/StatusChip";
 import { KillSwitchView } from "./components/KillSwitchView";
+import { ThemeProvider } from "./components/home/ThemeContext";
 import { Shield, Play, Target, CheckCircle2, FileText, AlertTriangle, Users, LogOut, ArrowRight, Activity, Home } from "lucide-react";
 
 interface SessionUser {
@@ -545,45 +546,51 @@ export function App() {
   if (!currentUser || isPublicRoute) {
     if (route.path === "/signin" || route.path === "/signup") {
       return (
-        <trpc.Provider client={trpcClient} queryClient={queryClient}>
-          <QueryClientProvider client={queryClient}>
-            <LoginView
-              initialMode={route.path === "/signup" ? "signup" : "signin"}
-              onBackToHome={() => navigateTo("/home")}
-              onLogin={handleLogin}
-            />
-          </QueryClientProvider>
-        </trpc.Provider>
+        <ThemeProvider>
+          <trpc.Provider client={trpcClient} queryClient={queryClient}>
+            <QueryClientProvider client={queryClient}>
+              <LoginView
+                initialMode={route.path === "/signup" ? "signup" : "signin"}
+                onBackToHome={() => navigateTo("/home")}
+                onLogin={handleLogin}
+              />
+            </QueryClientProvider>
+          </trpc.Provider>
+        </ThemeProvider>
       );
     }
 
     // Default to Landing Homepage
     return (
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
-          <HomeView
-            onSignIn={() => navigateTo("/signin")}
-            onSignUp={() => navigateTo("/signup")}
-            isLoggedIn={!!currentUser}
-            onGoToDashboard={() => navigateTo("/dashboard")}
-            onLogout={handleLogout}
-          />
-        </QueryClientProvider>
-      </trpc.Provider>
+      <ThemeProvider>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <HomeView
+              onSignIn={() => navigateTo("/signin")}
+              onSignUp={() => navigateTo("/signup")}
+              isLoggedIn={!!currentUser}
+              onGoToDashboard={() => navigateTo("/dashboard")}
+              onLogout={handleLogout}
+            />
+          </QueryClientProvider>
+        </trpc.Provider>
+      </ThemeProvider>
     );
   }
 
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        <MainApp
-          currentUser={currentUser}
-          route={route}
-          onNavigate={navigateTo}
-          onLogout={handleLogout}
-          onGoHome={() => navigateTo("/home")}
-        />
-      </QueryClientProvider>
-    </trpc.Provider>
+    <ThemeProvider>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>
+          <MainApp
+            currentUser={currentUser}
+            route={route}
+            onNavigate={navigateTo}
+            onLogout={handleLogout}
+            onGoHome={() => navigateTo("/home")}
+          />
+        </QueryClientProvider>
+      </trpc.Provider>
+    </ThemeProvider>
   );
 }
