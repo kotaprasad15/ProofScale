@@ -9,3 +9,4 @@ export * from "./scoring/ScoringEngine.js";
 export * from "./scoring/FindingsGenerator.js";
 export * from "./reports/ReportExporter.js";
 export * from "./reports/ComparisonEngine.js";
+export * from "./security/index.js";

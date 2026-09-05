@@ -9,6 +9,9 @@ import { runsRouter } from "./runs.js";
 import { reportsRouter } from "./reports.js";
 import { invitationsRouter } from "./invitations.js";
 import { accessRequestsRouter } from "./accessRequests.js";
+import { billingRouter } from "./billing.js";
+import { aiRouter } from "./ai.js";
+import { adminRouter } from "./admin.js";
 
 export const appRouter = router({
   system: systemRouter,
@@ -20,7 +23,10 @@ export const appRouter = router({
   runs: runsRouter,
   reports: reportsRouter,
   invitations: invitationsRouter,
-  accessRequests: accessRequestsRouter
+  accessRequests: accessRequestsRouter,
+  billing: billingRouter,
+  ai: aiRouter,
+  admin: adminRouter
 });
 
 export type AppRouter = typeof appRouter;

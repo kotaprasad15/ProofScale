@@ -192,9 +192,52 @@ export function runMigrations(customDb?: Database.Database) {
       revoked_at INTEGER,
       created_at INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      session_token_hash TEXT NOT NULL UNIQUE,
+      csrf_token TEXT NOT NULL,
+      ip_address TEXT,
+      user_agent TEXT,
+      expires_at INTEGER NOT NULL,
+      revoked_at INTEGER,
+      created_at INTEGER NOT NULL,
+      last_active_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL UNIQUE,
+      expires_at INTEGER NOT NULL,
+      used_at INTEGER,
+      ip_address TEXT,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS processed_webhooks (
+      id TEXT PRIMARY KEY,
+      event_id TEXT NOT NULL UNIQUE,
+      provider TEXT NOT NULL,
+      payload_hash TEXT NOT NULL,
+      processed_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_usage_records (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      tokens_used INTEGER NOT NULL DEFAULT 0,
+      requests_count INTEGER NOT NULL DEFAULT 1,
+      window_start INTEGER NOT NULL,
+      created_at INTEGER NOT NULL
+    );
   `);
 
   // Column backfill/alter migrations for existing SQLite records
+  try { targetDb.exec("ALTER TABLE users ADD COLUMN password_hash TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE users ADD COLUMN failed_login_attempts INTEGER NOT NULL DEFAULT 0;"); } catch {}
+  try { targetDb.exec("ALTER TABLE users ADD COLUMN locked_until INTEGER;"); } catch {}
   try { targetDb.exec("ALTER TABLE organizations ADD COLUMN slug TEXT NOT NULL DEFAULT 'default-org';"); } catch {}
   try { targetDb.exec("ALTER TABLE organizations ADD COLUMN owner_id TEXT NOT NULL DEFAULT 'usr_admin_01';"); } catch {}
   try { targetDb.exec("ALTER TABLE organizations ADD COLUMN owner_user_id TEXT NOT NULL DEFAULT 'usr_admin_01';"); } catch {}
@@ -207,6 +250,7 @@ export function runMigrations(customDb?: Database.Database) {
   try { targetDb.exec("ALTER TABLE targets ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;"); } catch {}
   try { targetDb.exec("ALTER TABLE test_plans ADD COLUMN safety_limits_json TEXT;"); } catch {}
   try { targetDb.exec("ALTER TABLE test_plans ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;"); } catch {}
+
 
   // Auto-seed default baseline workspace if no users exist
   try {

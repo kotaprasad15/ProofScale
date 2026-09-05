@@ -1,6 +1,7 @@
-import { db, users, organizationMembers, projectMembers, organizations } from "@proofscale/db";
-import { eq, and } from "drizzle-orm";
-import { evaluatePermissions, UserPermissions } from "@proofscale/shared";
+import { db, users, organizationMembers, projectMembers, organizations, sessions } from "@proofscale/db";
+import { eq, and, gt, isNull } from "drizzle-orm";
+import { evaluatePermissions, UserPermissions, SessionSecurity } from "@proofscale/shared";
+import { parseCookies } from "./middleware/securityMiddleware.js";
 
 export interface Context {
   db: typeof db;
@@ -17,27 +18,74 @@ export interface Context {
   orgRole?: string | null;
   projectRole?: string | null;
   permissions: UserPermissions;
+  sessionId?: string | null;
+  csrfToken?: string | null;
+  req?: any;
+  res?: any;
 }
 
 export async function createContext({ req, res }: { req: any; res?: any }): Promise<Context> {
-  const userId = (req.headers["x-user-id"] as string) || "usr_admin_01";
-  const userEmail = (req.headers["x-user-email"] as string) || "lead@acme.dev";
-  let organizationId = (req.headers["x-organization-id"] as string) || null;
-  const projectId = (req.headers["x-project-id"] as string) || null;
-
   let dbUser = null;
-  if (userId) {
-    const [existing] = await db.select().from(users).where(eq(users.id, userId));
+  let activeSessionId: string | null = null;
+  let activeCsrfToken: string | null = null;
+
+  // 1. Resolve Session from Cookie or Bearer Token (#19)
+  const cookies = req?.headers ? parseCookies(req.headers.cookie) : {};
+  const cookieToken = cookies[SessionSecurity.COOKIE_NAME];
+  const authHeader = req?.headers?.authorization;
+  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : null;
+  const sessionToken = cookieToken || bearerToken;
+
+  if (sessionToken) {
+    const tokenHash = SessionSecurity.hashSessionToken(sessionToken);
+    const now = new Date();
+
+    const [activeSession] = await db
+      .select()
+      .from(sessions)
+      .where(
+        and(
+          eq(sessions.sessionTokenHash, tokenHash),
+          isNull(sessions.revokedAt),
+          gt(sessions.expiresAt, now)
+        )
+      );
+
+    if (activeSession) {
+      activeSessionId = activeSession.id;
+      activeCsrfToken = activeSession.csrfToken;
+
+      // Fetch user associated with session
+      const [u] = await db.select().from(users).where(eq(users.id, activeSession.userId));
+      if (u) {
+        dbUser = u;
+        // Update lastActiveAt asynchronously
+        db.update(sessions)
+          .set({ lastActiveAt: now })
+          .where(eq(sessions.id, activeSession.id))
+          .catch(() => {});
+      }
+    }
+  }
+
+  // 2. Fallback to explicit dev/test headers ONLY in non-production environments (#16)
+  // Hardcoded default fallback to "usr_admin_01" is completely REMOVED.
+  const isProduction = process.env.NODE_ENV === "production";
+  if (!dbUser && !isProduction && req?.headers?.["x-user-id"]) {
+    const devUserId = req.headers["x-user-id"] as string;
+    const devUserEmail = (req.headers["x-user-email"] as string) || `${devUserId}@proofscale.dev`;
+
+    const [existing] = await db.select().from(users).where(eq(users.id, devUserId));
     if (existing) {
       dbUser = existing;
     } else {
-      // Auto-create user identity on first OAuth sign-in
+      // Auto-create identity in local test/dev run
       const [created] = await db
         .insert(users)
         .values({
-          id: userId,
-          email: userEmail,
-          displayName: userEmail.split("@")[0],
+          id: devUserId,
+          email: devUserEmail,
+          displayName: devUserEmail.split("@")[0],
           role: "member",
           onboardingStatus: "completed"
         })
@@ -45,6 +93,9 @@ export async function createContext({ req, res }: { req: any; res?: any }): Prom
       dbUser = created;
     }
   }
+
+  let organizationId = (req?.headers?.["x-organization-id"] as string) || null;
+  const projectId = (req?.headers?.["x-project-id"] as string) || null;
 
   // Resolve active organization membership
   let orgRole: string | null = null;
@@ -117,6 +168,10 @@ export async function createContext({ req, res }: { req: any; res?: any }): Prom
     projectId,
     orgRole,
     projectRole,
-    permissions
+    permissions,
+    sessionId: activeSessionId,
+    csrfToken: activeCsrfToken,
+    req,
+    res
   };
 }

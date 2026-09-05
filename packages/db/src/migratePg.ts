@@ -209,6 +209,51 @@ export async function runPgMigrations(connectionUrl?: string) {
         revoked_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS sessions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        session_token_hash TEXT NOT NULL UNIQUE,
+        csrf_token TEXT NOT NULL,
+        ip_address TEXT,
+        user_agent TEXT,
+        expires_at TIMESTAMPTZ NOT NULL,
+        revoked_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        last_active_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token_hash TEXT NOT NULL UNIQUE,
+        expires_at TIMESTAMPTZ NOT NULL,
+        used_at TIMESTAMPTZ,
+        ip_address TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS processed_webhooks (
+        id TEXT PRIMARY KEY,
+        event_id TEXT NOT NULL UNIQUE,
+        provider TEXT NOT NULL,
+        payload_hash TEXT NOT NULL,
+        processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS ai_usage_records (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        tokens_used INTEGER NOT NULL DEFAULT 0,
+        requests_count INTEGER NOT NULL DEFAULT 1,
+        window_start TIMESTAMPTZ NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      -- Column migrations for users
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ;
     `);
 
     // 2. Enable Row Level Security (RLS) on ALL tables and apply scoped service_role policies
@@ -227,8 +272,13 @@ export async function runPgMigrations(connectionUrl?: string) {
       "run_events",
       "findings",
       "artifacts",
-      "report_shares"
+      "report_shares",
+      "sessions",
+      "password_reset_tokens",
+      "processed_webhooks",
+      "ai_usage_records"
     ];
+
 
     for (const table of tables) {
       await client.query(`ALTER TABLE public.${table} ENABLE ROW LEVEL SECURITY;`);

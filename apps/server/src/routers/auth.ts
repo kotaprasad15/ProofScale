@@ -4,7 +4,11 @@ import {
   AcceptInvitationSchema,
   RequestTesterAccessSchema,
   SelectWorkspaceSchema,
-  UpdateProfileSchema
+  UpdateProfileSchema,
+  PasswordService,
+  SessionSecurity,
+  PasswordResetService,
+  SecurityLogger
 } from "@proofscale/shared";
 import {
   users,
@@ -14,12 +18,15 @@ import {
   projectMembers,
   invitations,
   accessRequests,
-  auditEvents
+  auditEvents,
+  sessions,
+  passwordResetTokens
 } from "@proofscale/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, gt, isNull } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import crypto from "node:crypto";
 import { z } from "zod";
+
 
 export const authRouter = router({
   me: protectedProcedure.query(async ({ ctx }) => {
@@ -309,5 +316,386 @@ export const authRouter = router({
         .where(eq(users.id, ctx.user.id));
 
       return { success: true };
-    })
+    }),
+
+  /**
+   * 5, 17, 18, 19: Constant-time login, account lockout handling, secure cookie issuance, session ID rotation
+   */
+  login: publicProcedure
+    .input(
+      z.object({
+        email: z.string().email(),
+        password: z.string().min(1)
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const email = input.email.trim().toLowerCase();
+      const ip = ctx.req?.ip || "unknown_ip";
+
+      // 1. Fetch user by email
+      const [user] = await ctx.db.select().from(users).where(eq(users.email, email));
+
+      if (!user) {
+        // Run dummy cryptographic hash to normalize response timing and prevent user enumeration
+        PasswordService.runDummyVerification();
+        SecurityLogger.log({
+          eventType: "auth.login_failed",
+          ipAddress: ip,
+          message: "Login failed: target account not found",
+          metadata: { email }
+        });
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: PasswordResetService.GENERIC_AUTH_ERROR
+        });
+      }
+
+      // 2. Check Account Lockout (#17)
+      const lockout = PasswordService.checkLockout(user.failedLoginAttempts, user.lockedUntil);
+      if (lockout.isLocked) {
+        SecurityLogger.log({
+          eventType: "auth.account_locked",
+          userId: user.id,
+          ipAddress: ip,
+          message: `Login rejected: account is locked for ${lockout.remainingSeconds}s`
+        });
+        // Requirement 17: do not reveal lockout state to attackers
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: PasswordResetService.GENERIC_AUTH_ERROR
+        });
+      }
+
+      // 3. Verify Password
+      const isValid = user.passwordHash
+        ? PasswordService.verifyPassword(input.password, user.passwordHash)
+        : false;
+
+      if (!isValid) {
+        const newAttempts = user.failedLoginAttempts + 1;
+        const willLock = newAttempts >= 5;
+        const newLockedUntil = willLock ? new Date(Date.now() + 15 * 60 * 1000) : null;
+
+        await ctx.db
+          .update(users)
+          .set({
+            failedLoginAttempts: newAttempts,
+            lockedUntil: newLockedUntil,
+            updatedAt: new Date()
+          })
+          .where(eq(users.id, user.id));
+
+        SecurityLogger.log({
+          eventType: willLock ? "auth.account_locked" : "auth.login_failed",
+          userId: user.id,
+          ipAddress: ip,
+          message: willLock ? "Account locked due to 5 consecutive failed logins" : `Login failed (attempt ${newAttempts})`
+        });
+
+        // Progressive backoff delay
+        const delay = PasswordService.calculateProgressiveDelayMs(newAttempts);
+        if (delay > 0) {
+          await new Promise(res => setTimeout(res, delay));
+        }
+
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: PasswordResetService.GENERIC_AUTH_ERROR
+        });
+      }
+
+      // 4. Successful Authentication: Reset lockouts, rotate/create session (#19)
+      await ctx.db
+        .update(users)
+        .set({
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, user.id));
+
+      const rawSessionToken = SessionSecurity.generateSessionToken();
+      const sessionTokenHash = SessionSecurity.hashSessionToken(rawSessionToken);
+      const csrfToken = SessionSecurity.generateCsrfToken();
+      const sessionId = `sess_${crypto.randomUUID().slice(0, 8)}`;
+      const expiresAt = new Date(Date.now() + SessionSecurity.SESSION_DURATION_MS);
+
+      await ctx.db.insert(sessions).values({
+        id: sessionId,
+        userId: user.id,
+        sessionTokenHash,
+        csrfToken,
+        ipAddress: ip,
+        userAgent: ctx.req?.headers?.["user-agent"] || "unknown",
+        expiresAt,
+        createdAt: new Date(),
+        lastActiveAt: new Date()
+      });
+
+      // Issue secure HTTP cookie if response object is present (#19)
+      if (ctx.res && typeof ctx.res.cookie === "function") {
+        const isProd = process.env.NODE_ENV === "production";
+        const cookieOpts = SessionSecurity.getSecureCookieOptions(isProd);
+        ctx.res.cookie(SessionSecurity.COOKIE_NAME, rawSessionToken, cookieOpts);
+      }
+
+      SecurityLogger.log({
+        eventType: "auth.login_success",
+        userId: user.id,
+        ipAddress: ip,
+        message: "User logged in successfully; new session issued with secure flags"
+      });
+
+      return {
+        success: true,
+        sessionToken: rawSessionToken,
+        csrfToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          displayName: user.displayName,
+          role: user.role
+        }
+      };
+    }),
+
+  /**
+   * 3. Reset All Active Sessions on Password Change (Requirement #3)
+   */
+  changePassword: protectedProcedure
+    .input(
+      z.object({
+        currentPassword: z.string().min(1),
+        newPassword: z.string().min(10)
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [user] = await ctx.db.select().from(users).where(eq(users.id, ctx.user.id));
+      if (!user) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User account not found." });
+      }
+
+      // Check current password if one is already set
+      if (user.passwordHash) {
+        const matches = PasswordService.verifyPassword(input.currentPassword, user.passwordHash);
+        if (!matches) {
+          SecurityLogger.log({
+            eventType: "auth.login_failed",
+            userId: user.id,
+            message: "Password change rejected: incorrect current password"
+          });
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Incorrect current password." });
+        }
+      }
+
+      // Validate complexity
+      const complexity = PasswordService.validateComplexity(input.newPassword);
+      if (!complexity.valid) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: complexity.reason || "Password does not meet complexity requirements." });
+      }
+
+      const newHash = PasswordService.hashPassword(input.newPassword);
+      const now = new Date();
+
+      // Update password
+      await ctx.db
+        .update(users)
+        .set({
+          passwordHash: newHash,
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          updatedAt: now
+        })
+        .where(eq(users.id, ctx.user.id));
+
+      // Invalidate ALL active sessions for this user (#3)
+      await ctx.db
+        .update(sessions)
+        .set({ revokedAt: now })
+        .where(and(eq(sessions.userId, ctx.user.id), isNull(sessions.revokedAt)));
+
+      // Issue a fresh replacement session for the current client
+      const rawSessionToken = SessionSecurity.generateSessionToken();
+      const sessionTokenHash = SessionSecurity.hashSessionToken(rawSessionToken);
+      const csrfToken = SessionSecurity.generateCsrfToken();
+      const newSessionId = `sess_${crypto.randomUUID().slice(0, 8)}`;
+      const expiresAt = new Date(Date.now() + SessionSecurity.SESSION_DURATION_MS);
+
+      await ctx.db.insert(sessions).values({
+        id: newSessionId,
+        userId: user.id,
+        sessionTokenHash,
+        csrfToken,
+        ipAddress: ctx.req?.ip || "unknown_ip",
+        userAgent: ctx.req?.headers?.["user-agent"] || "unknown",
+        expiresAt,
+        createdAt: now,
+        lastActiveAt: now
+      });
+
+      if (ctx.res && typeof ctx.res.cookie === "function") {
+        const isProd = process.env.NODE_ENV === "production";
+        ctx.res.cookie(SessionSecurity.COOKIE_NAME, rawSessionToken, SessionSecurity.getSecureCookieOptions(isProd));
+      }
+
+      SecurityLogger.log({
+        eventType: "auth.password_changed",
+        userId: user.id,
+        message: "User password updated; all prior active sessions were revoked"
+      });
+
+      return {
+        success: true,
+        sessionToken: rawSessionToken,
+        csrfToken,
+        message: "Password changed successfully. All other active sessions have been invalidated."
+      };
+    }),
+
+  /**
+   * 4, 5, 12: Rate-limited, enumeration-resistant password reset request with expiring single-use token
+   */
+  requestPasswordReset: publicProcedure
+    .input(z.object({ email: z.string().email() }))
+    .mutation(async ({ ctx, input }) => {
+      const email = input.email.trim().toLowerCase();
+      const ip = ctx.req?.ip || "unknown_ip";
+
+      const [user] = await ctx.db.select().from(users).where(eq(users.email, email));
+
+      if (user) {
+        const { rawToken, tokenHash, expiresAt } = PasswordResetService.generateResetToken();
+
+        await ctx.db.insert(passwordResetTokens).values({
+          id: `rst_${crypto.randomUUID().slice(0, 8)}`,
+          userId: user.id,
+          tokenHash,
+          expiresAt,
+          ipAddress: ip,
+          createdAt: new Date()
+        });
+
+        SecurityLogger.log({
+          eventType: "auth.password_reset_requested",
+          userId: user.id,
+          ipAddress: ip,
+          message: "Password reset link generated with single-use expiration token"
+        });
+      } else {
+        // Run dummy cryptographic work to ensure uniform execution timing (#5)
+        PasswordService.runDummyVerification();
+        SecurityLogger.log({
+          eventType: "auth.password_reset_requested",
+          ipAddress: ip,
+          message: "Password reset requested for non-existent email"
+        });
+      }
+
+      // Always return generic response to prevent user enumeration (#5)
+      return {
+        success: true,
+        message: PasswordResetService.GENERIC_RESET_RESPONSE
+      };
+    }),
+
+  /**
+   * 3, 4, 17: Complete single-use password reset, invalidate sessions, and unlock account
+   */
+  completePasswordReset: publicProcedure
+    .input(
+      z.object({
+        token: z.string().min(16),
+        newPassword: z.string().min(10)
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const tokenHash = PasswordResetService.hashRawToken(input.token);
+      const now = new Date();
+
+      const [tokenRecord] = await ctx.db
+        .select()
+        .from(passwordResetTokens)
+        .where(eq(passwordResetTokens.tokenHash, tokenHash));
+
+      // Verify token exists, is unconsumed, and not expired (#4)
+      if (!tokenRecord || !PasswordResetService.isTokenValid(tokenRecord.expiresAt, tokenRecord.usedAt)) {
+        SecurityLogger.log({
+          eventType: "auth.login_failed",
+          ipAddress: ctx.req?.ip,
+          message: "Password reset completion failed: invalid, expired, or previously used token"
+        });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This password reset link is invalid or has expired."
+        });
+      }
+
+      // Validate complexity
+      const complexity = PasswordService.validateComplexity(input.newPassword);
+      if (!complexity.valid) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: complexity.reason || "Invalid password complexity." });
+      }
+
+      // Mark token consumed immediately (single-use #4)
+      await ctx.db
+        .update(passwordResetTokens)
+        .set({ usedAt: now })
+        .where(eq(passwordResetTokens.id, tokenRecord.id));
+
+      const newHash = PasswordService.hashPassword(input.newPassword);
+
+      // Update password and safely reset lockout state (#17)
+      await ctx.db
+        .update(users)
+        .set({
+          passwordHash: newHash,
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          updatedAt: now
+        })
+        .where(eq(users.id, tokenRecord.userId));
+
+      // Reset all active sessions on password change (#3)
+      await ctx.db
+        .update(sessions)
+        .set({ revokedAt: now })
+        .where(and(eq(sessions.userId, tokenRecord.userId), isNull(sessions.revokedAt)));
+
+      SecurityLogger.log({
+        eventType: "auth.password_reset_completed",
+        userId: tokenRecord.userId,
+        ipAddress: ctx.req?.ip,
+        message: "Password reset completed successfully. All existing sessions were revoked."
+      });
+
+      return {
+        success: true,
+        message: "Your password has been successfully reset. Please sign in with your new password."
+      };
+    }),
+
+  /**
+   * 19. Logout & Session Invalidation
+   */
+  logout: protectedProcedure.mutation(async ({ ctx }) => {
+    if (ctx.sessionId) {
+      await ctx.db
+        .update(sessions)
+        .set({ revokedAt: new Date() })
+        .where(eq(sessions.id, ctx.sessionId));
+    }
+
+    if (ctx.res && typeof ctx.res.clearCookie === "function") {
+      ctx.res.clearCookie(SessionSecurity.COOKIE_NAME, { path: "/" });
+    }
+
+    SecurityLogger.log({
+      eventType: "auth.session_revoked",
+      userId: ctx.user.id,
+      message: "User logged out; active session was revoked"
+    });
+
+    return { success: true };
+  })
 });
+

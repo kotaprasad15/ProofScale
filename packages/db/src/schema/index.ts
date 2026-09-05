@@ -13,3 +13,5 @@ export * from "./runEvents.js";
 export * from "./findings.js";
 export * from "./artifacts.js";
 export * from "./reportShares.js";
+export * from "./sessions.js";
+export * from "./securityTables.js";
