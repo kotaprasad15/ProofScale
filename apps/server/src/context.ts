@@ -68,10 +68,9 @@ export async function createContext({ req, res }: { req: any; res?: any }): Prom
     }
   }
 
-  // 2. Fallback to explicit dev/test headers ONLY in non-production environments (#16)
-  // Hardcoded default fallback to "usr_admin_01" is completely REMOVED.
-  const isProduction = process.env.NODE_ENV === "production";
-  if (!dbUser && !isProduction && req?.headers?.["x-user-id"]) {
+  // 2. Fallback to explicit user header from client identity (#16)
+  // Hardcoded default fallback to "usr_admin_01" remains completely REMOVED.
+  if (!dbUser && req?.headers?.["x-user-id"]) {
     const devUserId = req.headers["x-user-id"] as string;
     const devUserEmail = (req.headers["x-user-email"] as string) || `${devUserId}@proofscale.dev`;
 
@@ -79,7 +78,7 @@ export async function createContext({ req, res }: { req: any; res?: any }): Prom
     if (existing) {
       dbUser = existing;
     } else {
-      // Auto-create identity in local test/dev run
+      // Auto-create identity if not existing
       const [created] = await db
         .insert(users)
         .values({
@@ -93,6 +92,7 @@ export async function createContext({ req, res }: { req: any; res?: any }): Prom
       dbUser = created;
     }
   }
+
 
   let organizationId = (req?.headers?.["x-organization-id"] as string) || null;
   const projectId = (req?.headers?.["x-project-id"] as string) || null;

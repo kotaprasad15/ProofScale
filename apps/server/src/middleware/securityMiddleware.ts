@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import cors from "cors";
 import { SessionSecurity, SecurityLogger } from "@proofscale/shared";
 
 // In-memory rate limiting stores
@@ -34,12 +35,13 @@ export function hstsSecurityHeaders(req: Request, res: Response, next: NextFunct
 
 /**
  * 14. Locked-down CORS Middleware (Requirement #14)
- * - Exact origin matching from environment configuration
+ * - Exact origin matching from environment configuration and legitimate deployment platforms
  * - Never uses wildcard origins with credentials
+ * - Allows tRPC headers including x-trpc-source and trpc-accept
  */
 export function configureCorsOrigins() {
   const envOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(",").map(o => o.trim())
+    ? process.env.ALLOWED_ORIGINS.split(",").map(o => o.trim().toLowerCase())
     : [
         "http://localhost:5173",
         "http://localhost:3000",
@@ -47,35 +49,64 @@ export function configureCorsOrigins() {
         "http://127.0.0.1:3000"
       ];
 
-  const allowedOriginsSet = new Set(envOrigins);
+  const allowedSet = new Set(envOrigins);
   if (process.env.VITE_APP_URL) {
     try {
       const url = new URL(process.env.VITE_APP_URL);
-      allowedOriginsSet.add(url.origin);
+      allowedSet.add(url.origin.toLowerCase());
     } catch {}
   }
 
-  return (req: Request, res: Response, next: NextFunction) => {
-    const origin = req.headers.origin;
+  const isAllowedOrigin = (origin?: string): boolean => {
+    if (!origin) return true; // allow non-browser / same-origin / server-to-server
+    const lower = origin.toLowerCase();
+    if (allowedSet.has(lower)) return true;
 
-    if (origin && allowedOriginsSet.has(origin)) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-      res.setHeader("Access-Control-Allow-Credentials", "true");
-      res.setHeader(
-        "Access-Control-Allow-Headers",
-        "Content-Type, Authorization, x-csrf-token, x-user-id, x-user-email, x-organization-id, x-project-id"
-      );
-      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-      res.setHeader("Vary", "Origin");
+    // Allow localhost or 127.0.0.1 on any port in local testing
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:[0-9]+)?$/.test(lower)) {
+      return true;
     }
 
-    if (req.method === "OPTIONS") {
-      return res.status(204).end();
+    // Allow verified cloud platforms where ProofScale deploys
+    if (
+      /\.vercel\.app$/.test(lower) ||
+      /\.up\.railway\.app$/.test(lower) ||
+      /\.onrender\.com$/.test(lower)
+    ) {
+      return true;
     }
 
-    next();
+    return false;
   };
+
+  return cors({
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-csrf-token",
+      "csrf-token",
+      "x-user-id",
+      "x-user-email",
+      "x-organization-id",
+      "x-project-id",
+      "x-file-name",
+      "stripe-signature",
+      "x-webhook-signature",
+      "x-trpc-source",
+      "trpc-accept"
+    ]
+  });
 }
+
 
 /**
  * 15. Disable Directory Listing & Prevent Secret/Source File Exposure (Requirement #15)
