@@ -1,0 +1,41 @@
+﻿.text-loop-container {
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+}
+
+.text-loop-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: auto;
+}
+
+/* 
+ * The empty-space gotcha fix:
+ * The component's SVG uses a fixed 1200x520 viewBox with height: auto.
+ * This crop confines it to just the active 120px text row.
+ */
+.marquee-textloop-wrap {
+  height: 120px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.marquee-textloop-wrap .text-loop-svg {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  min-width: 1100px;
+  transform: translateY(-42%);
+}

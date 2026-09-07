@@ -5,7 +5,7 @@ import { SceneBackground } from "./home/SceneBackground";
 import { CardNav, CardNavItem } from "./home/CardNav";
 import { ThemeToggle } from "./home/ThemeToggle";
 import { HeroSection } from "./home/HeroSection";
-import { Marquee } from "./home/Marquee";
+import { TextLoop } from "./home/TextLoop";
 import { CapabilitiesBento } from "./home/CapabilitiesBento";
 import { CinematicStages } from "./home/CinematicStages";
 import { RolePathways } from "./home/RolePathways";
@@ -133,8 +133,23 @@ export function HomeView({
               onGoToDashboard={onGoToDashboard}
             />
 
-            {/* 2. Marquee: Infinite Horizontal Auto-Scroll Strip */}
-            <Marquee />
+            {/* 2. TextLoop: Wave-shaped kinetic text loop */}
+            <div className="marquee-textloop-wrap">
+              <TextLoop
+                text="DETERMINISTIC SCORING · SANDBOXED EXECUTION · SSRF GUARDED · BOUNDED LOAD · SLA VERIFIED"
+                shape="wave"
+                curviness={35}
+                speed={70}
+                separator="—"
+                fontSize={26}
+                fontWeight={700}
+                letterSpacing={2}
+                uppercase
+                color="var(--text-primary)"
+                ribbon={false}
+                pauseOnHover
+              />
+            </div>
 
             {/* 3. Capabilities: Mixed-Size Bento Grid with Hover-Reveal Visuals */}
             <CapabilitiesBento />
