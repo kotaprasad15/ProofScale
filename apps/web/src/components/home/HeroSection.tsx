@@ -105,8 +105,8 @@ export function HeroSection({
         </div>
       </div>
 
-      {/* Bottom Scroll Cue */}
-      <div className="relative z-10 max-w-7xl mx-auto w-full pt-8 flex items-center justify-between border-t border-[var(--border)] text-xs font-mono text-text-faint">
+      {/* Bottom Scroll Cue (borderline removed per request) */}
+      <div className="relative z-10 max-w-7xl mx-auto w-full pt-8 flex items-center justify-between text-xs font-mono text-text-faint">
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-signal-indigo" />
           <span>SPEC v1.4 · AES-GCM · SHA-256</span>

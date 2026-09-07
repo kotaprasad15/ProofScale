@@ -5,7 +5,7 @@ import { SceneBackground } from "./home/SceneBackground";
 import { CardNav, CardNavItem } from "./home/CardNav";
 import { ThemeToggle } from "./home/ThemeToggle";
 import { HeroSection } from "./home/HeroSection";
-import { TextLoop } from "./home/TextLoop";
+import { RibbonMarquee } from "./home/RibbonMarquee";
 import { CapabilitiesBento } from "./home/CapabilitiesBento";
 import { CinematicStages } from "./home/CinematicStages";
 import { RolePathways } from "./home/RolePathways";
@@ -133,23 +133,8 @@ export function HomeView({
               onGoToDashboard={onGoToDashboard}
             />
 
-            {/* 2. TextLoop: Wave-shaped kinetic text loop */}
-            <TextLoop
-              className="text-loop-compact"
-              text="DETERMINISTIC SCORING · SANDBOXED EXECUTION · SSRF GUARDED · BOUNDED LOAD · SLA VERIFIED"
-              shape="wave"
-              curviness={35}
-              speed={70}
-              direction="forward"
-              separator="—"
-              fontSize={26}
-              fontWeight={700}
-              letterSpacing={2}
-              uppercase
-              color="var(--text-primary)"
-              ribbon={false}
-              pauseOnHover
-            />
+            {/* 2. RibbonMarquee: Dual Crossing Ribbon Marquee Tape Strip */}
+            <RibbonMarquee />
 
             {/* 3. Capabilities: Mixed-Size Bento Grid with Hover-Reveal Visuals */}
             <CapabilitiesBento />

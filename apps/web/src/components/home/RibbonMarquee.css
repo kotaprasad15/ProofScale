@@ -1,0 +1,94 @@
+/* Ribbon Marquee Styles - Inspired by dual crossing brand ribbon tapes */
+
+.ribbon-marquee-container {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  padding: 4.5rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  pointer-events: none; /* Never pauses on hover */
+}
+
+.ribbon-strip {
+  position: absolute;
+  left: -10%;
+  width: 120%;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Ribbon 1: Angled downwards (-2.8deg), scrolling left */
+.ribbon-strip-1 {
+  transform: rotate(-2.8deg);
+  z-index: 10;
+  background: #5B5FEF;
+  box-shadow: 0 10px 25px rgba(91, 95, 239, 0.35), 0 4px 12px rgba(0, 0, 0, 0.25);
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Ribbon 2: Angled upwards (+2.8deg), crossing over Ribbon 1, scrolling right */
+.ribbon-strip-2 {
+  transform: rotate(2.8deg);
+  z-index: 20;
+  background: #4E52E2;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.45), 0 6px 16px rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Infinite continuous scroll tracks */
+.ribbon-track-left {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  will-change: transform;
+  animation: ribbonMarqueeLeft 34s linear infinite;
+}
+
+.ribbon-track-right {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  will-change: transform;
+  animation: ribbonMarqueeRight 34s linear infinite;
+}
+
+/* No hover pause - cursor will not stop the animation */
+.ribbon-track-left:hover,
+.ribbon-track-right:hover,
+.ribbon-marquee-container:hover .ribbon-track-left,
+.ribbon-marquee-container:hover .ribbon-track-right {
+  animation-play-state: running !important;
+}
+
+@keyframes ribbonMarqueeLeft {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes ribbonMarqueeRight {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ribbon-track-left,
+  .ribbon-track-right {
+    animation-duration: 70s;
+  }
+}

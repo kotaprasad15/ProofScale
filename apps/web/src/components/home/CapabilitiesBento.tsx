@@ -18,7 +18,7 @@ export function CapabilitiesBento() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   return (
-    <section id="capabilities" className="pt-12 sm:pt-16 pb-16 sm:pb-24 px-6 sm:px-12 relative z-10 border-t border-[var(--border)]">
+    <section id="capabilities" className="pt-8 sm:pt-12 pb-16 sm:pb-24 px-6 sm:px-12 relative z-10">
       <div className="max-w-7xl mx-auto space-y-16">
         
         {/* Section Heading */}
