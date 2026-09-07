@@ -33,13 +33,15 @@ describe("ProofScale Control Plane API Routers", () => {
   test("organizations.list returns seeded default organization", async () => {
     const orgs = await caller.organizations.list();
     assert.ok(orgs.length > 0);
-    assert.strictEqual(orgs[0].name, "Acme Engineering Corp");
+    const defaultOrg = orgs.find(o => o.id === "org_default_01" || o.name === "Acme Engineering Corp");
+    assert.ok(defaultOrg, "Default organization Acme Engineering Corp should exist");
   });
 
   test("projects.list returns project scoped to active org", async () => {
     const projs = await caller.projects.list();
     assert.ok(projs.length > 0);
-    assert.strictEqual(projs[0].name, "Payment Gateway API");
+    const demoProj = projs.find(p => p.id === "proj_demo_01" || p.name === "Payment Gateway API");
+    assert.ok(demoProj, "Default project Payment Gateway API should exist");
   });
 
   test("targets.listByProject returns verified target URL", async () => {

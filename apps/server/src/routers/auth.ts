@@ -319,6 +319,132 @@ export const authRouter = router({
     }),
 
   /**
+   * Real-time check if email is already registered
+   */
+  checkEmailAvailability: publicProcedure
+    .input(
+      z.object({
+        email: z.string().email()
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const email = input.email.trim().toLowerCase();
+      const [existing] = await ctx.db.select().from(users).where(eq(users.email, email));
+      return {
+        exists: !!existing,
+        message: existing ? "already this email exists" : "Email is available"
+      };
+    }),
+
+  /**
+   * Sign up new user with email, password, confirmPassword (encrypted in Supabase)
+   */
+  signup: publicProcedure
+    .input(
+      z.object({
+        email: z.string().email(),
+        password: z.string().min(10, "Password must be at least 10 characters long"),
+        confirmPassword: z.string().min(1, "Password confirmation is required"),
+        displayName: z.string().optional()
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const email = input.email.trim().toLowerCase();
+      const ip = ctx.req?.ip || "unknown_ip";
+
+      // 1. Validate password === confirmPassword
+      if (input.password !== input.confirmPassword) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Passwords do not match."
+        });
+      }
+
+      // 2. Validate Password Complexity
+      const complexity = PasswordService.validateComplexity(input.password);
+      if (!complexity.valid) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: complexity.reason || "Password does not meet complexity requirements."
+        });
+      }
+
+      // 3. Check if user already exists
+      const [existing] = await ctx.db.select().from(users).where(eq(users.email, email));
+      if (existing) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "already this email exists"
+        });
+      }
+
+      // 4. Hash password with salted scrypt (strong cryptographic hashing)
+      const passwordHash = PasswordService.hashPassword(input.password);
+      const userId = `usr_${crypto.randomUUID().slice(0, 8)}`;
+      const displayName = input.displayName?.trim() || email.split("@")[0];
+
+      // 5. Insert new user into database (Supabase PostgreSQL)
+      await ctx.db.insert(users).values({
+        id: userId,
+        email,
+        displayName,
+        role: "member",
+        onboardingStatus: "required", // User must create an org or join an org next
+        passwordHash,
+        failedLoginAttempts: 0,
+        lockedUntil: null
+      });
+
+      // 6. Create active session
+      const rawSessionToken = SessionSecurity.generateSessionToken();
+      const sessionTokenHash = SessionSecurity.hashSessionToken(rawSessionToken);
+      const csrfToken = SessionSecurity.generateCsrfToken();
+      const sessionId = `sess_${crypto.randomUUID().slice(0, 8)}`;
+      const expiresAt = new Date(Date.now() + SessionSecurity.SESSION_DURATION_MS);
+
+      await ctx.db.insert(sessions).values({
+        id: sessionId,
+        userId,
+        sessionTokenHash,
+        csrfToken,
+        ipAddress: ip,
+        userAgent: ctx.req?.headers?.["user-agent"] || "unknown",
+        expiresAt,
+        createdAt: new Date(),
+        lastActiveAt: new Date()
+      });
+
+      // 7. Issue secure HTTP cookie if response object is present
+      if (ctx.res && typeof ctx.res.cookie === "function") {
+        const isProd = process.env.NODE_ENV === "production";
+        const cookieOpts = SessionSecurity.getSecureCookieOptions(isProd);
+        ctx.res.cookie(SessionSecurity.COOKIE_NAME, rawSessionToken, cookieOpts);
+      }
+
+      // 8. Log security event
+      SecurityLogger.log({
+        eventType: "auth.login_success",
+        userId,
+        ipAddress: ip,
+        message: "New user registered and session created successfully"
+      });
+
+      return {
+        success: true,
+        sessionToken: rawSessionToken,
+        csrfToken,
+        user: {
+          id: userId,
+          email,
+          displayName,
+          role: "member",
+          onboardingStatus: "required",
+          lastWorkspaceId: null
+        }
+      };
+    }),
+
+  /**
    * 5, 17, 18, 19: Constant-time login, account lockout handling, secure cookie issuance, session ID rotation
    */
   login: publicProcedure
@@ -454,7 +580,9 @@ export const authRouter = router({
           id: user.id,
           email: user.email,
           displayName: user.displayName,
-          role: user.role
+          role: user.role,
+          onboardingStatus: user.onboardingStatus,
+          lastWorkspaceId: user.lastWorkspaceId
         }
       };
     }),

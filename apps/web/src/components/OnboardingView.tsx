@@ -113,7 +113,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
               }`}
             >
               <Building2 className="h-4 w-4" />
-              <span>Create Org</span>
+              <span>Create an Org</span>
             </button>
 
             <button
@@ -128,7 +128,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
               }`}
             >
               <Mail className="h-4 w-4" />
-              <span>Accept Invite</span>
+              <span>Join an Org (Code)</span>
             </button>
 
             <button
@@ -143,7 +143,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
               }`}
             >
               <UserPlus className="h-4 w-4" />
-              <span>Test App</span>
+              <span>Request Access</span>
             </button>
           </div>
 
@@ -221,21 +221,24 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
             </form>
           )}
 
-          {/* Tab 2: Accept Invite */}
+          {/* Tab 2: Join an Org with Invitation Code */}
           {tab === "invite" && (
             <form onSubmit={handleAcceptInvite} className="space-y-4">
               <div>
                 <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">
-                  Invitation Token / Code *
+                  Organization Invitation Code *
                 </label>
                 <input
                   type="text"
                   value={inviteToken}
                   onChange={(e) => setInviteToken(e.target.value)}
-                  placeholder="ps_inv_..."
+                  placeholder="Enter invitation code (e.g. ps_inv_...)"
                   required
                   className="w-full px-4 py-2.5 rounded-xl bg-ink-900/90 border border-white/[0.1] text-sm font-mono text-text-primary placeholder:text-text-faint focus:outline-none focus:border-signal-indigo"
                 />
+                <p className="text-[11px] text-text-muted mt-1 font-mono">
+                  Enter the secure code or invite token shared by your organization admin.
+                </p>
               </div>
 
               <button
@@ -247,7 +250,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                   <LoadingDots size="sm" />
                 ) : (
                   <>
-                    <span>Accept &amp; Enter Workspace</span>
+                    <span>Join Organization &amp; Enter Workspace</span>
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}

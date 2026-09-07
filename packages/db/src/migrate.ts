@@ -1,8 +1,11 @@
 import type Database from "better-sqlite3";
 import { sqliteDb } from "./client.js";
 
-export function runMigrations(customDb?: Database.Database) {
+export function runMigrations(customDb?: Database.Database | null) {
   const targetDb = customDb || sqliteDb;
+  if (!targetDb) {
+    return;
+  }
   console.log("⚡ Running automatic database table initialization...");
 
   targetDb.exec(`

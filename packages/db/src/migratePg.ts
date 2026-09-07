@@ -254,6 +254,13 @@ export async function runPgMigrations(connectionUrl?: string) {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER NOT NULL DEFAULT 0;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ;
+      ALTER TABLE test_plans ADD COLUMN IF NOT EXISTS safety_limits_json TEXT;
+      ALTER TABLE test_plans ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+      ALTER TABLE targets ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+      ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS worker_id TEXT;
+      ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS lease_owner TEXT;
+      ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS attempt_count INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS worker_profile TEXT DEFAULT 'standard-runner-1';
     `);
 
     // 2. Enable Row Level Security (RLS) on ALL tables and apply scoped service_role policies
@@ -283,29 +290,37 @@ export async function runPgMigrations(connectionUrl?: string) {
     for (const table of tables) {
       await client.query(`ALTER TABLE public.${table} ENABLE ROW LEVEL SECURITY;`);
       
-      // Clean up old permissive policies
+      // Ensure service_role_access policy exists idempotently
       await client.query(`
-        DROP POLICY IF EXISTS "Allow service and app access" ON public.${table};
-        DROP POLICY IF EXISTS "Allow all actions for service role and app" ON public.${table};
-        DROP POLICY IF EXISTS "service_role_access" ON public.${table};
-      `);
-
-      // Create policy restricted explicitly to service_role (bypasses RLS warnings on Supabase PostgREST)
-      await client.query(`
-        CREATE POLICY "service_role_access" ON public.${table}
-          TO service_role
-          USING (true)
-          WITH CHECK (true);
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_policies 
+            WHERE schemaname = 'public' AND tablename = '${table}' AND policyname = 'service_role_access'
+          ) THEN
+            CREATE POLICY "service_role_access" ON public.${table}
+              TO service_role
+              USING (true)
+              WITH CHECK (true);
+          END IF;
+        END $$;
       `);
     }
 
     // Public read-only policy for public report sharing links (SELECT is safe and permitted by Supabase linter)
     await client.query(`
-      DROP POLICY IF EXISTS "public_read_shares" ON public.report_shares;
-      CREATE POLICY "public_read_shares" ON public.report_shares
-        FOR SELECT
-        TO anon, authenticated
-        USING (true);
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_policies 
+          WHERE schemaname = 'public' AND tablename = 'report_shares' AND policyname = 'public_read_shares'
+        ) THEN
+          CREATE POLICY "public_read_shares" ON public.report_shares
+            FOR SELECT
+            TO anon, authenticated
+            USING (true);
+        END IF;
+      END $$;
     `);
 
     // 3. Create Indexes on ALL Foreign Keys (Resolves Supabase Performance Linter)
@@ -346,6 +361,81 @@ export async function runPgMigrations(connectionUrl?: string) {
       
       CREATE INDEX IF NOT EXISTS idx_report_shares_run_id ON public.report_shares(run_id);
     `);
+
+    // 4. Baseline Seed Data if default workspace does not exist
+    const orgRes = await client.query("SELECT id FROM public.organizations WHERE id = 'org_default_01';");
+    if (orgRes.rows.length === 0) {
+      const defaultOrgId = "org_default_01";
+      const defaultUserId = "usr_admin_01";
+      const defaultTesterId = "usr_tester_01";
+      const defaultProjectId = "proj_demo_01";
+      const defaultTargetId = "target_fixture_01";
+      const defaultPlanId = "plan_smoke_01";
+
+      await client.query(`
+        INSERT INTO public.users (id, email, display_name, role, onboarding_status, last_workspace_id)
+        VALUES 
+          ($1, 'lead@acme.dev', 'Alex Rivera (Org Owner)', 'admin', 'completed', $2),
+          ($3, 'qa.tester@acme.dev', 'Sam Taylor (Tester)', 'member', 'completed', $2)
+        ON CONFLICT (id) DO NOTHING;
+      `, [defaultUserId, defaultOrgId, defaultTesterId]);
+
+      await client.query(`
+        INSERT INTO public.organizations (id, name, slug, owner_id, owner_user_id, status)
+        VALUES ($1, 'Acme Engineering Corp', 'acme-engineering', $2, $2, 'active')
+        ON CONFLICT (id) DO NOTHING;
+      `, [defaultOrgId, defaultUserId]);
+
+      await client.query(`
+        INSERT INTO public.organization_members (id, organization_id, user_id, user_email, role, status)
+        VALUES 
+          ('mem_admin_01', $1, $2, 'lead@acme.dev', 'owner', 'active'),
+          ('mem_tester_01', $1, $3, 'qa.tester@acme.dev', 'tester', 'active')
+        ON CONFLICT (id) DO NOTHING;
+      `, [defaultOrgId, defaultUserId, defaultTesterId]);
+
+      await client.query(`
+        INSERT INTO public.projects (id, organization_id, owner_user_id, name, description, environment, status)
+        VALUES ($1, $2, $3, 'Payment Gateway API', 'Production readiness load validation for Checkout API v2', 'staging', 'active')
+        ON CONFLICT (id) DO NOTHING;
+      `, [defaultProjectId, defaultOrgId, defaultUserId]);
+
+      await client.query(`
+        INSERT INTO public.project_members (id, project_id, user_id, role, status)
+        VALUES 
+          ('pmem_admin_01', $1, $2, 'owner', 'active'),
+          ('pmem_tester_01', $1, $3, 'tester', 'active')
+        ON CONFLICT (id) DO NOTHING;
+      `, [defaultProjectId, defaultUserId, defaultTesterId]);
+
+      await client.query(`
+        INSERT INTO public.targets (id, project_id, base_url, health_url, environment, authorization_status, allowed_host)
+        VALUES ($1, $2, 'http://localhost:4000', 'http://localhost:4000/health', 'staging', 'verified', 'localhost:4000')
+        ON CONFLICT (id) DO NOTHING;
+      `, [defaultTargetId, defaultProjectId]);
+
+      const smokePreset = {
+        loadProfile: { virtualUsers: 5, durationSec: 30 },
+        thresholds: { errorRateMax: 0.01, p95LatencyMs: 250 }
+      };
+
+      await client.query(`
+        INSERT INTO public.test_plans (id, project_id, name, version, profile, scenarios_json, load_profile_json, thresholds_json, scoring_version)
+        VALUES ($1, $2, 'Checkout API Smoke Check', 1, 'smoke', $3, $4, $5, 'mvp-1')
+        ON CONFLICT (id) DO NOTHING;
+      `, [
+        defaultPlanId,
+        defaultProjectId,
+        JSON.stringify([
+          { name: "Health Check", method: "GET", path: "/health", weight: 1 },
+          { name: "List Products", method: "GET", path: "/api/v1/products", weight: 2 }
+        ]),
+        JSON.stringify(smokePreset.loadProfile),
+        JSON.stringify(smokePreset.thresholds)
+      ]);
+
+      console.log("🌱 Auto-seeded initial default workspace and admin users in Supabase PostgreSQL.");
+    }
 
     console.log("✅ Scoped RLS policies and FK indexes updated successfully on Supabase!");
     await client.end();
