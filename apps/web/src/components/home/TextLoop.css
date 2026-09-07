@@ -20,21 +20,15 @@
 }
 
 /*
- * Wrapper to crop the 1200×520 viewBox SVG down to a compact height.
- * The wave sits near CY=260, so we crop to show only the text band.
+ * Compact cropping: the SVG viewBox is 1200×520 but the wave text
+ * sits in a narrow band around CY=260. We force .text-loop to 120px
+ * and center the full-height SVG inside it so only the text band shows.
  */
-.marquee-textloop-wrap {
+.text-loop-compact {
   height: 120px;
-  overflow: hidden;
-  position: relative;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
 }
 
-.marquee-textloop-wrap .text-loop-svg {
+.text-loop-compact .text-loop-svg {
   position: absolute;
   top: 50%;
   left: 0;

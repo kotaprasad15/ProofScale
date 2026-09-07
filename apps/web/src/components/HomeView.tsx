@@ -134,23 +134,22 @@ export function HomeView({
             />
 
             {/* 2. TextLoop: Wave-shaped kinetic text loop */}
-            <div className="marquee-textloop-wrap">
-              <TextLoop
-                text="DETERMINISTIC SCORING · SANDBOXED EXECUTION · SSRF GUARDED · BOUNDED LOAD · SLA VERIFIED"
-                shape="wave"
-                curviness={35}
-                speed={70}
-                direction="forward"
-                separator="—"
-                fontSize={26}
-                fontWeight={700}
-                letterSpacing={2}
-                uppercase
-                color="var(--text-primary)"
-                ribbon={false}
-                pauseOnHover
-              />
-            </div>
+            <TextLoop
+              className="text-loop-compact"
+              text="DETERMINISTIC SCORING · SANDBOXED EXECUTION · SSRF GUARDED · BOUNDED LOAD · SLA VERIFIED"
+              shape="wave"
+              curviness={35}
+              speed={70}
+              direction="forward"
+              separator="—"
+              fontSize={26}
+              fontWeight={700}
+              letterSpacing={2}
+              uppercase
+              color="var(--text-primary)"
+              ribbon={false}
+              pauseOnHover
+            />
 
             {/* 3. Capabilities: Mixed-Size Bento Grid with Hover-Reveal Visuals */}
             <CapabilitiesBento />
