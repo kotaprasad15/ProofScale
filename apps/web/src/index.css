@@ -416,7 +416,10 @@ html.light .modal-panel--destructive {
 
 .field-input {
   width: 100%;
-  padding: 10px 14px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-left: 14px;
+  padding-right: 14px;
   border-radius: 12px;
   background-color: var(--field-fill);
   border: 1.5px solid var(--border);
@@ -424,6 +427,9 @@ html.light .modal-panel--destructive {
   font-size: 14px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   outline: none;
+}
+.field-input-has-icon {
+  padding-left: 44px !important;
 }
 .field-input:hover {
   border-color: var(--border-strong);

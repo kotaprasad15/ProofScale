@@ -275,7 +275,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
                     }}
                     placeholder="you@company.dev"
                     required
-                    className={`field-input pl-10 pr-4 py-2.5 ${
+                    className={`field-input field-input-has-icon pl-11 pr-4 py-2.5 ${
                       emailExists ? "border-signal-rose focus:border-signal-rose bg-signal-rose-soft/20" : ""
                     }`}
                   />
@@ -314,7 +314,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       placeholder="e.g. Alex Rivera"
-                      className="field-input pl-10 pr-4 py-2.5"
+                      className="field-input field-input-has-icon pl-11 pr-4 py-2.5"
                     />
                   </div>
                 </div>
@@ -336,7 +336,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
                     }}
                     placeholder={isSignUp ? "Minimum 10 characters" : "Enter your password"}
                     required
-                    className="field-input pl-10 pr-4 py-2.5"
+                    className="field-input field-input-has-icon pl-11 pr-4 py-2.5"
                   />
                 </div>
                 {isSignUp && password.length > 0 && !isPasswordLongEnough && (
@@ -363,7 +363,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
                       }}
                       placeholder="Re-enter your password"
                       required
-                      className={`field-input pl-10 pr-4 py-2.5 ${
+                      className={`field-input field-input-has-icon pl-11 pr-4 py-2.5 ${
                         !passwordsMatch ? "border-signal-rose focus:border-signal-rose bg-signal-rose-soft/20" : ""
                       }`}
                     />

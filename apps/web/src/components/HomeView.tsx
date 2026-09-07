@@ -1,10 +1,8 @@
 import React, { useMemo } from "react";
 import { ThemeProvider, useTheme } from "./home/ThemeContext";
 import { SmoothScroll } from "./home/SmoothScroll";
-import { CustomCursor } from "./home/CustomCursor";
 import { SceneBackground } from "./home/SceneBackground";
 import { CardNav, CardNavItem } from "./home/CardNav";
-import { BrandLogo } from "./BrandLogo";
 import { ThemeToggle } from "./home/ThemeToggle";
 import { HeroSection } from "./home/HeroSection";
 import { Marquee } from "./home/Marquee";
@@ -77,7 +75,19 @@ function HomeNavbar({
   return (
     <CardNav
       items={items}
-      childrenLogo={<BrandLogo showWordmark title="Rate cap" />}
+      childrenLogo={
+        <div
+          className="cursor-pointer select-none group flex items-center justify-center py-1"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          role="button"
+          tabIndex={0}
+          aria-label="Ratecap home"
+        >
+          <span className="font-raleway font-black text-xl sm:text-2xl tracking-[0.18em] text-text-primary group-hover:text-signal-indigo transition-colors">
+            RATECAP
+          </span>
+        </div>
+      }
       baseColor={isDark ? "rgba(16, 21, 31, 0.90)" : "rgba(255, 255, 255, 0.94)"}
       menuColor={isDark ? "#F1F3F9" : "#0C101A"}
       buttonBgColor={isDark ? "#5B5FEF" : "#4F53E8"}
@@ -101,9 +111,6 @@ export function HomeView({
     <ThemeProvider>
       <SmoothScroll>
         <div className="bg-[var(--color-bg)] min-h-screen text-text-primary selection:bg-signal-indigo/30 selection:text-white relative overflow-x-hidden transition-colors duration-300">
-          {/* Custom cursor with precision dot + lagging ring (hidden on touch) */}
-          <CustomCursor />
-
           {/* 3D Depth Particle Field & Floating Wireframe (Behind all content) */}
           <SceneBackground />
 

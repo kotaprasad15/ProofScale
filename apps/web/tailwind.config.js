@@ -7,7 +7,8 @@ export default {
       fontFamily: {
         display: ['"Space Grotesk"', 'sans-serif'],
         sans: ['Inter', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'monospace']
+        mono: ['"IBM Plex Mono"', 'monospace'],
+        raleway: ['"Raleway"', 'sans-serif']
       },
       colors: {
         ink: {
