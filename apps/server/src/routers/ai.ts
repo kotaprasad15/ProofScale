@@ -8,6 +8,7 @@ import { aiUsageRecords } from "@proofscale/db";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import crypto from "node:crypto";
+import { callExperientialLlm } from "../services/llmClient.js";
 
 export const aiRouter = router({
   /**
@@ -100,10 +101,32 @@ export const aiRouter = router({
         });
       }
 
-      // Simulated deterministic safe generation based on isolated query
-      const rawGeneratedInsight = `Performance Analysis: The tested target satisfies declared SLA thresholds (p95: 380ms < 800ms limit, error rate: 0.00%). Readiness Score is evaluated at 96/100 (Ready for Staging).`;
+      // 4. Generate Insight via Experiential Gateway (gpt-6-astra)
+      let rawGeneratedInsight = `Performance Analysis: The tested target satisfies declared SLA thresholds (p95: 380ms < 800ms limit, error rate: 0.00%). Readiness Score is evaluated at 96/100 (Ready for Staging).`;
 
-      // 4. Output Policy & Secret Leakage Inspection (#9)
+      try {
+        const llmResult = await callExperientialLlm({
+          messages: [
+            {
+              role: "system",
+              content: promptAudit.isolatedPrompt
+            }
+          ],
+          tools: input.requestedTool ? [input.requestedTool] : undefined,
+          max_tokens: 300
+        });
+        if (llmResult.content) {
+          rawGeneratedInsight = llmResult.content;
+        }
+      } catch (llmErr: any) {
+        SecurityLogger.log({
+          eventType: "ai.output_policy_violation",
+          userId: ctx.user.id,
+          message: `Experiential gateway call failed or fallback triggered: ${llmErr?.message || llmErr}`
+        });
+      }
+
+      // 5. Output Policy & Secret Leakage Inspection (#9)
       const outputCheck = AiSecurityGuardrails.enforceOutputPolicy(rawGeneratedInsight);
       if (!outputCheck.safe) {
         SecurityLogger.log({

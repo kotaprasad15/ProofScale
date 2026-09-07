@@ -1,6 +1,19 @@
 import React, { useState } from "react";
 import { trpc } from "../utils/trpc";
-import { Target, Plus, ShieldCheck, AlertCircle, CheckCircle2, Trash2, X, AlertTriangle } from "lucide-react";
+import {
+  Target,
+  Plus,
+  ShieldCheck,
+  AlertCircle,
+  CheckCircle2,
+  Trash2,
+  X,
+  AlertTriangle,
+  Globe,
+  Activity,
+  Server,
+  ArrowRight
+} from "lucide-react";
 import { LoadingDots } from "./LoadingDots";
 
 interface TargetRegistrationViewProps {
@@ -77,209 +90,289 @@ export function TargetRegistrationView({ projectId }: TargetRegistrationViewProp
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12">
+    <div className="max-w-5xl mx-auto space-y-8 pb-16">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-text-primary tracking-tight">Target Endpoint Registration</h2>
-        <p className="text-xs text-text-muted mt-1">
-          Register application HTTP/API targets, set environment labels, and manage authorization status.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[var(--border)]">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
+              Target Endpoints
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-[var(--white-fill-sm)] text-text-muted border border-[var(--border)]">
+              {targetsQuery.data?.length || 0} Registered
+            </span>
+          </div>
+          <p className="text-sm text-text-muted">
+            Register authorized HTTP/API endpoints, configure environment tiers, and enforce SSRF safety limits.
+          </p>
+        </div>
       </div>
 
-      {/* Registration Stepper */}
-      <div className="glass-panel p-6 sm:p-8 space-y-6">
+      {/* Stepped Registration Card */}
+      <div className="rounded-2xl bg-ink-900 border border-[var(--border)] p-6 sm:p-8 space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-text-primary flex items-center space-x-2">
-            <Plus className="h-5 w-5 text-signal-indigo" />
-            <span>Register New Target</span>
-          </h3>
-          <span className="font-mono text-[10px] text-text-muted uppercase tracking-wider">
-            Step {step + 1} / 3
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-signal-indigo/10 text-signal-indigo">
+              <Target className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-text-primary">Register New Target</h3>
+              <p className="text-xs text-text-muted">Declare endpoint URL, target environment, and safety clearance</p>
+            </div>
+          </div>
+          <span className="font-mono text-xs text-text-faint uppercase tracking-wider">
+            Step {step + 1} of 3
           </span>
         </div>
 
-        {/* Stepper indicator */}
-        <div className="flex items-center gap-3">
-          {["Endpoint", "Environment", "Authorization"].map((label, i) => (
-            <div key={label} className="flex items-center gap-2 flex-1 min-w-0">
-              <div className={`h-1 flex-1 rounded-full ${i <= step ? "bg-signal-indigo" : "bg-white/[0.08]"}`} />
-              <span className={`font-mono text-[10px] uppercase tracking-wider shrink-0 ${
-                i <= step ? "text-signal-indigo font-bold" : "text-text-faint"
-              }`}>
-                {label}
-              </span>
+        {/* Stepper progress indicator */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          {[
+            { label: "1. Endpoint URL", desc: "Base & health route" },
+            { label: "2. Environment", desc: "Deployment tier" },
+            { label: "3. Safety Clearance", desc: "Ownership certify" }
+          ].map((s, i) => (
+            <div
+              key={s.label}
+              className={`p-3 rounded-xl border transition ${
+                i === step
+                  ? "bg-signal-indigo/10 border-signal-indigo/30 text-signal-indigo"
+                  : i < step
+                  ? "bg-[var(--white-fill-sm)] border-signal-teal/30 text-signal-teal"
+                  : "bg-[var(--white-fill-sm)] border-[var(--border)] text-text-faint"
+              }`}
+            >
+              <div className="text-xs font-semibold">{s.label}</div>
+              <div className="text-[10px] font-mono text-text-muted hidden sm:block">{s.desc}</div>
             </div>
           ))}
         </div>
 
         {errorMsg && (
-          <div className="p-4 rounded-xl bg-signal-rose-soft border border-signal-rose/30 text-xs text-signal-rose flex items-center space-x-2">
-            <AlertCircle className="h-4 w-4 shrink-0" />
+          <div className="p-4 rounded-xl bg-signal-rose/10 border border-signal-rose/30 text-xs text-signal-rose flex items-center gap-2 font-mono">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="p-4 rounded-xl bg-signal-teal-soft border border-signal-teal/30 text-xs text-signal-teal flex items-center space-x-2">
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
+          <div className="p-4 rounded-xl bg-signal-teal/10 border border-signal-teal/30 text-xs text-signal-teal flex items-center gap-2 font-mono">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{successMsg}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Step 1 — Endpoint URL */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Step 0 — Endpoint URL */}
           {step === 0 && (
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">Base Target URL *</label>
-                <input
-                  type="url"
-                  value={baseUrl}
-                  onChange={e => setBaseUrl(e.target.value)}
-                  placeholder="https://api-staging.example.com"
-                  className="field-input field-input--mono"
-                />
+                <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">
+                  Base Target URL *
+                </label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-3.5 text-xs font-mono text-text-faint">
+                    <Globe className="w-4 h-4" />
+                  </span>
+                  <input
+                    type="url"
+                    value={baseUrl}
+                    onChange={(e) => setBaseUrl(e.target.value)}
+                    placeholder="https://api-staging.example.com"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--white-fill-sm)] border border-[var(--border)] focus:border-signal-indigo text-xs font-mono text-text-primary outline-none transition"
+                  />
+                </div>
+                <p className="text-[11px] text-text-faint font-mono mt-1">
+                  Target must be an HTTP or HTTPS endpoint resolvable by the worker execution cluster.
+                </p>
               </div>
+
               <div>
-                <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">Health Check URL (Optional)</label>
-                <input
-                  type="url"
-                  value={healthUrl}
-                  onChange={e => setHealthUrl(e.target.value)}
-                  placeholder="https://api-staging.example.com/health"
-                  className="field-input field-input--mono"
-                />
+                <label className="block text-xs font-mono text-text-muted mb-1.5 uppercase">
+                  Health Check URL (Optional)
+                </label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-3.5 text-xs font-mono text-text-faint">
+                    <Activity className="w-4 h-4" />
+                  </span>
+                  <input
+                    type="url"
+                    value={healthUrl}
+                    onChange={(e) => setHealthUrl(e.target.value)}
+                    placeholder="https://api-staging.example.com/health"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--white-fill-sm)] border border-[var(--border)] focus:border-signal-indigo text-xs font-mono text-text-primary outline-none transition"
+                  />
+                </div>
               </div>
             </div>
           )}
 
-          {/* Step 2 — Environment tag */}
+          {/* Step 1 — Environment */}
           {step === 1 && (
             <div className="space-y-3">
-              <label className="block text-xs font-mono text-text-muted uppercase">Target Environment</label>
+              <label className="block text-xs font-mono text-text-muted uppercase">
+                Select Target Environment Tier
+              </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {(["development", "staging", "production"] as const).map(env => (
+                {(["development", "staging", "production"] as const).map((env) => (
                   <button
                     key={env}
                     type="button"
                     onClick={() => setEnvironment(env)}
-                    className={`p-4 rounded-xl text-left transition cursor-pointer ${
+                    className={`p-4 rounded-xl text-left border transition cursor-pointer ${
                       environment === env
-                        ? "bg-signal-indigo-soft border-2 border-signal-indigo text-signal-indigo shadow-md shadow-signal-indigo/15"
-                        : "bg-[var(--color-surface)] border-2 border-[var(--border)] hover:border-signal-indigo/50 text-text-muted hover:text-text-primary hover:bg-[var(--white-fill-sm)]"
+                        ? "bg-signal-indigo/10 border-signal-indigo text-text-primary shadow-sm"
+                        : "bg-[var(--white-fill-sm)] border-[var(--border)] hover:border-[var(--border-strong)] text-text-muted"
                     }`}
                   >
-                    <div className="font-bold text-xs text-text-primary capitalize">{env}</div>
-                    <div className="text-[10px] font-mono text-text-faint mt-0.5">
-                      {env === "production" ? "Live traffic — highest risk" : env === "staging" ? "Pre-prod mirror" : "Local / dev sandbox"}
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-semibold text-xs text-text-primary capitalize">{env}</span>
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          env === "production"
+                            ? "bg-signal-amber"
+                            : env === "staging"
+                            ? "bg-signal-indigo"
+                            : "bg-signal-teal"
+                        }`}
+                      />
                     </div>
+                    <p className="text-[11px] font-mono text-text-muted">
+                      {env === "production"
+                        ? "Live production traffic"
+                        : env === "staging"
+                        ? "Pre-release staging mirror"
+                        : "Local / isolated testbed"}
+                    </p>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Step 3 — Authorization acknowledgement (brutalist) */}
+          {/* Step 2 — Safety Clearance */}
           {step === 2 && (
-            <div className="brutalist p-5 flex items-start space-x-3">
-              <input
-                type="checkbox"
-                id="authCheck"
-                checked={authAcknowledged}
-                onChange={e => setAuthAcknowledged(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded bg-ink-900 border-white/[0.2] text-signal-indigo focus:ring-0 cursor-pointer shrink-0"
-              />
-              <label htmlFor="authCheck" className="text-xs text-text-muted cursor-pointer select-none leading-relaxed">
-                <strong className="text-text-primary font-semibold uppercase tracking-wider block mb-1">
-                  Ownership Authorization Acknowledgement
-                </strong>
-                I certify that our organization owns, or holds explicit written authorization to execute, synthetic load tests against this target endpoint.
-              </label>
+            <div className="p-5 rounded-2xl bg-signal-indigo/5 border border-signal-indigo/20 space-y-4">
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="authCheck"
+                  checked={authAcknowledged}
+                  onChange={(e) => setAuthAcknowledged(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded bg-ink-900 border-[var(--border)] text-signal-indigo focus:ring-0 cursor-pointer shrink-0"
+                />
+                <label
+                  htmlFor="authCheck"
+                  className="text-xs text-text-muted cursor-pointer select-none leading-relaxed"
+                >
+                  <strong className="text-text-primary uppercase tracking-wide block mb-1 font-mono">
+                    Ownership Authorization & Anti-DDoS Certification
+                  </strong>
+                  I certify that our organization owns, manages, or possesses explicit written authorization to execute synthetic load tests and burst concurrency checks against <code className="text-signal-indigo font-bold">{baseUrl}</code>.
+                </label>
+              </div>
+
+              <div className="text-[11px] font-mono text-text-faint p-3 rounded-xl bg-[var(--white-fill-sm)] border border-[var(--border)]">
+                Note: RateCap enforces automated SSRF protection and will reject tests targeting internal loopbacks (127.0.0.1, 169.254.169.254) in production mode.
+              </div>
             </div>
           )}
 
-          {/* Nav / submit */}
-          <div className="flex gap-3 pt-1">
+          {/* Stepper Buttons */}
+          <div className="flex items-center gap-3 pt-2">
             {step > 0 && (
               <button
                 type="button"
-                onClick={() => { setStep(step - 1); setErrorMsg(null); }}
-                className="btn-glass-secondary cursor-pointer"
+                onClick={() => {
+                  setStep(step - 1);
+                  setErrorMsg(null);
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[var(--white-fill-sm)] hover:bg-[var(--white-fill-md)] text-text-primary border border-[var(--border)] transition cursor-pointer"
               >
                 Back
               </button>
             )}
+
             {step < 2 ? (
               <button
                 type="button"
                 onClick={handleNext}
-                className="btn-solid-primary flex-1 cursor-pointer"
+                className="flex-1 py-2 rounded-xl text-xs font-semibold bg-signal-indigo hover:bg-signal-indigo-hover text-white transition cursor-pointer flex items-center justify-center gap-2"
               >
-                Continue
+                <span>Continue</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             ) : (
               <button
                 type="submit"
                 disabled={createTargetMutation.isPending || !authAcknowledged}
-                className="btn-solid-primary flex-1 cursor-pointer"
+                className="flex-1 py-2 rounded-xl text-xs font-semibold bg-signal-indigo hover:bg-signal-indigo-hover text-white transition cursor-pointer disabled:opacity-50"
               >
-                {createTargetMutation.isPending ? "Validating SSRF & Registering..." : "Register & Verify Target"}
+                {createTargetMutation.isPending
+                  ? "Validating & Registering..."
+                  : "Register Target Endpoint"}
               </button>
             )}
           </div>
         </form>
       </div>
 
-      {/* Target List */}
-      <div className="glass-panel p-6 sm:p-8 space-y-4">
-        <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
-          <h3 className="text-base font-semibold text-text-primary">Registered Target Endpoints</h3>
-          <span className="text-xs font-mono text-text-muted px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.08]">
+      {/* Target List Table */}
+      <div className="rounded-2xl bg-ink-900 border border-[var(--border)] p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+          <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
+            <Server className="w-4 h-4 text-signal-indigo" />
+            <span>Configured Endpoints in Project</span>
+          </h3>
+          <span className="text-xs font-mono text-text-muted px-2.5 py-0.5 rounded-full bg-[var(--white-fill-sm)] border border-[var(--border)]">
             {targetsQuery.data?.length || 0} Total
           </span>
         </div>
 
         {targetsQuery.isLoading ? (
-          <div className="p-6 flex justify-center">
+          <div className="p-8 flex justify-center">
             <LoadingDots size="sm" label="Loading target endpoints..." />
           </div>
         ) : targetsQuery.data?.length === 0 ? (
-          <div className="text-xs text-text-muted font-mono py-6 text-center">
-            No target endpoints registered yet. Register a target above to begin performance testing.
+          <div className="text-xs text-text-muted font-mono py-8 text-center space-y-2">
+            <Target className="w-8 h-8 text-text-faint mx-auto mb-2" />
+            <p>No target endpoints registered yet.</p>
+            <p className="text-text-faint">Register an endpoint above to begin performance validations.</p>
           </div>
         ) : (
-          <div className="divide-y divide-white/[0.06]">
-            {targetsQuery.data?.map(t => (
+          <div className="divide-y divide-[var(--border)]">
+            {targetsQuery.data?.map((t) => (
               <div
                 key={t.id}
-                className="data-row py-4 px-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                style={{ "--accent": "#2FD4A6" } as React.CSSProperties}
+                className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-mono text-sm text-text-primary font-semibold">{t.baseUrl}</span>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-signal-teal-soft text-signal-teal border border-signal-teal/30">
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-mono text-xs font-semibold text-text-primary">
+                      {t.baseUrl}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase bg-signal-teal/10 text-signal-teal border border-signal-teal/20">
                       {t.authorizationStatus}
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-[var(--white-fill-sm)] text-text-muted border border-[var(--border)]">
+                      {t.environment}
                     </span>
                   </div>
                   {t.healthUrl && (
-                    <p className="text-xs text-text-muted font-mono">Health: {t.healthUrl}</p>
+                    <p className="text-xs text-text-muted font-mono">
+                      Health Probe: {t.healthUrl}
+                    </p>
                   )}
                 </div>
 
-                <div className="flex items-center space-x-3">
-                  <span className="px-2.5 py-1 rounded-lg bg-white/[0.04] text-text-muted text-xs font-mono">
-                    {t.environment}
-                  </span>
-
-                  {/* Remove Target Button */}
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setTargetToDelete({ id: t.id, baseUrl: t.baseUrl })}
-                    className="p-2 rounded-xl bg-white/[0.04] hover:bg-signal-rose-soft hover:text-signal-rose hover:border-signal-rose/30 text-text-muted border border-white/[0.06] transition cursor-pointer"
-                    title="Remove this target endpoint"
+                    className="p-2 rounded-xl bg-[var(--white-fill-sm)] hover:bg-signal-rose/10 hover:text-signal-rose hover:border-signal-rose/30 text-text-muted border border-[var(--border)] transition cursor-pointer"
+                    title="Remove target"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -291,28 +384,33 @@ export function TargetRegistrationView({ projectId }: TargetRegistrationViewProp
       {/* Target Deletion Confirmation Modal */}
       {targetToDelete && (
         <div
-          className="modal-backdrop"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setTargetToDelete(null);
-          }}
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          onClick={() => setTargetToDelete(null)}
         >
-          <div className="modal-panel--destructive max-w-md w-full p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="w-full max-w-md rounded-2xl bg-ink-900 border border-signal-rose/30 p-6 space-y-5 shadow-2xl text-text-primary"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-signal-rose-soft border border-signal-rose/30 flex items-center justify-center text-signal-rose shrink-0">
-                  <AlertTriangle className="h-5 w-5" />
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-signal-rose/10 border border-signal-rose/25 flex items-center justify-center text-signal-rose shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-text-primary text-base">Remove Target Endpoint?</h3>
-                  <p className="text-xs text-text-muted">This action cannot be undone.</p>
+                  <h3 className="font-semibold text-text-primary text-base">
+                    Remove Target Endpoint?
+                  </h3>
+                  <p className="text-xs text-text-muted">This action is immediate and cannot be undone.</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setTargetToDelete(null)}
-                className="text-text-muted hover:text-text-primary p-1 rounded-lg hover:bg-[var(--white-fill-sm)] transition cursor-pointer"
+                className="text-text-muted hover:text-text-primary p-1 rounded-lg"
               >
-                <X className="h-5 w-5" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -321,32 +419,24 @@ export function TargetRegistrationView({ projectId }: TargetRegistrationViewProp
             </div>
 
             <p className="text-xs text-text-muted leading-relaxed">
-              Are you sure you want to remove this target endpoint? Test plans will need to point to an active endpoint to execute.
+              Test plans referencing this endpoint will be unable to run until re-associated with another verified target.
             </p>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex items-center gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setTargetToDelete(null)}
-                className="btn-glass-secondary flex-1 justify-center cursor-pointer"
+                className="flex-1 py-2 rounded-xl text-xs font-semibold bg-[var(--white-fill-sm)] hover:bg-[var(--white-fill-md)] text-text-primary border border-[var(--border)] transition cursor-pointer"
               >
                 Cancel
               </button>
-
               <button
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={deleteTargetMutation.isPending}
-                className="btn-destructive flex-1"
+                className="flex-1 py-2 rounded-xl text-xs font-semibold bg-signal-rose hover:bg-signal-rose/90 text-white transition cursor-pointer"
               >
-                {deleteTargetMutation.isPending ? (
-                  <span>Removing...</span>
-                ) : (
-                  <>
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span>Yes, Remove Target</span>
-                  </>
-                )}
+                {deleteTargetMutation.isPending ? "Removing..." : "Confirm Removal"}
               </button>
             </div>
           </div>
