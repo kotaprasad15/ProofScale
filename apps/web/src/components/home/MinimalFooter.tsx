@@ -1,6 +1,6 @@
 import React from "react";
 import { BrandLogo } from "../BrandLogo";
-import { Marquee } from "./Marquee";
+import { TextLoop } from "./TextLoop";
 
 interface MinimalFooterProps {
   onSignIn?: () => void;
@@ -9,8 +9,24 @@ interface MinimalFooterProps {
 export function MinimalFooter({ onSignIn }: MinimalFooterProps) {
   return (
     <footer className="relative z-10 border-t border-[var(--border)] bg-[var(--color-bg)]">
-      {/* Repeated Marquee Strip */}
-      <Marquee />
+      {/* TextLoop wave strip */}
+      <div className="marquee-textloop-wrap">
+        <TextLoop
+          text="DETERMINISTIC SCORING · SANDBOXED EXECUTION · SSRF GUARDED · BOUNDED LOAD · SLA VERIFIED"
+          shape="wave"
+          curviness={35}
+          speed={70}
+          direction="forward"
+          separator="—"
+          fontSize={26}
+          fontWeight={700}
+          letterSpacing={2}
+          uppercase
+          color="var(--text-primary)"
+          ribbon={false}
+          pauseOnHover
+        />
+      </div>
 
       {/* Minimal Footer Row */}
       <div className="max-w-7xl mx-auto px-6 sm:px-12 py-10 flex flex-col sm:flex-row items-center justify-between gap-6">

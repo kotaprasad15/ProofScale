@@ -140,6 +140,7 @@ export function HomeView({
                 shape="wave"
                 curviness={35}
                 speed={70}
+                direction="forward"
                 separator="—"
                 fontSize={26}
                 fontWeight={700}

@@ -35,7 +35,7 @@ const GUARDRAILS = [
 
 export function SafetyGuardrails() {
   return (
-    <section id="safety" className="py-24 sm:py-36 px-6 sm:px-12 relative z-10 border-t border-[var(--border)] bg-[var(--color-surface)]/20">
+    <section id="safety" className="py-16 sm:py-24 px-6 sm:px-12 relative z-10 border-t border-[var(--border)] bg-[var(--color-surface)]/20">
       <div className="max-w-7xl mx-auto space-y-12">
         
         {/* Section Heading */}

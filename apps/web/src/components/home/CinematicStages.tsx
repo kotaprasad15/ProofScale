@@ -70,7 +70,7 @@ export function CinematicStages() {
       {STAGES.map((stage, idx) => (
         <div
           key={stage.number}
-          className="stage-panel min-h-screen py-24 sm:py-32 px-6 sm:px-12 border-t border-[var(--border)] flex items-center relative overflow-hidden"
+          className="stage-panel py-16 sm:py-24 px-6 sm:px-12 border-t border-[var(--border)] flex items-center relative overflow-hidden"
           style={{ backgroundColor: stage.bgWash }}
         >
           {/* Giant Watermark Stage Number in Corner */}

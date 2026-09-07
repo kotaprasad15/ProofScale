@@ -17,7 +17,7 @@ export function HeroSection({
   onGoToDashboard
 }: HeroSectionProps) {
   return (
-    <section className="relative min-h-screen flex flex-col justify-between pt-24 pb-12 px-6 sm:px-12 overflow-hidden">
+    <section className="relative min-h-screen flex flex-col justify-between pt-24 pb-4 px-6 sm:px-12 overflow-hidden">
       {/* Slow-drifting grain-textured gradient mesh background */}
       <div
         aria-hidden="true"

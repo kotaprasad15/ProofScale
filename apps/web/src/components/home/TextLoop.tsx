@@ -1,188 +1,228 @@
-﻿import React, { useId, useLayoutEffect, useEffect, useRef } from "react";
-import { gsap } from "gsap";
-import "./TextLoop.css";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { gsap } from 'gsap';
 
-export interface TextLoopProps {
-  text: string;
-  shape?: "wave" | "circle" | "infinity" | "arch" | "line";
-  curviness?: number;
+import './TextLoop.css';
+
+const VIEW_W = 1200;
+const VIEW_H = 520;
+const CX = VIEW_W / 2;
+const CY = VIEW_H / 2;
+const EDGE_PAD = 6;
+
+const buildPath = (shape: string, curviness: number, ribbonWidth: number): string => {
+  const c = Math.max(0, curviness);
+  const room = Math.max(20, CY - Math.max(0, ribbonWidth) / 2 - EDGE_PAD);
+
+  switch (shape) {
+    case 'circle': {
+      const r = Math.min(90 + c * 0.95, room);
+      return `M ${CX - r} ${CY} A ${r} ${r} 0 1 1 ${CX + r} ${CY} A ${r} ${r} 0 1 1 ${CX - r} ${CY} Z`;
+    }
+    case 'infinity': {
+      const r = 150 + c * 1.4;
+      const h = Math.min(60 + c * 0.95, room);
+      return [
+        `M ${CX} ${CY}`,
+        `C ${CX + r * 0.55} ${CY - h} ${CX + r} ${CY - h} ${CX + r} ${CY}`,
+        `C ${CX + r} ${CY + h} ${CX + r * 0.55} ${CY + h} ${CX} ${CY}`,
+        `C ${CX - r * 0.55} ${CY - h} ${CX - r} ${CY - h} ${CX - r} ${CY}`,
+        `C ${CX - r} ${CY + h} ${CX - r * 0.55} ${CY + h} ${CX} ${CY}`,
+        'Z'
+      ].join(' ');
+    }
+    case 'arch': {
+      const rise = Math.min(120 + c * 1.1, room * 2);
+      return `M 120 ${CY + rise / 2} Q ${CX} ${CY - rise * 1.5} ${VIEW_W - 120} ${CY + rise / 2}`;
+    }
+    case 'line':
+      return `M -320 ${CY} L ${VIEW_W + 320} ${CY}`;
+    case 'wave':
+    default: {
+      const a = Math.min(c * 2.2, room * 2);
+      return `M -320 ${CY} Q -160 ${CY - a} 0 ${CY} T 320 ${CY} T 640 ${CY} T 960 ${CY} T 1280 ${CY} T ${VIEW_W + 320} ${CY}`;
+    }
+  }
+};
+
+interface TextLoopProps {
+  text?: string;
+  shape?: 'wave' | 'circle' | 'infinity' | 'arch' | 'line';
+  path?: string;
   speed?: number;
+  direction?: 'forward' | 'reverse';
   separator?: string;
+  curviness?: number;
   fontSize?: number;
-  fontWeight?: number | string;
+  fontWeight?: number;
   letterSpacing?: number;
   uppercase?: boolean;
   color?: string;
   ribbon?: boolean;
   ribbonColor?: string;
+  ribbonWidth?: number;
   pauseOnHover?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
 
 export const TextLoop: React.FC<TextLoopProps> = ({
-  text,
-  shape = "wave",
-  curviness = 35,
-  speed = 70,
-  separator = "—",
-  fontSize = 26,
-  fontWeight = 700,
+  text = 'React \u2726 Bits',
+  shape = 'wave',
+  path,
+  speed = 90,
+  direction = 'forward',
+  separator = '\u2726',
+  curviness = 90,
+  fontSize = 46,
+  fontWeight = 800,
   letterSpacing = 2,
   uppercase = true,
-  color = "var(--text-primary)",
-  ribbon = false,
-  ribbonColor,
+  color = '#ffffff',
+  ribbon = true,
+  ribbonColor = '#5227FF',
+  ribbonWidth = 86,
   pauseOnHover = true,
-  className = "",
-  style
+  className = '',
+  style = {}
 }) => {
-  const generatedId = useId();
-  const pathId = `text-loop-path-${generatedId.replace(/:/g, "")}`;
-  const textPathRef = useRef<SVGTextPathElement | null>(null);
-  const tweenRef = useRef<gsap.core.Tween | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const pathRef = useRef<SVGPathElement | null>(null);
+  const measureRef = useRef<SVGTextElement | null>(null);
+  const headRef = useRef<SVGTextPathElement | null>(null);
+  const tailRef = useRef<SVGTextPathElement | null>(null);
 
-  const cleanText = uppercase ? text.toUpperCase() : text;
-  const unitText = `${cleanText} ${separator} `;
-  // 10 units guarantee continuous seamless coverage across the 1200px SVG path
-  const REPEAT_COUNT = 10;
-  const fullContent = Array(REPEAT_COUNT).fill(unitText).join("");
+  const [metrics, setMetrics] = useState({ length: 0, reps: 1 });
 
-  // Build the wave path across the 1200x520 viewBox
-  const amp = curviness;
-  let pathD = "";
+  const rawId = useId();
+  const pathId = `text-loop-${rawId.replace(/:/g, '')}`;
 
-  if (shape === "line") {
-    pathD = "M -400 260 L 2200 260";
-  } else if (shape === "arch") {
-    pathD = `M -400 ${260 + amp * 2} Q 600 ${260 - amp * 3} 2000 ${260 + amp * 2}`;
-  } else {
-    // Default: smooth sinusoidal wave
-    pathD = `
-      M -400 260
-      C -250 ${260 - amp * 2}, -50 ${260 + amp * 2}, 100 260
-      C 250 ${260 - amp * 2}, 450 ${260 + amp * 2}, 600 260
-      C 750 ${260 - amp * 2}, 950 ${260 + amp * 2}, 1100 260
-      C 1250 ${260 - amp * 2}, 1450 ${260 + amp * 2}, 1600 260
-      C 1750 ${260 - amp * 2}, 1950 ${260 + amp * 2}, 2100 260
-    `.trim();
-  }
+  const d = useMemo(() => path || buildPath(shape, curviness, ribbonWidth), [path, shape, curviness, ribbonWidth]);
 
-  const useIsomorphicEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+  const unit = useMemo(() => {
+    const base = uppercase ? String(text).toUpperCase() : String(text);
+    const gap = separator ? `\u00A0${separator}\u00A0` : '\u00A0\u00A0\u00A0';
+    return `${base}${gap}`;
+  }, [text, separator, uppercase]);
 
-  useIsomorphicEffect(() => {
-    const textPathEl = textPathRef.current;
-    if (!textPathEl) return;
+  const textStyle = useMemo(
+    () => ({ fontSize: `${fontSize}px`, fontWeight, letterSpacing: `${letterSpacing}px` }),
+    [fontSize, fontWeight, letterSpacing]
+  );
 
-    let computedTotal = 0;
-    try {
-      computedTotal = textPathEl.getComputedTextLength();
-    } catch {
-      computedTotal = 0;
-    }
+  useLayoutEffect(() => {
+    const pathEl = pathRef.current;
+    const measureEl = measureRef.current;
+    if (!pathEl || !measureEl) return undefined;
 
-    // Fallback measurement if offscreen or hidden
-    const unitLength = computedTotal > 0 ? computedTotal / REPEAT_COUNT : 900;
-    const duration = Math.max(unitLength / Math.max(speed, 1), 2);
+    let cancelled = false;
 
-    const ctx = gsap.context(() => {
-      const tween = gsap.fromTo(
-        textPathEl,
-        { attr: { startOffset: 0 } },
-        {
-          attr: { startOffset: -unitLength },
-          duration,
-          ease: "none",
-          repeat: -1
-        }
-      );
-      tweenRef.current = tween;
-
-      // Handle prefers-reduced-motion
-      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-      if (prefersReducedMotion.matches) {
-        tween.pause();
+    const measure = () => {
+      if (cancelled) return;
+      let length = 0;
+      let unitWidth = 0;
+      try {
+        length = pathEl.getTotalLength();
+        unitWidth = measureEl.getComputedTextLength();
+      } catch {
+        return;
       }
+      if (!length) return;
 
-      const handleMotionChange = (e: MediaQueryListEvent) => {
-        if (e.matches) {
-          tween.pause();
-        } else {
-          tween.play();
-        }
-      };
+      const reps = unitWidth > 0 ? Math.max(1, Math.round(length / unitWidth)) : 1;
+      setMetrics(prev => (prev.length === length && prev.reps === reps ? prev : { length, reps }));
+    };
 
-      prefersReducedMotion.addEventListener("change", handleMotionChange);
-      return () => {
-        prefersReducedMotion.removeEventListener("change", handleMotionChange);
-      };
-    });
+    measure();
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      document.fonts.ready.then(measure).catch(() => {});
+    }
 
     return () => {
-      ctx.revert();
-      tweenRef.current = null;
+      cancelled = true;
     };
-  }, [text, shape, curviness, speed, separator, fontSize, letterSpacing, uppercase]);
+  }, [d, unit, fontSize, fontWeight, letterSpacing]);
 
-  const handleMouseEnter = () => {
-    if (pauseOnHover && tweenRef.current) {
-      tweenRef.current.pause();
+  useEffect(() => {
+    const { length } = metrics;
+    const head = headRef.current;
+    const tail = tailRef.current;
+    if (!head || !tail || !length) return undefined;
+
+    const apply = (offset: number) => {
+      const partner = offset >= 0 ? offset - length : offset + length;
+      head.setAttribute('startOffset', String(offset));
+      tail.setAttribute('startOffset', String(partner));
+    };
+
+    apply(0);
+
+    const prefersReduced =
+      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced || speed <= 0) return undefined;
+
+    const state = { offset: 0 };
+    const tween = gsap.to(state, {
+      offset: direction === 'reverse' ? -length : length,
+      duration: length / speed,
+      ease: 'none',
+      repeat: -1,
+      onUpdate: () => apply(state.offset)
+    });
+
+    const root = rootRef.current;
+    const pause = () => tween.pause();
+    const resume = () => tween.resume();
+
+    if (pauseOnHover && root) {
+      root.addEventListener('pointerenter', pause);
+      root.addEventListener('pointerleave', resume);
     }
-  };
 
-  const handleMouseLeave = () => {
-    if (pauseOnHover && tweenRef.current) {
-      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (!prefersReducedMotion) {
-        tweenRef.current.play();
+    return () => {
+      tween.kill();
+      if (pauseOnHover && root) {
+        root.removeEventListener('pointerenter', pause);
+        root.removeEventListener('pointerleave', resume);
       }
-    }
-  };
+    };
+  }, [metrics, speed, direction, pauseOnHover]);
+
+  const loopText = unit.repeat(metrics.reps);
+  const fitLength = metrics.length || undefined;
 
   return (
-    <div
-      className={`text-loop-container ${className}`.trim()}
-      style={style}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div ref={rootRef} className={`text-loop ${className}`.trim()} style={style}>
       <svg
         className="text-loop-svg"
-        viewBox="0 0 1200 520"
+        viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
         preserveAspectRatio="xMidYMid meet"
+        role="img"
         aria-label={text}
-        role="region"
       >
-        <defs>
-          <path id={pathId} d={pathD} fill="none" />
-        </defs>
+        <path
+          ref={pathRef}
+          id={pathId}
+          d={d}
+          fill="none"
+          stroke={ribbon ? ribbonColor : 'none'}
+          strokeWidth={ribbon ? ribbonWidth : 0}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
 
-        {ribbon && (
-          <path
-            d={pathD}
-            fill="none"
-            stroke={ribbonColor || "rgba(255, 255, 255, 0.08)"}
-            strokeWidth={fontSize * 2.2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        )}
+        <text ref={measureRef} className="text-loop-measure" style={textStyle} aria-hidden="true">
+          {unit}
+        </text>
 
-        <text
-          fill={color}
-          fontSize={fontSize}
-          fontWeight={fontWeight}
-          letterSpacing={letterSpacing}
-          style={{
-            fontFamily: "'Space Grotesk', 'Inter', sans-serif"
-          }}
-        >
-          <textPath
-            ref={textPathRef}
-            href={`#${pathId}`}
-            startOffset={0}
-          >
-            {fullContent}
+        <text className="text-loop-text" style={textStyle} fill={color} dominantBaseline="central" aria-hidden="true">
+          <textPath ref={headRef} href={`#${pathId}`} startOffset={0} textLength={fitLength} lengthAdjust="spacing">
+            {loopText}
+          </textPath>
+        </text>
+
+        <text className="text-loop-text" style={textStyle} fill={color} dominantBaseline="central" aria-hidden="true">
+          <textPath ref={tailRef} href={`#${pathId}`} startOffset={0} textLength={fitLength} lengthAdjust="spacing">
+            {loopText}
           </textPath>
         </text>
       </svg>

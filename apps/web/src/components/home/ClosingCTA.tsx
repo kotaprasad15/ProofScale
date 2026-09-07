@@ -17,7 +17,7 @@ export function ClosingCTA({
   onGoToDashboard
 }: ClosingCTAProps) {
   return (
-    <section className="py-28 sm:py-44 px-6 sm:px-12 relative z-10 border-t border-[var(--border)] overflow-hidden">
+    <section className="py-20 sm:py-28 px-6 sm:px-12 relative z-10 border-t border-[var(--border)] overflow-hidden">
       {/* Background ambient gradient glow */}
       <div
         aria-hidden="true"
