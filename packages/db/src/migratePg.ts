@@ -5,6 +5,25 @@ import path from "node:path";
 dotenv.config({ path: path.resolve(process.cwd(), "../../.env") });
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
+function normalizePgUrl(rawUrl: string): string {
+  const clean = rawUrl.replace(/\[|\]/g, "").trim();
+  try {
+    const u = new URL(clean);
+    const match = u.hostname.match(/^db\.([a-z0-9]+)\.supabase\.co$/);
+    if (match) {
+      const projectRef = match[1];
+      const region = process.env.SUPABASE_REGION || "ap-southeast-1";
+      u.hostname = `aws-0-${region}.pooler.supabase.com`;
+      u.port = "6543";
+      if (u.username === "postgres") {
+        u.username = `postgres.${projectRef}`;
+      }
+      return u.toString();
+    }
+  } catch {}
+  return clean;
+}
+
 export async function runPgMigrations(connectionUrl?: string) {
   const url = connectionUrl || process.env.DATABASE_URL;
   if (!url || (!url.startsWith("postgres://") && !url.startsWith("postgresql://"))) {
@@ -12,7 +31,7 @@ export async function runPgMigrations(connectionUrl?: string) {
     return;
   }
 
-  const cleanUrl = url.replace(/\[|\]/g, "").trim();
+  const cleanUrl = normalizePgUrl(url);
   console.log("⚡ Connecting to Supabase PostgreSQL for automated schema migration & hardening...");
 
   const client = new pg.Client({

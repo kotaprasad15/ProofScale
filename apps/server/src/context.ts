@@ -37,34 +37,38 @@ export async function createContext({ req, res }: { req: any; res?: any }): Prom
   const sessionToken = cookieToken || bearerToken;
 
   if (sessionToken) {
-    const tokenHash = SessionSecurity.hashSessionToken(sessionToken);
-    const now = new Date();
+    try {
+      const tokenHash = SessionSecurity.hashSessionToken(sessionToken);
+      const now = new Date();
 
-    const [activeSession] = await db
-      .select()
-      .from(sessions)
-      .where(
-        and(
-          eq(sessions.sessionTokenHash, tokenHash),
-          isNull(sessions.revokedAt),
-          gt(sessions.expiresAt, now)
-        )
-      );
+      const [activeSession] = await db
+        .select()
+        .from(sessions)
+        .where(
+          and(
+            eq(sessions.sessionTokenHash, tokenHash),
+            isNull(sessions.revokedAt),
+            gt(sessions.expiresAt, now)
+          )
+        );
 
-    if (activeSession) {
-      activeSessionId = activeSession.id;
-      activeCsrfToken = activeSession.csrfToken;
+      if (activeSession) {
+        activeSessionId = activeSession.id;
+        activeCsrfToken = activeSession.csrfToken;
 
-      // Fetch user associated with session
-      const [u] = await db.select().from(users).where(eq(users.id, activeSession.userId));
-      if (u) {
-        dbUser = u;
-        // Update lastActiveAt asynchronously
-        db.update(sessions)
-          .set({ lastActiveAt: now })
-          .where(eq(sessions.id, activeSession.id))
-          .catch(() => {});
+        // Fetch user associated with session
+        const [u] = await db.select().from(users).where(eq(users.id, activeSession.userId));
+        if (u) {
+          dbUser = u;
+          // Update lastActiveAt asynchronously
+          db.update(sessions)
+            .set({ lastActiveAt: now })
+            .where(eq(sessions.id, activeSession.id))
+            .catch(() => {});
+        }
       }
+    } catch (sessionErr: any) {
+      console.warn("Session resolution warning:", sessionErr.message);
     }
   }
 
@@ -99,54 +103,59 @@ export async function createContext({ req, res }: { req: any; res?: any }): Prom
 
   // Resolve active organization membership
   let orgRole: string | null = null;
+  let projectRole: string | null = null;
+
   if (dbUser) {
-    if (!organizationId) {
-      // Default to lastWorkspaceId or first available org
-      if (dbUser.lastWorkspaceId) {
-        organizationId = dbUser.lastWorkspaceId;
-      } else {
-        const [firstOrg] = await db
-          .select()
-          .from(organizationMembers)
-          .where(and(eq(organizationMembers.userId, dbUser.id), eq(organizationMembers.status, "active")));
-        if (firstOrg) {
-          organizationId = firstOrg.organizationId;
+    try {
+      if (!organizationId) {
+        // Default to lastWorkspaceId or first available org
+        if (dbUser.lastWorkspaceId) {
+          organizationId = dbUser.lastWorkspaceId;
+        } else {
+          const [firstOrg] = await db
+            .select()
+            .from(organizationMembers)
+            .where(and(eq(organizationMembers.userId, dbUser.id), eq(organizationMembers.status, "active")));
+          if (firstOrg) {
+            organizationId = firstOrg.organizationId;
+          }
         }
       }
-    }
 
-    if (organizationId) {
-      const [member] = await db
-        .select()
-        .from(organizationMembers)
-        .where(
-          and(
-            eq(organizationMembers.organizationId, organizationId),
-            eq(organizationMembers.userId, dbUser.id),
-            eq(organizationMembers.status, "active")
-          )
-        );
-      if (member) {
-        orgRole = member.role;
+      if (organizationId) {
+        const [member] = await db
+          .select()
+          .from(organizationMembers)
+          .where(
+            and(
+              eq(organizationMembers.organizationId, organizationId),
+              eq(organizationMembers.userId, dbUser.id),
+              eq(organizationMembers.status, "active")
+            )
+          );
+        if (member) {
+          orgRole = member.role;
+        }
       }
-    }
-  }
 
-  // Resolve active project membership
-  let projectRole: string | null = null;
-  if (dbUser && projectId) {
-    const [pm] = await db
-      .select()
-      .from(projectMembers)
-      .where(
-        and(
-          eq(projectMembers.projectId, projectId),
-          eq(projectMembers.userId, dbUser.id),
-          eq(projectMembers.status, "active")
-        )
-      );
-    if (pm) {
-      projectRole = pm.role;
+      // Resolve active project membership
+      if (projectId) {
+        const [pm] = await db
+          .select()
+          .from(projectMembers)
+          .where(
+            and(
+              eq(projectMembers.projectId, projectId),
+              eq(projectMembers.userId, dbUser.id),
+              eq(projectMembers.status, "active")
+            )
+          );
+        if (pm) {
+          projectRole = pm.role;
+        }
+      }
+    } catch (membershipErr: any) {
+      console.warn("Membership resolution warning:", membershipErr.message);
     }
   }
 

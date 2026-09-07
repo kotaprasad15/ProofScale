@@ -27,6 +27,27 @@ if (!envLoaded) {
   dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 }
 
+export function normalizeDatabaseUrl(url: string): string {
+  let clean = url.replace(/\[|\]/g, "").trim();
+  try {
+    const u = new URL(clean);
+    // Direct Supabase host: db.<project-ref>.supabase.co
+    const match = u.hostname.match(/^db\.([a-z0-9]+)\.supabase\.co$/);
+    if (match) {
+      const projectRef = match[1];
+      const region = process.env.SUPABASE_REGION || "ap-southeast-1";
+      // Auto-rewrite direct IPv6-only host to IPv4 connection pooler
+      u.hostname = `aws-0-${region}.pooler.supabase.com`;
+      u.port = "6543";
+      if (u.username === "postgres") {
+        u.username = `postgres.${projectRef}`;
+      }
+      return u.toString();
+    }
+  } catch {}
+  return clean;
+}
+
 const dbUrl = process.env.DATABASE_URL || "";
 export const isPostgres = dbUrl.startsWith("postgres://") || dbUrl.startsWith("postgresql://");
 
@@ -35,10 +56,13 @@ let pgPool: pg.Pool | null = null;
 let dbInstance: any = null;
 
 if (isPostgres) {
-  const cleanUrl = dbUrl.replace(/\[|\]/g, "").trim();
+  const cleanUrl = normalizeDatabaseUrl(dbUrl);
   pgPool = new pg.Pool({
     connectionString: cleanUrl,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+    max: 20
   });
 
   // Automatically ensure all tables, RLS, and indexes exist
