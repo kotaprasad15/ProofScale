@@ -219,11 +219,11 @@ export const CardNav: React.FC<CardNavProps> = ({
   };
 
   return (
-    <div ref={containerRef} className={card-nav-container }>
-      <nav ref={navRef} className={card-nav } style={{ backgroundColor: baseColor }}>
+    <div ref={containerRef} className={`card-nav-container ${className}`.trim()}>
+      <nav ref={navRef} className={`card-nav ${isExpanded ? 'open' : ''}`.trim()} style={{ backgroundColor: baseColor }}>
         <div className="card-nav-top">
           <div
-            className={hamburger-menu }
+            className={`hamburger-menu ${isHamburgerOpen ? 'open' : ''}`.trim()}
             onClick={toggleMenu}
             onKeyDown={e => {
               if (e.key === 'Enter' || e.key === ' ') {

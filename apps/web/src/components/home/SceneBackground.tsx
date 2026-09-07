@@ -376,7 +376,29 @@ function CameraRig({ reducedMotion, scrollProgressRef }: CameraRigProps) {
 }
 
 // ---------------------------------------------------------------------------
-// 4. Main Exported SceneBackground Component
+// 4. Fallback Boundary for WebGL / Canvas Initialization
+// ---------------------------------------------------------------------------
+class CanvasErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: any) {
+    console.warn("WebGL Canvas failed to initialize, falling back to clean CSS background:", error);
+  }
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 5. Main Exported SceneBackground Component
 // ---------------------------------------------------------------------------
 export function SceneBackground() {
   const { theme } = useTheme();
@@ -455,37 +477,39 @@ export function SceneBackground() {
         transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
       }}
     >
-      <Canvas
-        camera={{ position: [0, 0, 5], fov: 55 }}
-        gl={{
-          antialias: true,
-          alpha: true,
-          powerPreference: "high-performance"
-        }}
-        dpr={[1, 2]}
-        className="w-full h-full"
-      >
-        <CameraRig
-          reducedMotion={reducedMotion}
-          scrollProgressRef={scrollProgressRef}
-        />
+      <CanvasErrorBoundary>
+        <Canvas
+          camera={{ position: [0, 0, 5], fov: 55 }}
+          gl={{
+            antialias: true,
+            alpha: true,
+            powerPreference: "high-performance"
+          }}
+          dpr={[1, 2]}
+          className="w-full h-full"
+        >
+          <CameraRig
+            reducedMotion={reducedMotion}
+            scrollProgressRef={scrollProgressRef}
+          />
 
-        {/* Unified 1,200 Particle Field that morphs from ambient to "RATECAP" */}
-        <MorphingParticleField
-          count={1200}
-          isLight={isLight}
-          reducedMotion={reducedMotion}
-          texture={circleTexture}
-          scrollProgressRef={scrollProgressRef}
-        />
+          {/* Unified 1,200 Particle Field that morphs from ambient to "RATECAP" */}
+          <MorphingParticleField
+            count={1200}
+            isLight={isLight}
+            reducedMotion={reducedMotion}
+            texture={circleTexture}
+            scrollProgressRef={scrollProgressRef}
+          />
 
-        {/* Rotating Wireframe Ball Structure (Top-Right Hero -> RATECAP Center) */}
-        <FloatingBallStructure
-          isLight={isLight}
-          reducedMotion={reducedMotion}
-          scrollProgressRef={scrollProgressRef}
-        />
-      </Canvas>
+          {/* Rotating Wireframe Ball Structure (Top-Right Hero -> RATECAP Center) */}
+          <FloatingBallStructure
+            isLight={isLight}
+            reducedMotion={reducedMotion}
+            scrollProgressRef={scrollProgressRef}
+          />
+        </Canvas>
+      </CanvasErrorBoundary>
     </div>
   );
 }

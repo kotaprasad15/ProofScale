@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { ThemeProvider, useTheme } from "./home/ThemeContext";
 import { SmoothScroll } from "./home/SmoothScroll";
 import { CustomCursor } from "./home/CustomCursor";
@@ -35,7 +35,7 @@ function HomeNavbar({
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const items: CardNavItem[] = [
+  const items: CardNavItem[] = useMemo(() => [
     {
       label: "Platform",
       bgColor: isDark ? "#141A28" : "#F4F6FB",
@@ -72,7 +72,7 @@ function HomeNavbar({
             { label: "Architecture Overview", href: "#pipeline", ariaLabel: "Pipeline overview" }
           ]
     }
-  ];
+  ], [isDark, isLoggedIn, userEmail, onGoToDashboard, onLogout, onSignIn, onSignUp]);
 
   return (
     <CardNav
