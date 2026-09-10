@@ -19,7 +19,8 @@ import {
   Layers,
   Sparkles,
   SlidersHorizontal,
-  ChevronRight
+  ChevronRight,
+  Activity
 } from "lucide-react";
 import { TestProfile, PresetDefinitions } from "@proofscale/shared";
 import { LoadingDots } from "./LoadingDots";
@@ -238,9 +239,8 @@ export function TestPlanBuilderView({
 
       if (executeNow && savedPlanId && effectiveTargetId) {
         const run = await createRunMutation.mutateAsync({
-          testPlanId: savedPlanId,
-          targetId: effectiveTargetId,
-          projectId
+          planId: savedPlanId,
+          targetId: effectiveTargetId
         });
         if (onLaunchRun) {
           onLaunchRun(run.id);
@@ -262,9 +262,8 @@ export function TestPlanBuilderView({
     setErrorMsg(null);
     try {
       const run = await createRunMutation.mutateAsync({
-        testPlanId: planId,
-        targetId: effectiveTargetId,
-        projectId
+        planId,
+        targetId: effectiveTargetId
       });
       if (onLaunchRun) {
         onLaunchRun(run.id);
