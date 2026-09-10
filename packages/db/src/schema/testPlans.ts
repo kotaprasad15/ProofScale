@@ -6,7 +6,7 @@ export const testPlans = sqliteTable("test_plans", {
   projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   version: integer("version").notNull().default(1),
-  profile: text("profile", { enum: ["smoke", "baseline", "ramp", "spike", "short_soak"] }).notNull().default("smoke"),
+  profile: text("profile", { enum: ["smoke", "baseline", "load", "ramp", "stress", "spike", "short_soak"] }).notNull().default("smoke"),
   scenariosJson: text("scenarios_json").notNull(), // JSON array of ScenarioStep
   loadProfileJson: text("load_profile_json").notNull(), // JSON LoadProfile
   thresholdsJson: text("thresholds_json").notNull(), // JSON Thresholds

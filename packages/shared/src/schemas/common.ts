@@ -6,7 +6,7 @@ export type Role = z.infer<typeof RoleEnum>;
 export const EnvironmentEnum = z.enum(["development", "staging", "production", "testing"]);
 export type Environment = z.infer<typeof EnvironmentEnum>;
 
-export const TestProfileEnum = z.enum(["smoke", "baseline", "ramp", "spike", "short_soak"]);
+export const TestProfileEnum = z.enum(["smoke", "baseline", "load", "ramp", "stress", "spike", "short_soak"]);
 export type TestProfile = z.infer<typeof TestProfileEnum>;
 
 export const RunStatusEnum = z.enum([

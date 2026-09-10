@@ -78,11 +78,23 @@ export const PresetDefinitions: Record<z.infer<typeof TestProfileEnum>, {
     loadProfile: { virtualUsers: 10, durationSeconds: 120, rampUpSeconds: 15, timeoutMs: 5000 },
     thresholds: { maxP95Ms: 1500, maxP99Ms: 3000, maxErrorRate: 0.01 }
   },
+  load: {
+    name: "Sustained Load Test",
+    description: "Nominal SLA validation under steady concurrency.",
+    loadProfile: { virtualUsers: 25, durationSeconds: 60, rampUpSeconds: 10, timeoutMs: 5000 },
+    thresholds: { maxP95Ms: 1500, maxP99Ms: 3000, maxErrorRate: 0.01 }
+  },
   ramp: {
     name: "Ramp-Up Capacity Test",
     description: "Gradually increasing virtual users to observe concurrency degradation boundaries.",
     loadProfile: { virtualUsers: 30, durationSeconds: 300, rampUpSeconds: 60, timeoutMs: 5000 },
     thresholds: { maxP95Ms: 2000, maxP99Ms: 4000, maxErrorRate: 0.02 }
+  },
+  stress: {
+    name: "Stress Test",
+    description: "Burst limit search to find system break points and saturation limits.",
+    loadProfile: { virtualUsers: 50, durationSeconds: 90, rampUpSeconds: 15, timeoutMs: 5000 },
+    thresholds: { maxP95Ms: 2500, maxP99Ms: 5000, maxErrorRate: 0.02 }
   },
   spike: {
     name: "Spike Test",

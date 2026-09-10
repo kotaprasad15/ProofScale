@@ -96,11 +96,13 @@ export function TestPlanBuilderView({
   const handleApplyPreset = (profileKey: TestProfile) => {
     setSelectedProfile(profileKey);
     const preset = PresetDefinitions[profileKey];
-    setVirtualUsers(preset.loadProfile.virtualUsers);
-    setDurationSeconds(preset.loadProfile.durationSeconds);
-    setRampUpSeconds(preset.loadProfile.rampUpSeconds || 5);
-    setMaxP95Ms(preset.thresholds.maxP95Ms || 1500);
-    setMaxErrorRate(preset.thresholds.maxErrorRate ?? 0.01);
+    if (preset) {
+      setVirtualUsers(preset.loadProfile.virtualUsers);
+      setDurationSeconds(preset.loadProfile.durationSeconds);
+      setRampUpSeconds(preset.loadProfile.rampUpSeconds || 5);
+      setMaxP95Ms(preset.thresholds.maxP95Ms || 1500);
+      setMaxErrorRate(preset.thresholds.maxErrorRate ?? 0.01);
+    }
   };
 
   const handleAddStep = () => {
@@ -403,10 +405,10 @@ export function TestPlanBuilderView({
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                  { key: "smoke", label: "Smoke Check", icon: Shield, desc: "Fast baseline probe · 5 VUs · 30s" },
+                  { key: "smoke", label: "Smoke Check", icon: Shield, desc: "Fast baseline probe · 2 VUs · 30s" },
                   { key: "load", label: "Sustained Load", icon: Zap, desc: "Nominal SLA check · 25 VUs · 60s" },
                   { key: "stress", label: "Stress Test", icon: Flame, desc: "Burst limit search · 50 VUs · 90s" },
-                  { key: "spike", label: "Spike Spike", icon: Activity, desc: "Step capacity test · 75 VUs · 45s" }
+                  { key: "spike", label: "Spike Test", icon: Activity, desc: "Step capacity test · 50 VUs · 60s" }
                 ].map((p) => {
                   const Icon = p.icon;
                   const isSelected = selectedProfile === p.key;
