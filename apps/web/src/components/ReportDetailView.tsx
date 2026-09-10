@@ -18,7 +18,7 @@ function RadialGauge({ score }: { score: number }) {
   const color = scoreColor(score);
   return (
     <svg viewBox="0 0 140 140" className="w-32 h-32 sm:w-36 sm:h-36" aria-hidden="true">
-      <circle cx="70" cy="70" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="12" />
+      <circle cx="70" cy="70" r={r} fill="none" stroke="var(--border)" strokeWidth="12" />
       <circle
         cx="70"
         cy="70"
@@ -36,7 +36,7 @@ function RadialGauge({ score }: { score: number }) {
         y="70"
         textAnchor="middle"
         dominantBaseline="central"
-        fill="#F3F5FA"
+        fill="var(--text-primary)"
         fontSize="30"
         fontFamily="'IBM Plex Mono', monospace"
         fontWeight="700"
