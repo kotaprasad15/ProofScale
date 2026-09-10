@@ -64,6 +64,36 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
     setConfirmPassword("");
   };
 
+  const [activeDemo, setActiveDemo] = useState<string | null>(null);
+
+  const handleDemoLogin = async (demoEmail: string, demoRole: string) => {
+    const demoPass = "Password123!Secure";
+    setEmail(demoEmail);
+    setPassword(demoPass);
+    setIsSignUp(false);
+    setErrorMsg(null);
+    setActiveDemo(demoRole);
+
+    try {
+      const res = await loginMutation.mutateAsync({
+        email: demoEmail,
+        password: demoPass
+      });
+
+      if (res.success && res.user) {
+        onLogin({
+          id: res.user.id,
+          email: res.user.email,
+          organizationId: res.user.lastWorkspaceId || undefined
+        });
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Invalid credentials or account locked.");
+    } finally {
+      setActiveDemo(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -413,36 +443,62 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => {
-                  setEmail("lead@acme.dev");
-                  setPassword("Password123!Secure");
-                  setIsSignUp(false);
-                  setErrorMsg(null);
-                }}
-                className="p-3 rounded-xl bg-ink-900/60 border border-white/[0.08] hover:border-signal-indigo text-left transition cursor-pointer group"
+                disabled={isSubmitting}
+                onClick={() => handleDemoLogin("lead@acme.dev", "owner")}
+                className="p-3.5 rounded-xl bg-ink-900/70 border border-white/[0.08] hover:border-signal-indigo/70 hover:bg-signal-indigo/5 text-left transition cursor-pointer group disabled:opacity-50"
               >
-                <div className="font-display font-semibold text-xs text-text-primary flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-signal-indigo" />
-                  <span>Org Owner</span>
-                </div>
-                <p className="font-mono text-[10px] text-text-muted mt-0.5">lead@acme.dev</p>
+                {activeDemo === "owner" ? (
+                  <div className="py-2 flex items-center justify-center">
+                    <LoadingDots size="sm" label="Entering as Org Owner..." />
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div className="font-display font-semibold text-xs text-text-primary flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-signal-indigo" />
+                        <span>Org Owner</span>
+                      </div>
+                      <span className="text-[9px] font-mono text-signal-indigo opacity-0 group-hover:opacity-100 transition">
+                        1-Click →
+                      </span>
+                    </div>
+                    <p className="font-mono text-[10px] text-text-muted mt-1 truncate">lead@acme.dev</p>
+                    <div className="mt-1.5 flex items-center gap-1 text-[9px] font-mono text-text-faint">
+                      <KeyRound className="w-2.5 h-2.5 text-signal-indigo/70" />
+                      <span>Password123!Secure</span>
+                    </div>
+                  </>
+                )}
               </button>
 
               <button
                 type="button"
-                onClick={() => {
-                  setEmail("qa.tester@acme.dev");
-                  setPassword("Password123!Secure");
-                  setIsSignUp(false);
-                  setErrorMsg(null);
-                }}
-                className="p-3 rounded-xl bg-ink-900/60 border border-white/[0.08] hover:border-signal-teal text-left transition cursor-pointer group"
+                disabled={isSubmitting}
+                onClick={() => handleDemoLogin("qa.tester@acme.dev", "tester")}
+                className="p-3.5 rounded-xl bg-ink-900/70 border border-white/[0.08] hover:border-signal-teal/70 hover:bg-signal-teal/5 text-left transition cursor-pointer group disabled:opacity-50"
               >
-                <div className="font-display font-semibold text-xs text-text-primary flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-signal-teal" />
-                  <span>QA Tester</span>
-                </div>
-                <p className="font-mono text-[10px] text-text-muted mt-0.5">qa.tester@acme.dev</p>
+                {activeDemo === "tester" ? (
+                  <div className="py-2 flex items-center justify-center">
+                    <LoadingDots size="sm" label="Entering as QA Tester..." />
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div className="font-display font-semibold text-xs text-text-primary flex items-center gap-1.5">
+                        <Lock className="w-3.5 h-3.5 text-signal-teal" />
+                        <span>QA Tester</span>
+                      </div>
+                      <span className="text-[9px] font-mono text-signal-teal opacity-0 group-hover:opacity-100 transition">
+                        1-Click →
+                      </span>
+                    </div>
+                    <p className="font-mono text-[10px] text-text-muted mt-1 truncate">qa.tester@acme.dev</p>
+                    <div className="mt-1.5 flex items-center gap-1 text-[9px] font-mono text-text-faint">
+                      <KeyRound className="w-2.5 h-2.5 text-signal-teal/70" />
+                      <span>Password123!Secure</span>
+                    </div>
+                  </>
+                )}
               </button>
             </div>
 

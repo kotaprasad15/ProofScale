@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
 import { sqliteDb } from "./client.js";
+import { PasswordService } from "@proofscale/shared";
 
 export function runMigrations(customDb?: Database.Database | null) {
   const targetDb = customDb || sqliteDb;
@@ -266,16 +267,24 @@ export function runMigrations(customDb?: Database.Database | null) {
       const defaultTargetId = "target_fixture_01";
       const defaultPlanId = "plan_smoke_01";
       const now = Date.now();
+      const demoPasswordHash = PasswordService.hashPassword("Password123!Secure");
 
       targetDb.prepare(`
-        INSERT OR IGNORE INTO users (id, email, display_name, role, onboarding_status, last_workspace_id, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(defaultUserId, "lead@acme.dev", "Alex Rivera (Org Owner)", "admin", "completed", defaultOrgId, now, now);
+        INSERT OR IGNORE INTO users (id, email, display_name, role, onboarding_status, last_workspace_id, password_hash, failed_login_attempts, locked_until, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL, ?, ?)
+      `).run(defaultUserId, "lead@acme.dev", "Alex Rivera (Org Owner)", "admin", "completed", defaultOrgId, demoPasswordHash, now, now);
 
       targetDb.prepare(`
-        INSERT OR IGNORE INTO users (id, email, display_name, role, onboarding_status, last_workspace_id, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(defaultTesterId, "qa.tester@acme.dev", "Sam Taylor (Tester)", "member", "completed", defaultOrgId, now, now);
+        INSERT OR IGNORE INTO users (id, email, display_name, role, onboarding_status, last_workspace_id, password_hash, failed_login_attempts, locked_until, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL, ?, ?)
+      `).run(defaultTesterId, "qa.tester@acme.dev", "Sam Taylor (Tester)", "member", "completed", defaultOrgId, demoPasswordHash, now, now);
+
+      // Ensure demo accounts always have valid password hash
+      targetDb.prepare(`
+        UPDATE users 
+        SET password_hash = ?, failed_login_attempts = 0, locked_until = NULL 
+        WHERE email IN ('lead@acme.dev', 'qa.tester@acme.dev')
+      `).run(demoPasswordHash);
 
       targetDb.prepare(`
         INSERT OR IGNORE INTO organizations (id, name, slug, owner_user_id, status, created_at, updated_at)

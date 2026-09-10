@@ -1,6 +1,7 @@
 import pg from "pg";
 import dotenv from "dotenv";
 import path from "node:path";
+import { PasswordService } from "@proofscale/shared";
 
 dotenv.config({ path: path.resolve(process.cwd(), "../../.env") });
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
@@ -391,13 +392,15 @@ export async function runPgMigrations(connectionUrl?: string) {
       const defaultTargetId = "target_fixture_01";
       const defaultPlanId = "plan_smoke_01";
 
+      const demoPasswordHash = PasswordService.hashPassword("Password123!Secure");
+
       await client.query(`
-        INSERT INTO public.users (id, email, display_name, role, onboarding_status, last_workspace_id)
+        INSERT INTO public.users (id, email, display_name, role, onboarding_status, last_workspace_id, password_hash, failed_login_attempts, locked_until)
         VALUES 
-          ($1, 'lead@acme.dev', 'Alex Rivera (Org Owner)', 'admin', 'completed', $2),
-          ($3, 'qa.tester@acme.dev', 'Sam Taylor (Tester)', 'member', 'completed', $2)
+          ($1, 'lead@acme.dev', 'Alex Rivera (Org Owner)', 'admin', 'completed', $2, $4, 0, NULL),
+          ($3, 'qa.tester@acme.dev', 'Sam Taylor (Tester)', 'member', 'completed', $2, $4, 0, NULL)
         ON CONFLICT (id) DO NOTHING;
-      `, [defaultUserId, defaultOrgId, defaultTesterId]);
+      `, [defaultUserId, defaultOrgId, defaultTesterId, demoPasswordHash]);
 
       await client.query(`
         INSERT INTO public.organizations (id, name, slug, owner_id, owner_user_id, status)
@@ -454,6 +457,18 @@ export async function runPgMigrations(connectionUrl?: string) {
       ]);
 
       console.log("🌱 Auto-seeded initial default workspace and admin users in Supabase PostgreSQL.");
+    }
+
+    // 5. Always guarantee demo accounts are active, unlocked, and have valid password hashes
+    try {
+      const activeDemoHash = PasswordService.hashPassword("Password123!Secure");
+      await client.query(`
+        UPDATE public.users 
+        SET password_hash = $1, failed_login_attempts = 0, locked_until = NULL 
+        WHERE email IN ('lead@acme.dev', 'qa.tester@acme.dev');
+      `, [activeDemoHash]);
+    } catch (demoErr: any) {
+      console.warn("Demo user auto-provisioning notice:", demoErr.message);
     }
 
     console.log("✅ Scoped RLS policies and FK indexes updated successfully on Supabase!");

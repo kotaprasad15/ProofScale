@@ -1,7 +1,8 @@
 import { db, sqliteDb } from "./client.js";
 import { runMigrations } from "./migrate.js";
 import { users, organizations, organizationMembers, projects, projectMembers, targets, testPlans } from "./schema/index.js";
-import { PresetDefinitions } from "@proofscale/shared";
+import { PresetDefinitions, PasswordService } from "@proofscale/shared";
+import { or, eq } from "drizzle-orm";
 
 async function seed() {
   console.log("🌱 Initializing schema & Seeding ProofScale local database with RBAC fixture data...");
@@ -16,14 +17,19 @@ async function seed() {
   const defaultTargetId = "target_fixture_01";
   const defaultPlanId = "plan_smoke_01";
 
-  // 2. Seed Default Users
+  // 2. Seed Default Users with valid demo password hash ("Password123!Secure")
+  const demoPasswordHash = PasswordService.hashPassword("Password123!Secure");
+
   await db.insert(users).values({
     id: defaultUserId,
     email: "lead@acme.dev",
     displayName: "Alex Rivera (Org Owner)",
     role: "admin",
     onboardingStatus: "completed",
-    lastWorkspaceId: defaultOrgId
+    lastWorkspaceId: defaultOrgId,
+    passwordHash: demoPasswordHash,
+    failedLoginAttempts: 0,
+    lockedUntil: null
   }).onConflictDoNothing();
 
   await db.insert(users).values({
@@ -32,8 +38,18 @@ async function seed() {
     displayName: "Sam Taylor (Tester)",
     role: "member",
     onboardingStatus: "completed",
-    lastWorkspaceId: defaultOrgId
+    lastWorkspaceId: defaultOrgId,
+    passwordHash: demoPasswordHash,
+    failedLoginAttempts: 0,
+    lockedUntil: null
   }).onConflictDoNothing();
+
+  // Guarantee existing demo accounts have valid password hash & zero lockouts
+  await db.update(users).set({
+    passwordHash: demoPasswordHash,
+    failedLoginAttempts: 0,
+    lockedUntil: null
+  }).where(or(eq(users.email, "lead@acme.dev"), eq(users.email, "qa.tester@acme.dev")));
 
   // 3. Seed Default Organization
   await db.insert(organizations).values({
