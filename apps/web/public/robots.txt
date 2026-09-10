@@ -1,0 +1,9 @@
+﻿User-agent: *
+Allow: /
+Allow: /home
+Allow: /signin
+Allow: /signup
+Disallow: /api/
+Disallow: /trpc/
+
+Sitemap: https://ratecap.vercel.app/sitemap.xml
