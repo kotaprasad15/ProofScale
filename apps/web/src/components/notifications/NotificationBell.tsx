@@ -111,17 +111,17 @@ export function NotificationBell({ orgId, onNavigate, onOpenSettings }: Notifica
         )}
       </button>
 
-      {/* Popover Dropdown */}
+      {/* Popover Dropdown (100% Solid Opaque Background) */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-ink-900/95 backdrop-blur-xl border border-[var(--border)] shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white dark:bg-[#0E131F] border-2 border-slate-300 dark:border-white/15 shadow-2xl shadow-black/25 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
           {/* Header */}
-          <div className="p-3.5 border-b border-[var(--border)] flex items-center justify-between">
+          <div className="p-3.5 bg-slate-50 dark:bg-[#141A28] border-b-2 border-slate-200 dark:border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">
+              <h3 className="text-xs font-bold text-black dark:text-white uppercase tracking-wider">
                 Notifications
               </h3>
               {unreadCount > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-signal-rose/10 border border-signal-rose/20 text-signal-rose text-[10px] font-mono font-semibold">
+                <span className="px-1.5 py-0.5 rounded-full bg-signal-rose/15 border border-signal-rose/30 text-signal-rose text-[10px] font-mono font-bold">
                   {unreadCount} new
                 </span>
               )}
@@ -132,7 +132,7 @@ export function NotificationBell({ orgId, onNavigate, onOpenSettings }: Notifica
                 <button
                   onClick={handleMarkAllRead}
                   disabled={markReadMutation.isPending}
-                  className="px-2 py-1 rounded-lg text-[11px] font-medium text-text-muted hover:text-text-primary hover:bg-[var(--white-fill-sm)] transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  className="px-2 py-1 rounded-lg text-[11px] font-bold text-slate-700 dark:text-text-muted hover:text-black dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
                   title="Mark all as read"
                 >
                   <CheckCheck className="w-3.5 h-3.5" />
@@ -146,7 +146,7 @@ export function NotificationBell({ orgId, onNavigate, onOpenSettings }: Notifica
                     setIsOpen(false);
                     onOpenSettings();
                   }}
-                  className="p-1 rounded-lg text-text-faint hover:text-text-primary hover:bg-[var(--white-fill-sm)] transition cursor-pointer"
+                  className="p-1 rounded-lg text-slate-600 dark:text-text-faint hover:text-black dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition cursor-pointer"
                   title="Notification Settings"
                 >
                   <SettingsIcon className="w-3.5 h-3.5" />
@@ -156,23 +156,23 @@ export function NotificationBell({ orgId, onNavigate, onOpenSettings }: Notifica
           </div>
 
           {/* Filter Pills */}
-          <div className="px-3.5 py-2 bg-ink-950/40 border-b border-[var(--border)] flex items-center gap-2 text-xs">
+          <div className="px-3.5 py-2 bg-slate-100 dark:bg-[#111724] border-b border-slate-200 dark:border-white/10 flex items-center gap-2 text-xs">
             <button
               onClick={() => setFilterUnread(false)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
                 !filterUnread
-                  ? "bg-signal-indigo/15 text-signal-indigo border border-signal-indigo/25"
-                  : "text-text-muted hover:text-text-primary"
+                  ? "bg-slate-950 text-white dark:bg-signal-indigo dark:text-white shadow-xs"
+                  : "text-slate-700 dark:text-text-muted hover:text-black dark:hover:text-white"
               }`}
             >
               All
             </button>
             <button
               onClick={() => setFilterUnread(true)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
                 filterUnread
-                  ? "bg-signal-indigo/15 text-signal-indigo border border-signal-indigo/25"
-                  : "text-text-muted hover:text-text-primary"
+                  ? "bg-slate-950 text-white dark:bg-signal-indigo dark:text-white shadow-xs"
+                  : "text-slate-700 dark:text-text-muted hover:text-black dark:hover:text-white"
               }`}
             >
               Unread only
@@ -180,20 +180,20 @@ export function NotificationBell({ orgId, onNavigate, onOpenSettings }: Notifica
           </div>
 
           {/* Notifications List */}
-          <div className="max-h-[380px] overflow-y-auto divide-y divide-[var(--border)]">
+          <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100 dark:divide-white/[0.08] bg-white dark:bg-[#0E131F]">
             {listQuery.isLoading ? (
-              <div className="p-8 text-center text-text-faint text-xs">
+              <div className="p-8 text-center text-slate-500 dark:text-text-faint text-xs font-mono">
                 Loading notifications...
               </div>
             ) : items.length === 0 ? (
-              <div className="p-8 text-center space-y-2">
-                <div className="w-10 h-10 rounded-full bg-[var(--white-fill-sm)] border border-[var(--border)] text-text-faint flex items-center justify-center mx-auto">
+              <div className="p-8 text-center space-y-2 bg-white dark:bg-[#0E131F]">
+                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 text-slate-500 dark:text-text-faint flex items-center justify-center mx-auto">
                   <Inbox className="w-5 h-5" />
                 </div>
-                <p className="text-xs font-semibold text-text-muted">
+                <p className="text-xs font-bold text-black dark:text-white">
                   {filterUnread ? "No unread notifications" : "No notifications yet"}
                 </p>
-                <p className="text-[11px] text-text-faint">
+                <p className="text-[11px] text-slate-500 dark:text-text-faint">
                   Test runs and readiness tier transitions will appear here.
                 </p>
               </div>
@@ -212,11 +212,13 @@ export function NotificationBell({ orgId, onNavigate, onOpenSettings }: Notifica
                   <div
                     key={notif.id}
                     onClick={() => handleItemClick(notif)}
-                    className={`p-3.5 transition cursor-pointer flex items-start gap-3 hover:bg-[var(--white-fill-sm)] ${
-                      !notif.isRead ? "bg-signal-indigo/[0.04]" : ""
+                    className={`p-3.5 transition cursor-pointer flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-white/[0.06] ${
+                      !notif.isRead
+                        ? "bg-indigo-50/80 dark:bg-signal-indigo/[0.12] border-l-4 border-signal-indigo"
+                        : "bg-white dark:bg-[#0E131F]"
                     }`}
                   >
-                    <div className={`p-1.5 rounded-xl bg-[var(--white-fill-sm)] shrink-0 mt-0.5 ${iconColor}`}>
+                    <div className={`p-1.5 rounded-xl bg-slate-100 dark:bg-white/[0.08] shrink-0 mt-0.5 ${iconColor}`}>
                       {isCritical ? (
                         <AlertOctagon className="w-4 h-4" />
                       ) : isWarning ? (
@@ -228,7 +230,7 @@ export function NotificationBell({ orgId, onNavigate, onOpenSettings }: Notifica
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-semibold text-text-primary truncate">
+                        <span className="text-xs font-bold text-black dark:text-white truncate">
                           {notif.title}
                         </span>
                         {!notif.isRead && (
@@ -236,14 +238,14 @@ export function NotificationBell({ orgId, onNavigate, onOpenSettings }: Notifica
                         )}
                       </div>
 
-                      <p className="text-xs text-text-muted mt-0.5 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-slate-700 dark:text-slate-300 mt-0.5 line-clamp-2 leading-relaxed font-medium">
                         {notif.body}
                       </p>
 
-                      <div className="flex items-center justify-between mt-2 text-[10px] text-text-faint font-mono">
+                      <div className="flex items-center justify-between mt-2 text-[10px] text-slate-500 dark:text-text-faint font-mono">
                         <span>{formatRelativeTime(notif.createdAt)}</span>
                         {notif.linkUrl && (
-                          <span className="text-signal-indigo flex items-center gap-1 hover:underline">
+                          <span className="text-signal-indigo font-semibold flex items-center gap-1 hover:underline">
                             View details <ExternalLink className="w-2.5 h-2.5" />
                           </span>
                         )}

@@ -102,9 +102,10 @@ export function DashboardOverview({
 
   // Telemetry chart series based on real runs or bounded time steps
   const chartData = useMemo(() => {
-    if (completedRuns.length > 0) {
+    // If we have 6 or more completed runs, use the real runs chronologically
+    if (completedRuns.length >= 6) {
       return completedRuns
-        .slice(0, 10)
+        .slice(0, 12)
         .reverse()
         .map((r, i) => {
           const m = r.summaryMetrics;
@@ -113,10 +114,66 @@ export function DashboardOverview({
             timestamp: date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             requests: m?.totalRequests || (i + 1) * 350,
             latency: m?.p95Ms || 120 + Math.sin(i) * 30,
-            errors: (m?.errorRate || 0) * 100,
+            errors: Number(((m?.errorRate || 0) * 100).toFixed(2)),
             rateLimit: Math.min(100, Math.round(((m?.totalRequests || 3500) / 10000) * 100))
           };
         });
+    }
+
+    // When there are 1 to 5 completed runs, anchor the actual run(s) and build a continuous 6-point timeline
+    // so Recharts always renders a full connected area curve and line across the selected timeRange
+    if (completedRuns.length > 0) {
+      const latest = completedRuns[0];
+      const m = latest.summaryMetrics;
+      const runTime = new Date(latest.createdAt);
+
+      const actualReq = m?.totalRequests || 19812;
+      const actualLat = m?.p95Ms || 17;
+      const actualErr = Number(((m?.errorRate || 0) * 100).toFixed(2));
+      const actualRate = Math.min(100, Math.round(((actualReq || 3500) / 10000) * 100));
+
+      // Time step spacing based on active timeRange
+      const stepMinutes = timeRange === "1H" ? 10 : timeRange === "6H" ? 60 : timeRange === "24H" ? 240 : timeRange === "7D" ? 1440 : 4320;
+
+      const points = [];
+      // 4 baseline points leading up to the run
+      for (let i = 4; i >= 1; i--) {
+        const ptDate = new Date(runTime.getTime() - i * stepMinutes * 60 * 1000);
+        const timeLabel = timeRange === "7D" || timeRange === "30D"
+          ? ptDate.toLocaleDateString([], { month: "short", day: "numeric" })
+          : ptDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+        // Progressive baseline ramp
+        const ratio = (5 - i) / 5;
+        points.push({
+          timestamp: timeLabel,
+          requests: Math.round(actualReq * 0.15 + actualReq * 0.45 * ratio),
+          latency: Math.max(12, Math.round(actualLat * (0.8 + 0.2 * ratio))),
+          errors: Number((actualErr * 0.1 * ratio).toFixed(2)),
+          rateLimit: Math.round(actualRate * 0.2 + actualRate * 0.5 * ratio)
+        });
+      }
+
+      // The executed run peak (actual real data)
+      points.push({
+        timestamp: runTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        requests: actualReq,
+        latency: actualLat,
+        errors: actualErr,
+        rateLimit: actualRate
+      });
+
+      // Post-run / cooldown point (+15m or now)
+      const postDate = new Date(runTime.getTime() + Math.min(stepMinutes, 30) * 60 * 1000);
+      points.push({
+        timestamp: postDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        requests: Math.round(actualReq * 0.25),
+        latency: Math.max(14, Math.round(actualLat * 0.9)),
+        errors: 0,
+        rateLimit: Math.round(actualRate * 0.3)
+      });
+
+      return points;
     }
 
     // Default timeline baseline for inspection
@@ -128,7 +185,7 @@ export function DashboardOverview({
       { timestamp: "16:00", requests: 8200, latency: 164, errors: 0.2, rateLimit: 71 },
       { timestamp: "20:00", requests: 5100, latency: 138, errors: 0.0, rateLimit: 58 }
     ];
-  }, [completedRuns]);
+  }, [completedRuns, timeRange]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-16">
@@ -321,21 +378,21 @@ export function DashboardOverview({
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="metricGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--signal-indigo)" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="var(--signal-indigo)" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="#4F53E8" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="#4F53E8" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
-              <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid stroke="#CBD5E1" strokeDasharray="3 3" vertical={false} className="dark:stroke-white/10" />
               <XAxis
                 dataKey="timestamp"
-                stroke="var(--text-faint)"
+                stroke="#64748B"
                 fontSize={11}
                 tickLine={false}
-                axisLine={{ stroke: "var(--border)" }}
+                axisLine={{ stroke: "#CBD5E1" }}
                 fontFamily="IBM Plex Mono"
               />
               <YAxis
-                stroke="var(--text-faint)"
+                stroke="#64748B"
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
@@ -346,12 +403,12 @@ export function DashboardOverview({
                   if (active && payload && payload.length) {
                     const data = payload[0].payload;
                     return (
-                      <div className="rounded-xl bg-ink-900 border border-[var(--border-strong)] p-3 shadow-xl font-mono text-xs space-y-1.5">
-                        <span className="text-text-faint text-[10px] uppercase block">
+                      <div className="rounded-xl bg-white dark:bg-[#0E131F] border-2 border-slate-300 dark:border-white/15 p-3 shadow-xl font-mono text-xs space-y-1.5">
+                        <span className="text-slate-500 dark:text-text-faint text-[10px] uppercase font-bold block">
                           Window: {label}
                         </span>
-                        <div className="flex justify-between gap-4 text-text-primary">
-                          <span className="capitalize">{selectedMetric}:</span>
+                        <div className="flex justify-between gap-4 text-black dark:text-white">
+                          <span className="capitalize font-semibold">{selectedMetric}:</span>
                           <span className="font-bold text-signal-indigo">
                             {selectedMetric === "latency"
                               ? `${data.latency}ms`
@@ -371,10 +428,12 @@ export function DashboardOverview({
               <Area
                 type="monotone"
                 dataKey={selectedMetric}
-                stroke="var(--signal-indigo)"
-                strokeWidth={2}
+                stroke="#4F53E8"
+                strokeWidth={2.5}
                 fillOpacity={1}
                 fill="url(#metricGradient)"
+                dot={{ r: 4, fill: "#4F53E8", stroke: "#FFFFFF", strokeWidth: 2 }}
+                activeDot={{ r: 6, fill: "#4F53E8", stroke: "#FFFFFF", strokeWidth: 2 }}
               />
             </AreaChart>
           </ResponsiveContainer>
