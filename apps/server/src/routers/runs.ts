@@ -1,6 +1,6 @@
 import { router, tenantProcedure, requireProjectPermission } from "../trpc.js";
-import { CreateTestRunSchema, CancelTestRunSchema, KillSwitch, sanitizeTargetUrl, validateTargetHostDns } from "@proofscale/shared";
-import { testRuns, runEvents, testPlans, targets } from "@proofscale/db";
+import { CreateTestRunSchema, CancelTestRunSchema, KillSwitch, sanitizeTargetUrl, validateTargetHostDns, LifecycleEventBus } from "@proofscale/shared";
+import { testRuns, runEvents, testPlans, targets, projects } from "@proofscale/db";
 import { eq, desc } from "drizzle-orm";
 import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
@@ -178,6 +178,41 @@ export const runsRouter = router({
         eventType: "cancelled",
         message: `Run cancelled by ${ctx.user.email}: ${input.reason || "No reason provided"}`
       });
+
+      // Emit run.aborted lifecycle event
+      try {
+        const [runInfo] = await ctx.db
+          .select({
+            run: testRuns,
+            plan: testPlans,
+            target: targets,
+            project: projects
+          })
+          .from(testRuns)
+          .innerJoin(testPlans, eq(testRuns.planId, testPlans.id))
+          .innerJoin(targets, eq(testRuns.targetId, targets.id))
+          .innerJoin(projects, eq(testPlans.projectId, projects.id))
+          .where(eq(testRuns.id, input.runId));
+
+        if (runInfo) {
+          await LifecycleEventBus.publish({
+            eventId: `evt_${crypto.randomUUID()}`,
+            eventType: "run.aborted",
+            occurredAt: new Date().toISOString(),
+            orgId: runInfo.project.organizationId,
+            projectId: runInfo.project.id,
+            targetId: runInfo.target.id,
+            runId: input.runId,
+            payload: {
+              targetName: runInfo.target.baseUrl,
+              scenario: runInfo.plan.profile,
+              failureReason: input.reason || "Cancelled by user"
+            }
+          });
+        }
+      } catch (evtErr) {
+        console.error("Failed to publish run.aborted event:", evtErr);
+      }
 
       return { success: true, id: input.runId };
     })

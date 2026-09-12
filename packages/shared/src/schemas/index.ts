@@ -6,3 +6,4 @@ export * from "./target.js";
 export * from "./testPlan.js";
 export * from "./testRun.js";
 export * from "./report.js";
+export * from "./notifications.js";

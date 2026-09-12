@@ -15,3 +15,4 @@ export * from "./artifacts.js";
 export * from "./reportShares.js";
 export * from "./sessions.js";
 export * from "./securityTables.js";
+export * from "./notifications.js";

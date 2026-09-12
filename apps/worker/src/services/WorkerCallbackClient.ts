@@ -1,6 +1,6 @@
-import { db, testRuns, runEvents, artifacts, findings } from "@proofscale/db";
-import { eq } from "drizzle-orm";
-import { SummaryMetrics, Thresholds, calculateReadinessScore, generateFindings } from "@proofscale/shared";
+import { db, testRuns, runEvents, artifacts, findings, testPlans, targets, projects } from "@proofscale/db";
+import { eq, and, ne, desc } from "drizzle-orm";
+import { SummaryMetrics, Thresholds, calculateReadinessScore, generateFindings, LifecycleEventBus } from "@proofscale/shared";
 import crypto from "node:crypto";
 
 export class WorkerCallbackClient {
@@ -94,6 +94,84 @@ export class WorkerCallbackClient {
       checksum: crypto.createHash("sha256").update(rawOutput).digest("hex"),
       retentionUntil
     });
+
+    // 7. Publish RunLifecycleEvent (run.completed and optionally run.tier_changed)
+    try {
+      const [runInfo] = await db
+        .select({
+          run: testRuns,
+          plan: testPlans,
+          target: targets,
+          project: projects
+        })
+        .from(testRuns)
+        .innerJoin(testPlans, eq(testRuns.planId, testPlans.id))
+        .innerJoin(targets, eq(testRuns.targetId, targets.id))
+        .innerJoin(projects, eq(testPlans.projectId, projects.id))
+        .where(eq(testRuns.id, runId));
+
+      if (runInfo) {
+        let previousTier: string | null = null;
+        const [prevRun] = await db
+          .select({ readinessLabel: testRuns.readinessLabel })
+          .from(testRuns)
+          .where(
+            and(
+              eq(testRuns.targetId, runInfo.target.id),
+              eq(testRuns.status, "completed"),
+              ne(testRuns.id, runId)
+            )
+          )
+          .orderBy(desc(testRuns.finishedAt))
+          .limit(1);
+
+        previousTier = prevRun?.readinessLabel || null;
+
+        // Emit run.completed
+        await LifecycleEventBus.publish({
+          eventId: `evt_${crypto.randomUUID()}`,
+          eventType: "run.completed",
+          occurredAt: now.toISOString(),
+          orgId: runInfo.project.organizationId,
+          projectId: runInfo.project.id,
+          targetId: runInfo.target.id,
+          runId,
+          payload: {
+            targetName: runInfo.target.baseUrl,
+            scenario: runInfo.plan.profile,
+            score: scoreBreakdown.overallScore,
+            tier: scoreBreakdown.label as any,
+            previousTier,
+            errorRate: metrics.errorRate,
+            p95LatencyMs: metrics.p95Ms
+          }
+        });
+
+        // Distinct second event if tier changed
+        if (previousTier !== null && previousTier !== scoreBreakdown.label) {
+          await LifecycleEventBus.publish({
+            eventId: `evt_${crypto.randomUUID()}`,
+            eventType: "run.tier_changed",
+            occurredAt: now.toISOString(),
+            orgId: runInfo.project.organizationId,
+            projectId: runInfo.project.id,
+            targetId: runInfo.target.id,
+            runId,
+            payload: {
+              targetName: runInfo.target.baseUrl,
+              scenario: runInfo.plan.profile,
+              score: scoreBreakdown.overallScore,
+              tier: scoreBreakdown.label as any,
+              previousTier,
+              errorRate: metrics.errorRate,
+              p95LatencyMs: metrics.p95Ms
+            }
+          });
+        }
+      }
+    } catch (evtErr) {
+      console.error("Failed to publish run.completed event:", evtErr);
+    }
   }
 
   /**
@@ -118,5 +196,40 @@ export class WorkerCallbackClient {
       eventType: "failed",
       message: `Load test execution failed: ${errorMessage}`
     });
+
+    // Publish run.failed event
+    try {
+      const [runInfo] = await db
+        .select({
+          run: testRuns,
+          plan: testPlans,
+          target: targets,
+          project: projects
+        })
+        .from(testRuns)
+        .innerJoin(testPlans, eq(testRuns.planId, testPlans.id))
+        .innerJoin(targets, eq(testRuns.targetId, targets.id))
+        .innerJoin(projects, eq(testPlans.projectId, projects.id))
+        .where(eq(testRuns.id, runId));
+
+      if (runInfo) {
+        await LifecycleEventBus.publish({
+          eventId: `evt_${crypto.randomUUID()}`,
+          eventType: "run.failed",
+          occurredAt: now.toISOString(),
+          orgId: runInfo.project.organizationId,
+          projectId: runInfo.project.id,
+          targetId: runInfo.target.id,
+          runId,
+          payload: {
+            targetName: runInfo.target.baseUrl,
+            scenario: runInfo.plan.profile,
+            failureReason: errorMessage
+          }
+        });
+      }
+    } catch (evtErr) {
+      console.error("Failed to publish run.failed event:", evtErr);
+    }
   }
 }

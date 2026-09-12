@@ -18,6 +18,8 @@ import {
 import { db, processedWebhooks, sessions } from "@proofscale/db";
 import { eq } from "drizzle-orm";
 import crypto from "node:crypto";
+import { RealtimeNotificationManager } from "./services/notifications/RealtimeNotificationManager.js";
+import { PresenceService } from "./services/presence/PresenceService.js";
 
 export function createApp() {
   const app = express();
@@ -178,6 +180,66 @@ export function createApp() {
       createContext
     })
   );
+
+  // Helper to resolve authenticated userId from session cookie or headers
+  async function resolveUserId(req: express.Request): Promise<string | null> {
+    const headerUserId = req.headers["x-user-id"];
+    if (headerUserId && typeof headerUserId === "string") {
+      return headerUserId;
+    }
+    const cookies = parseCookies(req.headers.cookie);
+    const sessionToken = cookies[SessionSecurity.COOKIE_NAME];
+    if (sessionToken) {
+      const hash = SessionSecurity.hashSessionToken(sessionToken);
+      const [sess] = await db.select().from(sessions).where(eq(sessions.sessionTokenHash, hash));
+      if (sess && !sess.revokedAt && sess.expiresAt > new Date()) {
+        return sess.userId;
+      }
+    }
+    return null;
+  }
+
+  // Real-time SSE Notification Stream
+  app.get("/api/notifications/stream", async (req, res) => {
+    const userId = await resolveUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+      "X-Accel-Buffering": "no"
+    });
+
+    res.write(`event: connected\ndata: ${JSON.stringify({ status: "connected", userId })}\n\n`);
+    RealtimeNotificationManager.registerConnection(userId, res);
+
+    const keepaliveInterval = setInterval(() => {
+      res.write(": keepalive\n\n");
+    }, 15000);
+
+    req.on("close", () => {
+      clearInterval(keepaliveInterval);
+    });
+  });
+
+  // Presence Heartbeat Endpoint
+  app.post("/api/presence/heartbeat", async (req, res) => {
+    const userId = await resolveUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { deviceId, visible } = req.body || {};
+    if (!deviceId) {
+      return res.status(400).json({ error: "deviceId is required" });
+    }
+
+    PresenceService.updatePresence(userId, String(deviceId), Boolean(visible));
+    return res.json({ success: true, timestamp: Date.now() });
+  });
 
   // REST Health Check
   app.get("/health", (req, res) => {

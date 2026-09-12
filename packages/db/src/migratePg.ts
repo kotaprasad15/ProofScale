@@ -270,6 +270,53 @@ export async function runPgMigrations(connectionUrl?: string) {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS notification_preferences (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        org_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+        event_category TEXT NOT NULL,
+        in_app_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+        push_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+        email_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+        run_result_filter TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        endpoint TEXT NOT NULL,
+        p256dh_key TEXT NOT NULL,
+        auth_key TEXT NOT NULL,
+        user_agent TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        is_valid BOOLEAN NOT NULL DEFAULT TRUE
+      );
+
+      CREATE TABLE IF NOT EXISTS notifications (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        org_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+        event_type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        body TEXT NOT NULL,
+        severity TEXT NOT NULL DEFAULT 'info',
+        link_url TEXT,
+        is_read BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS notification_deliveries (
+        id TEXT PRIMARY KEY,
+        notification_id TEXT NOT NULL REFERENCES notifications(id) ON DELETE CASCADE,
+        channel TEXT NOT NULL,
+        status TEXT NOT NULL,
+        error_detail TEXT,
+        attempted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
       -- Column migrations for users
       ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER NOT NULL DEFAULT 0;
@@ -303,7 +350,11 @@ export async function runPgMigrations(connectionUrl?: string) {
       "sessions",
       "password_reset_tokens",
       "processed_webhooks",
-      "ai_usage_records"
+      "ai_usage_records",
+      "notification_preferences",
+      "push_subscriptions",
+      "notifications",
+      "notification_deliveries"
     ];
 
 
@@ -380,6 +431,11 @@ export async function runPgMigrations(connectionUrl?: string) {
       CREATE INDEX IF NOT EXISTS idx_artifacts_run_id ON public.artifacts(run_id);
       
       CREATE INDEX IF NOT EXISTS idx_report_shares_run_id ON public.report_shares(run_id);
+
+      CREATE INDEX IF NOT EXISTS idx_notification_preferences_user_org ON public.notification_preferences(user_id, org_id);
+      CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id ON public.push_subscriptions(user_id);
+      CREATE INDEX IF NOT EXISTS idx_notifications_user_org ON public.notifications(user_id, org_id, is_read);
+      CREATE INDEX IF NOT EXISTS idx_notification_deliveries_notification_id ON public.notification_deliveries(notification_id);
     `);
 
     // 4. Baseline Seed Data if default workspace does not exist

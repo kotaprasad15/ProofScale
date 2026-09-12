@@ -10,3 +10,4 @@ export * from "./scoring/FindingsGenerator.js";
 export * from "./reports/ReportExporter.js";
 export * from "./reports/ComparisonEngine.js";
 export * from "./security/index.js";
+export * from "./events/LifecycleEventBus.js";

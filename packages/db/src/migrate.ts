@@ -236,6 +236,53 @@ export function runMigrations(customDb?: Database.Database | null) {
       window_start INTEGER NOT NULL,
       created_at INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS notification_preferences (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      org_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      event_category TEXT NOT NULL,
+      in_app_enabled INTEGER NOT NULL DEFAULT 1,
+      push_enabled INTEGER NOT NULL DEFAULT 1,
+      email_enabled INTEGER NOT NULL DEFAULT 0,
+      run_result_filter TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      endpoint TEXT NOT NULL,
+      p256dh_key TEXT NOT NULL,
+      auth_key TEXT NOT NULL,
+      user_agent TEXT,
+      created_at INTEGER NOT NULL,
+      last_seen_at INTEGER NOT NULL,
+      is_valid INTEGER NOT NULL DEFAULT 1
+    );
+
+    CREATE TABLE IF NOT EXISTS notifications (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      org_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      event_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      body TEXT NOT NULL,
+      severity TEXT NOT NULL DEFAULT 'info',
+      link_url TEXT,
+      is_read INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS notification_deliveries (
+      id TEXT PRIMARY KEY,
+      notification_id TEXT NOT NULL REFERENCES notifications(id) ON DELETE CASCADE,
+      channel TEXT NOT NULL,
+      status TEXT NOT NULL,
+      error_detail TEXT,
+      attempted_at INTEGER NOT NULL
+    );
   `);
 
   // Column backfill/alter migrations for existing SQLite records

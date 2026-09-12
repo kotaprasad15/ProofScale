@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -232,4 +232,51 @@ export const aiUsageRecords = pgTable("ai_usage_records", {
   requestsCount: integer("requests_count").notNull().default(1),
   windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  orgId: text("org_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  eventCategory: text("event_category").notNull(), // 'run_results' | 'team_activity' | 'security_alerts'
+  inAppEnabled: boolean("in_app_enabled").notNull().default(true),
+  pushEnabled: boolean("push_enabled").notNull().default(true),
+  emailEnabled: boolean("email_enabled").notNull().default(false),
+  runResultFilter: text("run_result_filter"), // 'all' | 'tier_change_only' | 'failures_only'
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull(),
+  p256dhKey: text("p256dh_key").notNull(),
+  authKey: text("auth_key").notNull(),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+  isValid: boolean("is_valid").notNull().default(true)
+});
+
+export const notifications = pgTable("notifications", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  orgId: text("org_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  eventType: text("event_type").notNull(), // 'run.completed' | 'run.failed' | 'run.aborted' | 'run.tier_changed'
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  severity: text("severity").notNull().default("info"), // 'info' | 'warning' | 'critical'
+  linkUrl: text("link_url"),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+export const notificationDeliveries = pgTable("notification_deliveries", {
+  id: text("id").primaryKey(),
+  notificationId: text("notification_id").notNull().references(() => notifications.id, { onDelete: "cascade" }),
+  channel: text("channel").notNull(), // 'in_app' | 'push' | 'email'
+  status: text("status").notNull(), // 'sent' | 'failed' | 'skipped_preference'
+  errorDetail: text("error_detail"),
+  attemptedAt: timestamp("attempted_at", { withTimezone: true }).notNull().defaultNow()
 });

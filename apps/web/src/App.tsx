@@ -17,6 +17,8 @@ import { StatusChip, readinessTone } from "./components/ui/StatusChip";
 import { KillSwitchView } from "./components/KillSwitchView";
 import { DashboardOverview } from "./components/DashboardOverview";
 import { ThemeProvider } from "./components/home/ThemeContext";
+import { useNotifications } from "./hooks/useNotifications";
+import { NotificationPreferencesView } from "./components/notifications/NotificationPreferencesView";
 import { Shield, Play, Target, CheckCircle2, FileText, AlertTriangle, Users, LogOut, ArrowRight, Activity, Home } from "lucide-react";
 
 interface SessionUser {
@@ -149,6 +151,12 @@ function MainApp({
   const isTester = authData?.orgRole === "tester" || authData?.projectRole === "tester";
   const activeTab = route.tab;
 
+  // Real-time notifications, presence heartbeats, and web push hook
+  const notifications = useNotifications(
+    currentUser.id,
+    selectedOrgId || authData?.activeOrganizationId || undefined
+  );
+
   // Dynamically resolve active project ID
   const projectId = authData?.activeProjectId || authData?.projects?.[0]?.id || projectsQuery.data?.[0]?.id || "proj_demo_01";
 
@@ -164,6 +172,9 @@ function MainApp({
       onSelectOrg={handleSelectOrg}
       onLogout={onLogout}
       onGoHome={onGoHome}
+      toasts={notifications.toasts}
+      onDismissToast={notifications.dismissToast}
+      onNavigate={onNavigate}
     >
       {activeTab === "projects" && <DashboardOverview projectId={projectId} onNavigate={handleTabChange} isTester={isTester} />}
       {activeTab === "targets" && <TargetRegistrationView projectId={projectId} />}
@@ -229,6 +240,18 @@ function MainApp({
               <span className="text-text-muted">Scoring Engine:</span>
               <span className="text-signal-teal font-bold">mvp-1 (Deterministic)</span>
             </div>
+          </div>
+
+          {/* Notification & Push Preferences */}
+          <div className="p-6 rounded-2xl bg-ink-950/80 border border-white/[0.06]">
+            <NotificationPreferencesView
+              orgId={selectedOrgId || authData?.activeOrganizationId}
+              orgRole={authData?.orgRole}
+              subscribeToWebPush={notifications.subscribeToWebPush}
+              pushPermission={notifications.pushPermission}
+              isPushSupported={notifications.isPushSupported}
+              isSubscribingPush={notifications.isSubscribingPush}
+            />
           </div>
 
           <KillSwitchView />

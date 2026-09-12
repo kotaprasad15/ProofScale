@@ -24,3 +24,7 @@ export const sessions = (isPostgres ? pgSchema.sessions : sqliteSchema.sessions)
 export const passwordResetTokens = (isPostgres ? pgSchema.passwordResetTokens : sqliteSchema.passwordResetTokens) as typeof sqliteSchema.passwordResetTokens;
 export const processedWebhooks = (isPostgres ? pgSchema.processedWebhooks : sqliteSchema.processedWebhooks) as typeof sqliteSchema.processedWebhooks;
 export const aiUsageRecords = (isPostgres ? pgSchema.aiUsageRecords : sqliteSchema.aiUsageRecords) as typeof sqliteSchema.aiUsageRecords;
+export const notificationPreferences = (isPostgres ? pgSchema.notificationPreferences : sqliteSchema.notificationPreferences) as typeof sqliteSchema.notificationPreferences;
+export const pushSubscriptions = (isPostgres ? pgSchema.pushSubscriptions : sqliteSchema.pushSubscriptions) as typeof sqliteSchema.pushSubscriptions;
+export const notifications = (isPostgres ? pgSchema.notifications : sqliteSchema.notifications) as typeof sqliteSchema.notifications;
+export const notificationDeliveries = (isPostgres ? pgSchema.notificationDeliveries : sqliteSchema.notificationDeliveries) as typeof sqliteSchema.notificationDeliveries;

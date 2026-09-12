@@ -23,6 +23,9 @@ import { UserPermissions } from "@proofscale/shared";
 import { BrandLogo } from "./BrandLogo";
 import { ThemeToggle } from "./home/ThemeToggle";
 import { CommandPalette } from "./CommandPalette";
+import { NotificationBell } from "./notifications/NotificationBell";
+import { ToastContainer } from "./notifications/ToastContainer";
+import { InAppToast } from "../hooks/useNotifications";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -36,6 +39,9 @@ interface LayoutProps {
   onSelectOrg?: (orgId: string) => void;
   onLogout?: () => void;
   onGoHome?: () => void;
+  toasts?: InAppToast[];
+  onDismissToast?: (id: string) => void;
+  onNavigate?: (path: string) => void;
 }
 
 export function Layout({
@@ -49,7 +55,10 @@ export function Layout({
   userEmail = "user@organization.dev",
   onSelectOrg,
   onLogout,
-  onGoHome
+  onGoHome,
+  toasts,
+  onDismissToast,
+  onNavigate
 }: LayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     return localStorage.getItem("rc_sidebar_collapsed") === "true";
@@ -308,6 +317,13 @@ export function Layout({
               </kbd>
             </button>
 
+            {/* Notification Bell with Dropdown Inbox */}
+            <NotificationBell
+              orgId={activeOrgId}
+              onNavigate={onNavigate || onTabChange}
+              onOpenSettings={() => onTabChange?.("settings")}
+            />
+
             {/* System Status Ping Badge */}
             <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-signal-teal/10 border border-signal-teal/20 text-signal-teal text-[11px] font-mono font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-signal-teal animate-pulse" />
@@ -321,6 +337,15 @@ export function Layout({
           {children}
         </main>
       </div>
+
+      {/* Floating Realtime Toast Notifications */}
+      {toasts && onDismissToast && (
+        <ToastContainer
+          toasts={toasts}
+          onDismiss={onDismissToast}
+          onNavigate={onNavigate || onTabChange}
+        />
+      )}
     </div>
   );
 }
