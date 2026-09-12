@@ -198,67 +198,58 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
       <main className="relative z-10 max-w-4xl w-full mx-auto px-6 sm:px-12 py-6">
         <div className="glass-panel overflow-hidden border border-slate-300 dark:border-white/[0.12] grid grid-cols-1 md:grid-cols-12 shadow-2xl bg-white dark:bg-ink-950/80">
           
-          {/* Left Column: Shield & Security Notice */}
-          <div className="md:col-span-5 p-8 bg-slate-50 dark:bg-ink-900/90 border-b md:border-b-0 md:border-r border-slate-200 dark:border-white/[0.08] flex flex-col justify-between space-y-6 relative overflow-hidden">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono text-[10px] font-bold text-black dark:text-signal-indigo bg-slate-200/80 dark:bg-signal-indigo-soft border border-slate-300 dark:border-signal-indigo/20 uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-signal-indigo animate-pulse" />
-                SECURE IDENTITY PIPELINE
-              </div>
-              <h2 className="font-display font-bold text-2xl text-black dark:text-white tracking-tight">
-                {isSignUp ? "Create your workspace" : "Return to the evidence"}
-              </h2>
-              <p className="text-black dark:text-text-muted text-xs leading-relaxed font-sans font-medium">
-                {isSignUp
-                  ? "Register with your work email and password. Your credentials are cryptographically protected with salted scrypt hashing and persisted to Supabase PostgreSQL."
-                  : "Sign in to inspect your organization’s declared test envelopes, report archives, and permitted workspace actions."}
-              </p>
-            </div>
+          {/* Left Column: Big Light Blue Shield in Middle (No Text) */}
+          <div className="md:col-span-5 p-8 sm:p-12 bg-slate-50 dark:bg-ink-900/90 border-b md:border-b-0 md:border-r border-slate-200 dark:border-white/[0.08] flex items-center justify-center relative overflow-hidden min-h-[260px] md:min-h-[500px]">
+            {/* Ambient Light Blue Glow */}
+            <div className="absolute w-64 h-64 sm:w-80 sm:h-80 rounded-full bg-sky-400/20 dark:bg-sky-400/15 blur-3xl pointer-events-none" />
 
-            {/* RateCap Security Shield Feature (Replaces Database Storage Box) */}
-            <div className="my-auto py-6 flex flex-col items-center justify-center text-center space-y-4">
-              <div className="relative group">
-                <div className="absolute -inset-3 bg-gradient-to-r from-signal-indigo via-[#4D51E8] to-signal-teal rounded-3xl blur-xl opacity-25 group-hover:opacity-50 transition duration-500" />
-                <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-signal-indigo via-[#4D51E8] to-signal-teal p-[2px] shadow-2xl transition-transform duration-300 group-hover:scale-105">
-                  <div className="w-full h-full bg-slate-950 rounded-[22px] flex items-center justify-center text-signal-teal shadow-inner">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-14 h-14"
-                    >
-                      <path
-                        d="M12 2L4 5.5V11.5C4 16.5 7.5 21 12 22C16.5 21 20 16.5 20 11.5V5.5L12 2Z"
-                        stroke="url(#shield_left_grad)"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <circle cx="12" cy="12" r="2.5" fill="#2FD4A6" />
-                      <defs>
-                        <linearGradient id="shield_left_grad" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
-                          <stop stopColor="#5B5FEF" />
-                          <stop offset="1" stopColor="#2FD4A6" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                  </div>
-                </div>
-              </div>
+            {/* Big Light Blue Shield */}
+            <div className="relative z-10 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-36 h-36 sm:w-48 sm:h-48 md:w-56 md:h-56 drop-shadow-[0_12px_32px_rgba(56,189,248,0.38)] transition-transform duration-300 hover:scale-105"
+              >
+                <defs>
+                  <linearGradient id="shield_light_blue_grad" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#38BDF8" />
+                    <stop offset="0.5" stopColor="#0EA5E9" />
+                    <stop offset="1" stopColor="#0284C7" />
+                  </linearGradient>
+                  <linearGradient id="shield_inner_fill" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#38BDF8" stopOpacity="0.22" />
+                    <stop offset="1" stopColor="#0284C7" stopOpacity="0.08" />
+                  </linearGradient>
+                  <linearGradient id="shield_inner_stroke" x1="12" y1="5" x2="12" y2="19" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#7DD3FC" stopOpacity="0.85" />
+                    <stop offset="1" stopColor="#38BDF8" stopOpacity="0.3" />
+                  </linearGradient>
+                </defs>
 
-              <div className="space-y-1">
-                <div className="font-display font-bold text-base text-black dark:text-white tracking-tight">
-                  RateCap Shield
-                </div>
-                <div className="font-mono text-[11px] text-slate-700 dark:text-text-muted uppercase tracking-wider font-semibold">
-                  Hardened Verification &amp; Load Safety
-                </div>
-              </div>
+                {/* Outer Shield Outline */}
+                <path
+                  d="M12 2L4 5.5V11.5C4 16.5 7.5 21 12 22C16.5 21 20 16.5 20 11.5V5.5L12 2Z"
+                  fill="url(#shield_inner_fill)"
+                  stroke="url(#shield_light_blue_grad)"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
 
-              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-200/80 dark:bg-black/40 border border-slate-300 dark:border-white/[0.08] text-[10px] font-mono text-black dark:text-signal-teal font-bold shadow-sm">
-                <ShieldCheck className="w-3.5 h-3.5 text-signal-teal shrink-0" />
-                <span>DUAL-SCOPE RBAC &amp; HSTS ACTIVE</span>
-              </div>
+                {/* Inner Inset Contour */}
+                <path
+                  d="M12 4.6L5.8 7.3V11.8C5.8 15.6 8.5 19.1 12 20C15.5 19.1 18.2 15.6 18.2 11.8V7.3L12 4.6Z"
+                  stroke="url(#shield_inner_stroke)"
+                  strokeWidth="1"
+                  strokeDasharray="2.5 2"
+                  strokeLinecap="round"
+                />
+
+                {/* Center Core Node */}
+                <circle cx="12" cy="12" r="2.5" fill="#38BDF8" />
+                <circle cx="12" cy="12" r="4.5" stroke="#7DD3FC" strokeWidth="1" strokeOpacity="0.45" />
+              </svg>
             </div>
           </div>
 
