@@ -110,7 +110,7 @@ export function HomeView({
   return (
     <ThemeProvider>
       <SmoothScroll>
-        <div className="bg-[var(--color-bg)] min-h-screen text-text-primary selection:bg-signal-indigo/30 selection:text-white relative overflow-x-hidden transition-colors duration-300">
+        <div className="bg-[var(--color-bg)] min-h-screen text-text-primary relative overflow-x-hidden transition-colors duration-300">
           {/* 3D Depth Particle Field & Floating Wireframe (Behind all content) */}
           <SceneBackground />
 

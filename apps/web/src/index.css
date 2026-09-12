@@ -150,6 +150,30 @@ html.dark,
     outline-offset: 2px;
     border-radius: 6px;
   }
+
+  /* High-contrast Text Selection Highlight System */
+  ::selection {
+    background-color: rgba(79, 83, 232, 0.25);
+    color: inherit;
+  }
+}
+
+/* Global Text Drag & Selection Highlighting across Themes */
+::selection {
+  background-color: rgba(79, 83, 232, 0.25);
+  color: inherit;
+}
+
+html.light ::selection,
+[data-theme="light"] ::selection {
+  background-color: rgba(79, 83, 232, 0.25);
+  color: #0C101A !important;
+}
+
+html.dark ::selection,
+[data-theme="dark"] ::selection {
+  background-color: rgba(91, 95, 239, 0.40);
+  color: #FFFFFF !important;
 }
 
 /* Custom Scrollbar */

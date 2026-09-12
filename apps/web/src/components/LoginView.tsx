@@ -168,7 +168,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
   };
 
   return (
-    <div className="min-h-screen bg-ink-950 text-text-primary flex flex-col justify-between relative selection:bg-signal-indigo/30 selection:text-white">
+    <div className="min-h-screen bg-ink-950 text-text-primary flex flex-col justify-between relative">
       {/* Background ambient gradient glow */}
       <div
         aria-hidden="true"
