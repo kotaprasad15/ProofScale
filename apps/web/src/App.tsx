@@ -84,6 +84,11 @@ function MainApp({
   const projectsQuery = trpc.projects.list.useQuery();
   const selectWorkspaceMutation = trpc.auth.selectWorkspace.useMutation();
 
+  // Real-time notifications, presence heartbeats, and web push hook
+  // MUST be called unconditionally at top level to satisfy Rules of Hooks (prevents React Error #310)
+  const activeOrgId = selectedOrgId || meQuery.data?.activeOrganizationId || undefined;
+  const notifications = useNotifications(currentUser.id, activeOrgId);
+
   const handleSelectRun = (runId: string) => {
     onNavigate(`/reports?runId=${runId}`);
   };
@@ -150,12 +155,6 @@ function MainApp({
 
   const isTester = authData?.orgRole === "tester" || authData?.projectRole === "tester";
   const activeTab = route.tab;
-
-  // Real-time notifications, presence heartbeats, and web push hook
-  const notifications = useNotifications(
-    currentUser.id,
-    selectedOrgId || authData?.activeOrganizationId || undefined
-  );
 
   // Dynamically resolve active project ID
   const projectId = authData?.activeProjectId || authData?.projects?.[0]?.id || projectsQuery.data?.[0]?.id || "proj_demo_01";
