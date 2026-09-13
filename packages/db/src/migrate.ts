@@ -220,6 +220,23 @@ export function runMigrations(customDb?: Database.Database | null) {
       created_at INTEGER NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS email_codes (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+      purpose TEXT NOT NULL CHECK (purpose IN ('signup_verification', 'password_reset')),
+      code_hash TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      consumed_at INTEGER,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      request_ip TEXT,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS email_codes_email_purpose_idx ON email_codes(email, purpose);
+    CREATE INDEX IF NOT EXISTS email_codes_active_lookup_idx ON email_codes(email, purpose, consumed_at);
+    CREATE UNIQUE INDEX IF NOT EXISTS email_codes_one_active_idx ON email_codes(email, purpose) WHERE consumed_at IS NULL;
+
     CREATE TABLE IF NOT EXISTS processed_webhooks (
       id TEXT PRIMARY KEY,
       event_id TEXT NOT NULL UNIQUE,
@@ -287,8 +304,11 @@ export function runMigrations(customDb?: Database.Database | null) {
 
   // Column backfill/alter migrations for existing SQLite records
   try { targetDb.exec("ALTER TABLE users ADD COLUMN password_hash TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE users ADD COLUMN email_verified_at INTEGER;"); } catch {}
   try { targetDb.exec("ALTER TABLE users ADD COLUMN failed_login_attempts INTEGER NOT NULL DEFAULT 0;"); } catch {}
   try { targetDb.exec("ALTER TABLE users ADD COLUMN locked_until INTEGER;"); } catch {}
+  // Existing accounts were created before email verification existed.
+  targetDb.exec("UPDATE users SET email_verified_at = COALESCE(email_verified_at, created_at) WHERE email_verified_at IS NULL;");
   try { targetDb.exec("ALTER TABLE organizations ADD COLUMN slug TEXT NOT NULL DEFAULT 'default-org';"); } catch {}
   try { targetDb.exec("ALTER TABLE organizations ADD COLUMN owner_id TEXT NOT NULL DEFAULT 'usr_admin_01';"); } catch {}
   try { targetDb.exec("ALTER TABLE organizations ADD COLUMN owner_user_id TEXT NOT NULL DEFAULT 'usr_admin_01';"); } catch {}

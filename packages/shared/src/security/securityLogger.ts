@@ -5,6 +5,8 @@ export type SecurityEventType =
   | "auth.password_changed"
   | "auth.password_reset_requested"
   | "auth.password_reset_completed"
+  | "auth.email_verification_requested"
+  | "auth.email_verified"
   | "auth.session_revoked"
   | "auth.session_rotated"
   | "auth.permission_denied"

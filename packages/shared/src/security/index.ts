@@ -1,6 +1,7 @@
 export * from "./passwordService.js";
 export * from "./sessionSecurity.js";
 export * from "./passwordResetService.js";
+export * from "./emailCodeService.js";
 export * from "./uploadValidator.js";
 export * from "./paymentWebhookValidator.js";
 export * from "./pricingEngine.js";

@@ -105,6 +105,20 @@ Tables and seed data are automatically initialized on startup, or you can run:
 npm run db:seed
 ```
 
+### Production authentication environment
+
+Email verification and password recovery require these server-side variables in production:
+
+```bash
+OTP_SECRET=long-random-server-secret
+UPSTASH_REDIS_REST_URL=https://...upstash.io
+UPSTASH_REDIS_REST_TOKEN=...
+RESEND_API_KEY=re_...
+RESEND_FROM="Ratecap <security@your-domain.example>"
+```
+
+`OTP_SECRET` is used only to HMAC OTPs before database storage. Redis credentials are mandatory in production so request limits cannot silently fall back to per-instance memory. Resend delivers verification, recovery, and password-changed emails; configure and verify the sender domain before enabling production sign-up.
+
 ### 3. Run Development Services
 Run the full monorepo stack:
 ```bash

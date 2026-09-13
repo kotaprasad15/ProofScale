@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, boolean, index } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -8,6 +8,7 @@ export const users = pgTable("users", {
   onboardingStatus: text("onboarding_status").notNull().default("completed"),
   lastWorkspaceId: text("last_workspace_id"),
   passwordHash: text("password_hash"),
+  emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
   failedLoginAttempts: integer("failed_login_attempts").notNull().default(0),
   lockedUntil: timestamp("locked_until", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -216,6 +217,22 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   ipAddress: text("ip_address"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 });
+
+export const emailCodes = pgTable("email_codes", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  purpose: text("purpose", { enum: ["signup_verification", "password_reset"] }).notNull(),
+  codeHash: text("code_hash").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  consumedAt: timestamp("consumed_at", { withTimezone: true }),
+  attempts: integer("attempts").notNull().default(0),
+  requestIp: text("request_ip"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => [
+  index("email_codes_email_purpose_idx").on(table.email, table.purpose),
+  index("email_codes_active_lookup_idx").on(table.email, table.purpose, table.consumedAt)
+]);
 
 export const processedWebhooks = pgTable("processed_webhooks", {
   id: text("id").primaryKey(),

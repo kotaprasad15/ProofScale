@@ -1,9 +1,9 @@
 import crypto from "node:crypto";
 
 export class PasswordResetService {
-  public static readonly RESET_TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutes
+  public static readonly RESET_TOKEN_TTL_MS = 10 * 60 * 1000; // 10 minutes
   public static readonly GENERIC_RESET_RESPONSE =
-    "If an account exists for this email, password reset instructions have been dispatched.";
+    "If an account exists for that email, we've sent a code.";
   public static readonly GENERIC_AUTH_ERROR = "Invalid email or password.";
 
   /**

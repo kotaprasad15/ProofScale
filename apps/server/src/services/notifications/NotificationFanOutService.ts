@@ -4,9 +4,17 @@ import { RunLifecycleEvent, NotificationCategory, NotificationSeverity } from "@
 import { PresenceService } from "../presence/PresenceService.js";
 import { RealtimeNotificationManager } from "./RealtimeNotificationManager.js";
 import { WebPushService } from "./WebPushService.js";
+import { EmailService } from "../EmailService.js";
 import crypto from "node:crypto";
 
 export class NotificationFanOutService {
+  /** Security events use the same fan-out boundary as run events, but email is
+   * mandatory and does not depend on a workspace notification preference. */
+  static async notifyPasswordChanged(userId: string, email: string): Promise<void> {
+    await EmailService.sendPasswordChanged(email);
+    console.info(`Password-changed security notification delivered for ${userId}`);
+  }
+
   /**
    * Main Fan-out handler for RunLifecycleEvent.
    */

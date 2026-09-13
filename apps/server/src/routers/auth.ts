@@ -26,6 +26,91 @@ import { eq, and, gt, isNull } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import crypto from "node:crypto";
 import { z } from "zod";
+import { EmailCodeManager } from "../services/EmailCodeManager.js";
+import { OtpRateLimiter } from "../services/OtpRateLimiter.js";
+import { NotificationFanOutService } from "../services/notifications/NotificationFanOutService.js";
+
+const GENERIC_INVALID_CODE = "Invalid or expired code.";
+
+async function consumeOtpRequestAllowance(email: string, ip: string): Promise<void> {
+  try {
+    const allowed = await OtpRateLimiter.consume(email, ip);
+    if (allowed) return;
+  } catch (error) {
+    // Do not issue security codes if the production rate limiter is unavailable.
+    SecurityLogger.log({
+      eventType: "rate_limit.exceeded",
+      ipAddress: ip,
+      message: "OTP request rejected because rate-limit infrastructure was unavailable"
+    });
+  }
+  throw new TRPCError({
+    code: "TOO_MANY_REQUESTS",
+    message: "Too many code requests. Please try again in 15 minutes."
+  });
+}
+
+async function resetPasswordWithToken(ctx: any, resetToken: string, newPassword: string) {
+  const tokenHash = PasswordResetService.hashRawToken(resetToken);
+  const now = new Date();
+  const [tokenRecord] = await ctx.db
+    .select()
+    .from(passwordResetTokens)
+    .where(eq(passwordResetTokens.tokenHash, tokenHash));
+
+  if (!tokenRecord || !PasswordResetService.isTokenValid(tokenRecord.expiresAt, tokenRecord.usedAt)) {
+    SecurityLogger.log({
+      eventType: "auth.login_failed",
+      ipAddress: ctx.req?.ip,
+      message: "Password reset completion failed: invalid, expired, or previously used token"
+    });
+    throw new TRPCError({ code: "BAD_REQUEST", message: "This password reset token is invalid or has expired." });
+  }
+
+  const complexity = PasswordService.validateComplexity(newPassword);
+  if (!complexity.valid) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: complexity.reason || "Invalid password complexity." });
+  }
+
+  const [user] = await ctx.db.select().from(users).where(eq(users.id, tokenRecord.userId));
+  if (!user) throw new TRPCError({ code: "BAD_REQUEST", message: "This password reset token is invalid or has expired." });
+
+  await (ctx.db as any).transaction(async (tx: any) => {
+    // One-time use is consumed before the password is changed, preventing replay.
+    const consumed = await tx.update(passwordResetTokens).set({ usedAt: now })
+      .where(and(eq(passwordResetTokens.id, tokenRecord.id), isNull(passwordResetTokens.usedAt)))
+      .returning({ id: passwordResetTokens.id });
+    if (!consumed[0]) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "This password reset token is invalid or has expired." });
+    }
+    await tx.update(users).set({
+      passwordHash: PasswordService.hashPassword(newPassword),
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      updatedAt: now
+    }).where(eq(users.id, tokenRecord.userId));
+    await tx.update(sessions).set({ revokedAt: now })
+      .where(and(eq(sessions.userId, tokenRecord.userId), isNull(sessions.revokedAt)));
+  });
+
+  SecurityLogger.log({
+    eventType: "auth.password_reset_completed",
+    userId: tokenRecord.userId,
+    ipAddress: ctx.req?.ip,
+    message: "Password reset completed successfully. All existing sessions were revoked."
+  });
+
+  // Notification delivery must not roll back an already-secure password reset.
+  await NotificationFanOutService.notifyPasswordChanged(tokenRecord.userId, user.email).catch(() => {
+    SecurityLogger.log({
+      eventType: "auth.password_reset_completed",
+      userId: tokenRecord.userId,
+      message: "Password reset completed but password-changed email delivery failed"
+    });
+  });
+
+  return { success: true, message: "Your password has been successfully reset. Please sign in with your new password." };
+}
 
 
 export const authRouter = router({
@@ -378,6 +463,8 @@ export const authRouter = router({
         });
       }
 
+      await consumeOtpRequestAllowance(email, ip);
+
       // 4. Hash password with salted scrypt (strong cryptographic hashing)
       const passwordHash = PasswordService.hashPassword(input.password);
       const userId = `usr_${crypto.randomUUID().slice(0, 8)}`;
@@ -391,48 +478,25 @@ export const authRouter = router({
         role: "member",
         onboardingStatus: "required", // User must create an org or join an org next
         passwordHash,
+        emailVerifiedAt: null,
         failedLoginAttempts: 0,
         lockedUntil: null
       });
 
-      // 6. Create active session
-      const rawSessionToken = SessionSecurity.generateSessionToken();
-      const sessionTokenHash = SessionSecurity.hashSessionToken(rawSessionToken);
-      const csrfToken = SessionSecurity.generateCsrfToken();
-      const sessionId = `sess_${crypto.randomUUID().slice(0, 8)}`;
-      const expiresAt = new Date(Date.now() + SessionSecurity.SESSION_DURATION_MS);
-
-      await ctx.db.insert(sessions).values({
-        id: sessionId,
-        userId,
-        sessionTokenHash,
-        csrfToken,
-        ipAddress: ip,
-        userAgent: ctx.req?.headers?.["user-agent"] || "unknown",
-        expiresAt,
-        createdAt: new Date(),
-        lastActiveAt: new Date()
-      });
-
-      // 7. Issue secure HTTP cookie if response object is present
-      if (ctx.res && typeof ctx.res.cookie === "function") {
-        const isProd = process.env.NODE_ENV === "production";
-        const cookieOpts = SessionSecurity.getSecureCookieOptions(isProd);
-        ctx.res.cookie(SessionSecurity.COOKIE_NAME, rawSessionToken, cookieOpts);
-      }
+      // 6. Verification is required before a session can be issued.
+      await EmailCodeManager.issue({ email, userId, purpose: "signup_verification", requestIp: ip });
 
       // 8. Log security event
       SecurityLogger.log({
         eventType: "auth.login_success",
         userId,
         ipAddress: ip,
-        message: "New user registered and session created successfully"
+        message: "New user registered; email verification code issued before session creation"
       });
 
       return {
         success: true,
-        sessionToken: rawSessionToken,
-        csrfToken,
+        verificationRequired: true,
         user: {
           id: userId,
           email,
@@ -490,6 +554,11 @@ export const authRouter = router({
           user.passwordHash = demoPasswordHash;
           user.failedLoginAttempts = 0;
           user.lockedUntil = null;
+        }
+        if (user && !user.emailVerifiedAt) {
+          await ctx.db.update(users).set({ emailVerifiedAt: new Date(), updatedAt: new Date() })
+            .where(eq(users.id, user.id));
+          user.emailVerifiedAt = new Date();
         }
       }
 
@@ -566,6 +635,13 @@ export const authRouter = router({
       }
 
       // 4. Successful Authentication: Reset lockouts, rotate/create session (#19)
+      if (!user.emailVerifiedAt) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Please verify your email address before signing in."
+        });
+      }
+
       await ctx.db
         .update(users)
         .set({
@@ -601,7 +677,7 @@ export const authRouter = router({
       }
 
       SecurityLogger.log({
-        eventType: "auth.login_success",
+        eventType: "auth.email_verification_requested",
         userId: user.id,
         ipAddress: ip,
         message: "User logged in successfully; new session issued with secure flags"
@@ -724,25 +800,21 @@ export const authRouter = router({
       const email = input.email.trim().toLowerCase();
       const ip = ctx.req?.ip || "unknown_ip";
 
+      await consumeOtpRequestAllowance(email, ip);
+
       const [user] = await ctx.db.select().from(users).where(eq(users.email, email));
 
       if (user) {
-        const { rawToken, tokenHash, expiresAt } = PasswordResetService.generateResetToken();
-
-        await ctx.db.insert(passwordResetTokens).values({
-          id: `rst_${crypto.randomUUID().slice(0, 8)}`,
-          userId: user.id,
-          tokenHash,
-          expiresAt,
-          ipAddress: ip,
-          createdAt: new Date()
-        });
+        // A fresh recovery request supersedes any previously issued reset token too.
+        await ctx.db.update(passwordResetTokens).set({ usedAt: new Date() })
+          .where(and(eq(passwordResetTokens.userId, user.id), isNull(passwordResetTokens.usedAt)));
+        await EmailCodeManager.issue({ email, userId: user.id, purpose: "password_reset", requestIp: ip });
 
         SecurityLogger.log({
           eventType: "auth.password_reset_requested",
           userId: user.id,
           ipAddress: ip,
-          message: "Password reset link generated with single-use expiration token"
+          message: "Password reset OTP issued with 10-minute expiration"
         });
       } else {
         // Run dummy cryptographic work to ensure uniform execution timing (#5)
@@ -761,6 +833,72 @@ export const authRouter = router({
       };
     }),
 
+  verifyResetCode: publicProcedure
+    .input(z.object({ email: z.string().email(), code: z.string().regex(/^\d{6}$/) }))
+    .mutation(async ({ ctx, input }) => {
+      const email = input.email.trim().toLowerCase();
+      const result = await EmailCodeManager.consumeIfValid(email, "password_reset", input.code);
+      if (!result?.userId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: GENERIC_INVALID_CODE });
+      }
+      const userId = result.userId;
+
+      const now = new Date();
+      const { rawToken, tokenHash, expiresAt } = PasswordResetService.generateResetToken();
+      await (ctx.db as any).transaction(async (tx: any) => {
+        await tx.update(passwordResetTokens).set({ usedAt: now })
+          .where(and(eq(passwordResetTokens.userId, userId), isNull(passwordResetTokens.usedAt)));
+        await tx.insert(passwordResetTokens).values({
+          id: `rst_${crypto.randomUUID().slice(0, 12)}`,
+          userId,
+          tokenHash,
+          expiresAt,
+          ipAddress: ctx.req?.ip || "unknown_ip",
+          createdAt: now
+        });
+      });
+      return { success: true, resetToken: rawToken };
+    }),
+
+  resetPassword: publicProcedure
+    .input(z.object({ resetToken: z.string().min(16), newPassword: z.string().min(10) }))
+    .mutation(async ({ ctx, input }) => resetPasswordWithToken(ctx, input.resetToken, input.newPassword)),
+
+  verifyEmail: publicProcedure
+    .input(z.object({ email: z.string().email(), code: z.string().regex(/^\d{6}$/) }))
+    .mutation(async ({ ctx, input }) => {
+      const email = input.email.trim().toLowerCase();
+      const result = await EmailCodeManager.consumeIfValid(email, "signup_verification", input.code);
+      if (!result?.userId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: GENERIC_INVALID_CODE });
+      }
+      const userId = result.userId;
+      await ctx.db.update(users).set({ emailVerifiedAt: new Date(), updatedAt: new Date() })
+        .where(eq(users.id, userId));
+      SecurityLogger.log({
+        eventType: "auth.email_verified",
+        userId,
+        ipAddress: ctx.req?.ip,
+        message: "Email address verified successfully"
+      });
+      return { success: true };
+    }),
+
+  resendVerificationEmail: publicProcedure
+    .input(z.object({ email: z.string().email() }))
+    .mutation(async ({ ctx, input }) => {
+      const email = input.email.trim().toLowerCase();
+      const ip = ctx.req?.ip || "unknown_ip";
+      await consumeOtpRequestAllowance(email, ip);
+      const [user] = await ctx.db.select().from(users).where(eq(users.email, email));
+      if (user && !user.emailVerifiedAt) {
+        await EmailCodeManager.issue({ email, userId: user.id, purpose: "signup_verification", requestIp: ip });
+      } else {
+        PasswordService.runDummyVerification();
+      }
+      return { success: true, message: "If an account needs verification, we've sent a code." };
+    }),
+
   /**
    * 3, 4, 17: Complete single-use password reset, invalidate sessions, and unlock account
    */
@@ -771,71 +909,7 @@ export const authRouter = router({
         newPassword: z.string().min(10)
       })
     )
-    .mutation(async ({ ctx, input }) => {
-      const tokenHash = PasswordResetService.hashRawToken(input.token);
-      const now = new Date();
-
-      const [tokenRecord] = await ctx.db
-        .select()
-        .from(passwordResetTokens)
-        .where(eq(passwordResetTokens.tokenHash, tokenHash));
-
-      // Verify token exists, is unconsumed, and not expired (#4)
-      if (!tokenRecord || !PasswordResetService.isTokenValid(tokenRecord.expiresAt, tokenRecord.usedAt)) {
-        SecurityLogger.log({
-          eventType: "auth.login_failed",
-          ipAddress: ctx.req?.ip,
-          message: "Password reset completion failed: invalid, expired, or previously used token"
-        });
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "This password reset link is invalid or has expired."
-        });
-      }
-
-      // Validate complexity
-      const complexity = PasswordService.validateComplexity(input.newPassword);
-      if (!complexity.valid) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: complexity.reason || "Invalid password complexity." });
-      }
-
-      // Mark token consumed immediately (single-use #4)
-      await ctx.db
-        .update(passwordResetTokens)
-        .set({ usedAt: now })
-        .where(eq(passwordResetTokens.id, tokenRecord.id));
-
-      const newHash = PasswordService.hashPassword(input.newPassword);
-
-      // Update password and safely reset lockout state (#17)
-      await ctx.db
-        .update(users)
-        .set({
-          passwordHash: newHash,
-          failedLoginAttempts: 0,
-          lockedUntil: null,
-          updatedAt: now
-        })
-        .where(eq(users.id, tokenRecord.userId));
-
-      // Reset all active sessions on password change (#3)
-      await ctx.db
-        .update(sessions)
-        .set({ revokedAt: now })
-        .where(and(eq(sessions.userId, tokenRecord.userId), isNull(sessions.revokedAt)));
-
-      SecurityLogger.log({
-        eventType: "auth.password_reset_completed",
-        userId: tokenRecord.userId,
-        ipAddress: ctx.req?.ip,
-        message: "Password reset completed successfully. All existing sessions were revoked."
-      });
-
-      return {
-        success: true,
-        message: "Your password has been successfully reset. Please sign in with your new password."
-      };
-    }),
+    .mutation(async ({ ctx, input }) => resetPasswordWithToken(ctx, input.token, input.newPassword)),
 
   /**
    * 19. Logout & Session Invalidation
@@ -861,4 +935,3 @@ export const authRouter = router({
     return { success: true };
   })
 });
-

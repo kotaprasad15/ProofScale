@@ -12,12 +12,15 @@ interface LoginViewProps {
 
 export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: LoginViewProps) {
   const [isSignUp, setIsSignUp] = useState(initialMode === "signup");
+  const [flow, setFlow] = useState<"credentials" | "verify-email" | "request-reset" | "verify-reset" | "set-password">("credentials");
 
   // Form Fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [code, setCode] = useState("");
+  const [resetToken, setResetToken] = useState("");
 
   // Debounced email for real-time existence checking
   const [debouncedEmail, setDebouncedEmail] = useState("");
@@ -51,8 +54,14 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
   // Mutations
   const loginMutation = trpc.auth.login.useMutation();
   const signupMutation = trpc.auth.signup.useMutation();
+  const requestResetMutation = trpc.auth.requestPasswordReset.useMutation();
+  const verifyResetMutation = trpc.auth.verifyResetCode.useMutation();
+  const resetPasswordMutation = trpc.auth.resetPassword.useMutation();
+  const verifyEmailMutation = trpc.auth.verifyEmail.useMutation();
+  const resendVerificationMutation = trpc.auth.resendVerificationEmail.useMutation();
 
-  const isSubmitting = loginMutation.isPending || signupMutation.isPending;
+  const isSubmitting = loginMutation.isPending || signupMutation.isPending || requestResetMutation.isPending ||
+    verifyResetMutation.isPending || resetPasswordMutation.isPending || verifyEmailMutation.isPending || resendVerificationMutation.isPending;
 
   const passwordsMatch = !confirmPassword || password === confirmPassword;
   const isPasswordLongEnough = password.length >= 10;
@@ -62,6 +71,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
     setErrorMsg(null);
     setPassword("");
     setConfirmPassword("");
+    setFlow("credentials");
   };
 
   const [activeDemo, setActiveDemo] = useState<string | null>(null);
@@ -137,11 +147,10 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
         });
 
         if (res.success && res.user) {
-          onLogin({
-            id: res.user.id,
-            email: res.user.email,
-            organizationId: res.user.lastWorkspaceId || undefined
-          });
+          setPassword("");
+          setConfirmPassword("");
+          setCode("");
+          setFlow("verify-email");
         }
       } catch (err: any) {
         setErrorMsg(err?.message || "Registration failed. Please try again.");
@@ -164,6 +173,62 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
       } catch (err: any) {
         setErrorMsg(err?.message || "Invalid credentials or account locked.");
       }
+    }
+  };
+
+  const handleRequestReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    try {
+      await requestResetMutation.mutateAsync({ email: email.trim().toLowerCase() });
+      setCode("");
+      setFlow("verify-reset");
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Unable to send a code. Please try again.");
+    }
+  };
+
+  const handleVerifyEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    try {
+      await verifyEmailMutation.mutateAsync({ email: email.trim().toLowerCase(), code });
+      setFlow("credentials");
+      setIsSignUp(false);
+      setCode("");
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Invalid or expired code.");
+    }
+  };
+
+  const handleVerifyReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    try {
+      const result = await verifyResetMutation.mutateAsync({ email: email.trim().toLowerCase(), code });
+      setResetToken(result.resetToken);
+      setCode("");
+      setPassword("");
+      setConfirmPassword("");
+      setFlow("set-password");
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Invalid or expired code.");
+    }
+  };
+
+  const handleSetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    if (password !== confirmPassword) return setErrorMsg("Passwords do not match.");
+    try {
+      await resetPasswordMutation.mutateAsync({ resetToken, newPassword: password });
+      setPassword("");
+      setConfirmPassword("");
+      setResetToken("");
+      setFlow("credentials");
+      setIsSignUp(false);
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Unable to reset password. Please request a new code.");
     }
   };
 
@@ -259,15 +324,15 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
             <div className="flex items-center justify-between">
               <div>
                 <span className="font-mono text-[10px] text-black dark:text-signal-indigo font-bold uppercase tracking-wider">
-                  {isSignUp ? "NEW ACCOUNT" : "AUTHENTICATION"}
+                  {flow === "verify-email" ? "EMAIL VERIFICATION" : flow.includes("reset") || flow === "set-password" ? "PASSWORD RECOVERY" : isSignUp ? "NEW ACCOUNT" : "AUTHENTICATION"}
                 </span>
                 <h1 className="font-display font-bold text-2xl sm:text-3xl text-black dark:text-white tracking-tight mt-1">
-                  {isSignUp ? "Sign Up" : "Sign In"}
+                  {flow === "verify-email" ? "Verify your email" : flow === "request-reset" ? "Reset your password" : flow === "verify-reset" ? "Enter your code" : flow === "set-password" ? "Choose a new password" : isSignUp ? "Sign Up" : "Sign In"}
                 </h1>
               </div>
 
               {/* Mode Toggle Tabs */}
-              <div className="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-ink-900 border-2 border-slate-300 dark:border-white/[0.08] text-xs font-mono shadow-sm">
+              {flow === "credentials" && <div className="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-ink-900 border-2 border-slate-300 dark:border-white/[0.08] text-xs font-mono shadow-sm">
                 <button
                   type="button"
                   onClick={() => handleToggleMode(false)}
@@ -286,7 +351,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
                 >
                   Sign Up
                 </button>
-              </div>
+              </div>}
             </div>
 
             {/* Error Banner */}
@@ -297,7 +362,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {flow === "credentials" ? <form onSubmit={handleSubmit} className="space-y-4">
               {/* Email Input */}
               <div>
                 <label className="block text-xs font-mono text-black dark:text-slate-200 font-bold mb-1.5 uppercase tracking-wide">
@@ -432,14 +497,65 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
                   <LoadingDots size="sm" label={isSignUp ? "Creating account in Supabase..." : "Verifying credentials..."} />
                 ) : (
                   <>
-                    <span className="font-bold">{isSignUp ? "Create Account & Continue" : "Sign In"}</span>
+                    <span className="font-bold">{isSignUp ? "Create Account & Send Code" : "Sign In"}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
-            </form>
+            </form> : (
+              <form
+                onSubmit={flow === "verify-email" ? handleVerifyEmail : flow === "request-reset" ? handleRequestReset : flow === "verify-reset" ? handleVerifyReset : handleSetPassword}
+                className="space-y-4"
+              >
+                <p className="text-sm text-black dark:text-text-muted leading-relaxed">
+                  {flow === "verify-email" && `Enter the six-digit code sent to ${email}.`}
+                  {flow === "request-reset" && "Enter your email and we’ll send a six-digit reset code if an account exists."}
+                  {flow === "verify-reset" && `Enter the six-digit code sent to ${email}.`}
+                  {flow === "set-password" && "Choose a strong new password. You’ll be signed out on all devices."}
+                </p>
+                {flow === "request-reset" && (
+                  <label className="block text-xs font-mono text-black dark:text-slate-200 font-bold mb-1.5 uppercase tracking-wide">
+                    Email ID *
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1.5 w-full rounded-xl bg-white dark:bg-ink-900 text-black dark:text-white font-semibold border-2 border-slate-300 dark:border-white/15 px-4 py-2.5 outline-none" />
+                  </label>
+                )}
+                {(flow === "verify-email" || flow === "verify-reset") && (
+                  <label className="block text-xs font-mono text-black dark:text-slate-200 font-bold mb-1.5 uppercase tracking-wide">
+                    Six-digit code *
+                    <input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} required className="mt-1.5 w-full rounded-xl bg-white dark:bg-ink-900 text-black dark:text-white font-mono text-center tracking-[0.45em] font-bold border-2 border-slate-300 dark:border-white/15 px-4 py-2.5 outline-none" />
+                  </label>
+                )}
+                {flow === "set-password" && <>
+                  <label className="block text-xs font-mono text-black dark:text-slate-200 font-bold mb-1.5 uppercase tracking-wide">
+                    New password *
+                    <input type="password" minLength={10} value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1.5 w-full rounded-xl bg-white dark:bg-ink-900 text-black dark:text-white font-semibold border-2 border-slate-300 dark:border-white/15 px-4 py-2.5 outline-none" />
+                  </label>
+                  <label className="block text-xs font-mono text-black dark:text-slate-200 font-bold mb-1.5 uppercase tracking-wide">
+                    Confirm password *
+                    <input type="password" minLength={10} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="mt-1.5 w-full rounded-xl bg-white dark:bg-ink-900 text-black dark:text-white font-semibold border-2 border-slate-300 dark:border-white/15 px-4 py-2.5 outline-none" />
+                  </label>
+                </>}
+                <button type="submit" disabled={isSubmitting || ((flow === "verify-email" || flow === "verify-reset") && code.length !== 6)} className="w-full py-3.5 px-6 rounded-xl font-display font-bold text-sm transition cursor-pointer justify-center flex items-center gap-2 bg-slate-950 hover:bg-black text-white dark:bg-signal-indigo dark:hover:bg-signal-indigo/90 disabled:opacity-50">
+                  {isSubmitting ? <LoadingDots size="sm" label="Please wait..." /> : <><span>{flow === "verify-email" ? "Verify email" : flow === "request-reset" ? "Send reset code" : flow === "verify-reset" ? "Verify code" : "Reset password"}</span><ArrowRight className="w-4 h-4" /></>}
+                </button>
+                {flow === "verify-email" && <button type="button" onClick={async () => {
+                  try {
+                    await resendVerificationMutation.mutateAsync({ email: email.trim().toLowerCase() });
+                  } catch (err: any) {
+                    setErrorMsg(err?.message || "Unable to resend the code.");
+                  }
+                }} disabled={isSubmitting} className="w-full text-xs text-signal-indigo underline">Resend verification code</button>}
+                <button type="button" onClick={() => { setFlow("credentials"); setErrorMsg(null); }} className="w-full text-xs text-text-muted underline">Back to sign in</button>
+              </form>
+            )}
 
-            <div className="relative text-center pt-2">
+            {flow === "credentials" && !isSignUp && (
+              <button type="button" onClick={() => { setFlow("request-reset"); setErrorMsg(null); }} className="w-full -mt-2 text-xs text-signal-indigo hover:text-white underline">
+                Forgot your password?
+              </button>
+            )}
+
+            {flow === "credentials" && <><div className="relative text-center pt-2">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-slate-300 dark:border-white/[0.08]" />
               </div>
@@ -520,7 +636,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
               >
                 {isSignUp ? "Sign In" : "Sign Up"}
               </button>
-            </p>
+            </p></>}
           </div>
         </div>
       </main>

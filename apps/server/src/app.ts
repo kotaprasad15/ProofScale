@@ -23,6 +23,8 @@ import { PresenceService } from "./services/presence/PresenceService.js";
 
 export function createApp() {
   const app = express();
+  // Use the proxy-provided client IP for OTP abuse limits in Vercel/Railway.
+  app.set("trust proxy", 1);
 
   // 1. HSTS and Defense-in-Depth Security Headers (#1)
   app.use(hstsSecurityHeaders);

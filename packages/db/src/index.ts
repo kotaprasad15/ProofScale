@@ -22,6 +22,7 @@ export const artifacts = (isPostgres ? pgSchema.artifacts : sqliteSchema.artifac
 export const reportShares = (isPostgres ? pgSchema.reportShares : sqliteSchema.reportShares) as typeof sqliteSchema.reportShares;
 export const sessions = (isPostgres ? pgSchema.sessions : sqliteSchema.sessions) as typeof sqliteSchema.sessions;
 export const passwordResetTokens = (isPostgres ? pgSchema.passwordResetTokens : sqliteSchema.passwordResetTokens) as typeof sqliteSchema.passwordResetTokens;
+export const emailCodes = (isPostgres ? pgSchema.emailCodes : sqliteSchema.emailCodes) as typeof sqliteSchema.emailCodes;
 export const processedWebhooks = (isPostgres ? pgSchema.processedWebhooks : sqliteSchema.processedWebhooks) as typeof sqliteSchema.processedWebhooks;
 export const aiUsageRecords = (isPostgres ? pgSchema.aiUsageRecords : sqliteSchema.aiUsageRecords) as typeof sqliteSchema.aiUsageRecords;
 export const notificationPreferences = (isPostgres ? pgSchema.notificationPreferences : sqliteSchema.notificationPreferences) as typeof sqliteSchema.notificationPreferences;

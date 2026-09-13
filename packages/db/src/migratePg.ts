@@ -253,6 +253,23 @@ export async function runPgMigrations(connectionUrl?: string) {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS email_codes (
+        id TEXT PRIMARY KEY,
+        email TEXT NOT NULL,
+        user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+        purpose TEXT NOT NULL CHECK (purpose IN ('signup_verification', 'password_reset')),
+        code_hash TEXT NOT NULL,
+        expires_at TIMESTAMPTZ NOT NULL,
+        consumed_at TIMESTAMPTZ,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        request_ip TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS email_codes_email_purpose_idx ON email_codes(email, purpose);
+      CREATE INDEX IF NOT EXISTS email_codes_active_lookup_idx ON email_codes(email, purpose, consumed_at);
+      CREATE UNIQUE INDEX IF NOT EXISTS email_codes_one_active_idx ON email_codes(email, purpose) WHERE consumed_at IS NULL;
+
       CREATE TABLE IF NOT EXISTS processed_webhooks (
         id TEXT PRIMARY KEY,
         event_id TEXT NOT NULL UNIQUE,
@@ -319,8 +336,10 @@ export async function runPgMigrations(connectionUrl?: string) {
 
       -- Column migrations for users
       ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER NOT NULL DEFAULT 0;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ;
+      UPDATE users SET email_verified_at = COALESCE(email_verified_at, created_at) WHERE email_verified_at IS NULL;
       ALTER TABLE test_plans ADD COLUMN IF NOT EXISTS safety_limits_json TEXT;
       ALTER TABLE test_plans ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
       ALTER TABLE targets ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
