@@ -137,6 +137,7 @@ export const testRuns = pgTable("test_runs", {
   readinessLabel: text("readiness_label"),
   scoreBreakdownJson: text("score_breakdown_json"),
   summaryMetricsJson: text("summary_metrics_json"),
+  policySnapshotJson: text("policy_snapshot_json"),
   errorMessage: text("error_message"),
   region: text("region").notNull().default("local-us-east"),
   workerId: text("worker_id"),
@@ -225,6 +226,19 @@ export const processedWebhooks = pgTable("processed_webhooks", {
   processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow()
 });
 
+export const emailCodes = pgTable("email_codes", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  purpose: text("purpose").notNull(),
+  codeHash: text("code_hash").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  consumedAt: timestamp("consumed_at", { withTimezone: true }),
+  attempts: integer("attempts").notNull().default(0),
+  requestIp: text("request_ip"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+});
+
 export const aiUsageRecords = pgTable("ai_usage_records", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -279,4 +293,41 @@ export const notificationDeliveries = pgTable("notification_deliveries", {
   status: text("status").notNull(), // 'sent' | 'failed' | 'skipped_preference'
   errorDetail: text("error_detail"),
   attemptedAt: timestamp("attempted_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+export const readinessPolicies = pgTable("readiness_policies", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  testPlanId: text("test_plan_id").notNull().references(() => testPlans.id, { onDelete: "cascade" }),
+  version: integer("version").notNull().default(1),
+  name: text("name").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("draft"),
+  minimumScore: integer("minimum_score"),
+  maximumP95Ms: integer("maximum_p95_ms"),
+  maximumP99Ms: integer("maximum_p99_ms"),
+  maximumErrorRatePercent: integer("maximum_error_rate_percent"),
+  minimumThroughputRps: integer("minimum_throughput_rps"),
+  maximumTimeouts: integer("maximum_timeouts"),
+  failOnHardCap: boolean("fail_on_hard_cap").notNull().default(false),
+  minimumConfidence: text("minimum_confidence"),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  activatedAt: timestamp("activated_at", { withTimezone: true }),
+  archivedAt: timestamp("archived_at", { withTimezone: true })
+});
+
+export const baselines = pgTable("baselines", {
+  id: text("id").primaryKey(),
+  testPlanId: text("test_plan_id").notNull().references(() => testPlans.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").notNull(),
+  runId: text("run_id").notNull().references(() => testRuns.id, { onDelete: "cascade" }),
+  promotedBy: text("promoted_by").notNull(),
+  promotedAt: timestamp("promoted_at", { withTimezone: true }).notNull().defaultNow(),
+  reason: text("reason"),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  revokedBy: text("revoked_by")
 });

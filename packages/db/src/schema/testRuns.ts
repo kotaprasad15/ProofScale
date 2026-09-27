@@ -24,6 +24,7 @@ export const testRuns = sqliteTable("test_runs", {
   confidence: text("confidence", { enum: ["high", "medium", "low"] }),
   readinessLabel: text("readiness_label"),
   scoreBreakdownJson: text("score_breakdown_json"), // JSON ScoreBreakdown
+  policySnapshotJson: text("policy_snapshot_json"), // JSON PolicyEvaluationSnapshot
   errorMessage: text("error_message"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date())

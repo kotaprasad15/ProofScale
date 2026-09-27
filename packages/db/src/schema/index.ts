@@ -16,3 +16,6 @@ export * from "./reportShares.js";
 export * from "./sessions.js";
 export * from "./securityTables.js";
 export * from "./notifications.js";
+export * from "./readinessPolicies.js";
+export * from "./baselines.js";
+

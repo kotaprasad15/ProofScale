@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { TestProfile, PresetDefinitions } from "@proofscale/shared";
 import { LoadingDots } from "./LoadingDots";
+import { PolicyConfigurationView } from "./PolicyConfigurationView";
+import { BaselineView } from "./BaselineView";
 
 interface ScenarioItem {
   name: string;
@@ -741,6 +743,13 @@ export function TestPlanBuilderView({
                 </button>
               </div>
             </div>
+
+            {editingPlanId && (
+              <div className="pt-6 mt-6 border-t border-[var(--border)] grid grid-cols-1 md:grid-cols-2 gap-6">
+                <PolicyConfigurationView projectId={projectId} testPlanId={editingPlanId} />
+                <BaselineView testPlanId={editingPlanId} />
+              </div>
+            )}
           </div>
         )}
       </div>

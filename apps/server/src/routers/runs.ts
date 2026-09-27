@@ -67,18 +67,88 @@ export const runsRouter = router({
         .where(eq(runEvents.runId, input.id))
         .orderBy(runEvents.timestamp);
 
-      return {
-        ...runData.run,
-        planName: runData.planName,
-        planProfile: runData.planProfile,
-        scenarios: runData.planScenariosJson ? JSON.parse(runData.planScenariosJson) : [],
-        loadProfile: runData.planLoadProfileJson ? JSON.parse(runData.planLoadProfileJson) : null,
-        targetBaseUrl: runData.targetBaseUrl,
-        targetEnvironment: runData.targetEnvironment,
-        summaryMetrics: runData.run.summaryMetricsJson ? JSON.parse(runData.run.summaryMetricsJson) : null,
-        scoreBreakdown: runData.run.scoreBreakdownJson ? JSON.parse(runData.run.scoreBreakdownJson) : null,
-        events
-      };
+        const snapshotJson = runData.run.policySnapshotJson;
+        let policySnapshot = snapshotJson ? JSON.parse(snapshotJson) : null;
+
+        if (!policySnapshot && runData.run.status === "completed") {
+          // Lazy evaluation
+          const { readinessPolicies, baselines } = await import("@proofscale/db");
+          const { evaluateRunAgainstPolicy } = await import("@proofscale/shared");
+          const { and, desc, isNull } = await import("drizzle-orm");
+          
+          const [policy] = await ctx.db
+            .select()
+            .from(readinessPolicies)
+            .where(
+              and(
+                eq(readinessPolicies.testPlanId, runData.run.planId),
+                eq(readinessPolicies.status, "active")
+              )
+            )
+            .limit(1);
+
+          if (policy) {
+            const [baseline] = await ctx.db
+              .select({
+                baseline: baselines,
+                run: testRuns
+              })
+              .from(baselines)
+              .innerJoin(testRuns, eq(baselines.runId, testRuns.id))
+              .where(
+                and(
+                  eq(baselines.testPlanId, runData.run.planId),
+                  isNull(baselines.revokedAt)
+                )
+              )
+              .orderBy(desc(baselines.promotedAt))
+              .limit(1);
+
+            let baselineData = null;
+            if (baseline) {
+              baselineData = {
+                id: baseline.run.id,
+                score: baseline.run.score,
+                summaryMetrics: baseline.run.summaryMetricsJson ? JSON.parse(baseline.run.summaryMetricsJson) : null
+              };
+            }
+
+            const summaryMetrics = runData.run.summaryMetricsJson ? JSON.parse(runData.run.summaryMetricsJson) : null;
+            const hasHardCap = runData.run.scoreBreakdownJson && runData.run.scoreBreakdownJson.includes('"isHardCapTriggered":true'); // Rough check, since we just parse the whole thing anyway
+            const scoreBreakdown = runData.run.scoreBreakdownJson ? JSON.parse(runData.run.scoreBreakdownJson) : null;
+            
+            const result = evaluateRunAgainstPolicy({
+              currentRunId: runData.run.id,
+              score: runData.run.score,
+              confidence: runData.run.confidence as any,
+              summaryMetrics,
+              status: runData.run.status,
+              hasHardCapFailure: scoreBreakdown?.isHardCapTriggered || false,
+              policy: policy as any,
+              baseline: baselineData
+            });
+
+            policySnapshot = result;
+            await ctx.db
+              .update(testRuns)
+              .set({ policySnapshotJson: JSON.stringify(result) })
+              .where(eq(testRuns.id, runData.run.id));
+          }
+        }
+
+        return {
+          ...runData.run,
+          planName: runData.planName,
+          planProfile: runData.planProfile,
+          scenarios: runData.planScenariosJson ? JSON.parse(runData.planScenariosJson) : [],
+          loadProfile: runData.planLoadProfileJson ? JSON.parse(runData.planLoadProfileJson) : null,
+          targetBaseUrl: runData.targetBaseUrl,
+          targetEnvironment: runData.targetEnvironment,
+          summaryMetrics: runData.run.summaryMetricsJson ? JSON.parse(runData.run.summaryMetricsJson) : null,
+          scoreBreakdown: runData.run.scoreBreakdownJson ? JSON.parse(runData.run.scoreBreakdownJson) : null,
+          policySnapshot,
+          events
+        };
     }),
 
   create: requireProjectPermission("createRuns")

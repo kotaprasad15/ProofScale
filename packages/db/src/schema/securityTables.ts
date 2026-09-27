@@ -19,6 +19,19 @@ export const processedWebhooks = sqliteTable("processed_webhooks", {
   processedAt: integer("processed_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date())
 });
 
+export const emailCodes = sqliteTable("email_codes", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  purpose: text("purpose").notNull(),
+  codeHash: text("code_hash").notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  consumedAt: integer("consumed_at", { mode: "timestamp" }),
+  attempts: integer("attempts").notNull().default(0),
+  requestIp: text("request_ip"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date())
+});
+
 export const aiUsageRecords = sqliteTable("ai_usage_records", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),

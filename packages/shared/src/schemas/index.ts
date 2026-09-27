@@ -7,3 +7,4 @@ export * from "./testPlan.js";
 export * from "./testRun.js";
 export * from "./report.js";
 export * from "./notifications.js";
+export * from "./policy.js";

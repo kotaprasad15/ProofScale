@@ -209,6 +209,36 @@ export async function runPgMigrations(connectionUrl?: string) {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS readiness_policies (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+        project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        test_plan_id TEXT NOT NULL REFERENCES test_plans(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        version INTEGER NOT NULL DEFAULT 1,
+        status TEXT NOT NULL DEFAULT 'draft',
+        fail_on_hard_cap BOOLEAN NOT NULL DEFAULT false,
+        min_score INTEGER,
+        max_p95_ms INTEGER,
+        max_error_rate_percent DECIMAL,
+        created_by_user_id TEXT NOT NULL REFERENCES users(id),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        archived_at TIMESTAMPTZ
+      );
+
+      CREATE TABLE IF NOT EXISTS baselines (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+        project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        test_plan_id TEXT NOT NULL REFERENCES test_plans(id) ON DELETE CASCADE,
+        run_id TEXT NOT NULL REFERENCES test_runs(id) ON DELETE CASCADE,
+        status TEXT NOT NULL DEFAULT 'active',
+        promoted_by_user_id TEXT NOT NULL REFERENCES users(id),
+        promoted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        revoked_at TIMESTAMPTZ
+      );
+
       CREATE TABLE IF NOT EXISTS artifacts (
         id TEXT PRIMARY KEY,
         run_id TEXT NOT NULL REFERENCES test_runs(id) ON DELETE CASCADE,
@@ -328,6 +358,7 @@ export async function runPgMigrations(connectionUrl?: string) {
       ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS lease_owner TEXT;
       ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS attempt_count INTEGER NOT NULL DEFAULT 0;
       ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS worker_profile TEXT DEFAULT 'standard-runner-1';
+      ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS policy_snapshot_json TEXT;
     `);
 
     // 2. Enable Row Level Security (RLS) on ALL tables and apply scoped service_role policies
@@ -342,6 +373,8 @@ export async function runPgMigrations(connectionUrl?: string) {
       "audit_events",
       "targets",
       "test_plans",
+      "readiness_policies",
+      "baselines",
       "test_runs",
       "run_events",
       "findings",

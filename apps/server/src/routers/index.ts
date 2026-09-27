@@ -13,6 +13,8 @@ import { billingRouter } from "./billing.js";
 import { aiRouter } from "./ai.js";
 import { adminRouter } from "./admin.js";
 import { notificationsRouter } from "./notifications.js";
+import { policiesRouter } from "./policies.js";
+import { baselinesRouter } from "./baselines.js";
 
 export const appRouter = router({
   system: systemRouter,
@@ -28,7 +30,9 @@ export const appRouter = router({
   billing: billingRouter,
   ai: aiRouter,
   admin: adminRouter,
-  notifications: notificationsRouter
+  notifications: notificationsRouter,
+  policies: policiesRouter,
+  baselines: baselinesRouter
 });
 
 export type AppRouter = typeof appRouter;
