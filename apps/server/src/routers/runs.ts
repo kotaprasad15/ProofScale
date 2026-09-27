@@ -1,7 +1,8 @@
 import { router, tenantProcedure, requireProjectPermission } from "../trpc.js";
 import { CreateTestRunSchema, CancelTestRunSchema, KillSwitch, sanitizeTargetUrl, validateTargetHostDns, LifecycleEventBus } from "@proofscale/shared";
-import { testRuns, runEvents, testPlans, targets, projects } from "@proofscale/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, isNull } from "drizzle-orm";
+import { testRuns, runEvents, testPlans, targets, projects, readinessPolicies, baselines } from "@proofscale/db";
+import { evaluateRunAgainstPolicy } from "@proofscale/shared";
 import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -72,9 +73,6 @@ export const runsRouter = router({
 
         if (!policySnapshot && runData.run.status === "completed") {
           // Lazy evaluation
-          const { readinessPolicies, baselines } = await import("@proofscale/db");
-          const { evaluateRunAgainstPolicy } = await import("@proofscale/shared");
-          const { and, desc, isNull } = await import("drizzle-orm");
           
           const [policy] = await ctx.db
             .select()
