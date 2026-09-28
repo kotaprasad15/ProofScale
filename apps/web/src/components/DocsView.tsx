@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { HomeNavbar } from "./HomeView";
 import { MinimalFooter } from "./home/MinimalFooter";
-import { SceneBackground } from "./home/SceneBackground";
 import { ThemeProvider } from "./home/ThemeContext";
 import { Shield, Play, Target, CheckCircle2, FileText, AlertTriangle, Users, BookOpen } from "lucide-react";
 
@@ -60,8 +59,6 @@ export function DocsView(props: DocsViewProps) {
   return (
     <ThemeProvider>
       <div className="bg-[var(--color-bg)] min-h-screen text-text-primary relative overflow-x-hidden transition-colors duration-300">
-        <SceneBackground />
-        
         <HomeNavbar {...props} />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-12 pt-32 pb-24 flex flex-col md:flex-row gap-12">

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { HomeNavbar } from "./HomeView";
 import { MinimalFooter } from "./home/MinimalFooter";
-import { SceneBackground } from "./home/SceneBackground";
 import { ThemeProvider } from "./home/ThemeContext";
 import { ChevronDown, ArrowRight } from "lucide-react";
 
@@ -79,8 +78,6 @@ export function FaqView(props: FaqViewProps) {
   return (
     <ThemeProvider>
       <div className="bg-[var(--color-bg)] min-h-screen text-text-primary relative overflow-x-hidden transition-colors duration-300">
-        <SceneBackground />
-        
         <HomeNavbar {...props} />
 
         <main className="relative z-10 max-w-4xl mx-auto px-6 sm:px-12 pt-32 pb-24 space-y-16">
