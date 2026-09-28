@@ -20,6 +20,7 @@ interface HomeViewProps {
   onGoToDashboard?: () => void;
   onLogout?: () => void;
   userEmail?: string;
+  onGoHome?: () => void;
 }
 
 export function HomeNavbar({
@@ -28,7 +29,8 @@ export function HomeNavbar({
   isLoggedIn,
   onGoToDashboard,
   onLogout,
-  userEmail
+  userEmail,
+  onGoHome
 }: HomeViewProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -79,7 +81,13 @@ export function HomeNavbar({
       childrenLogo={
         <div
           className="cursor-pointer select-none group flex items-center justify-center py-1"
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          onClick={() => {
+            if (onGoHome) {
+              onGoHome();
+            } else {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          }}
           role="button"
           tabIndex={0}
           aria-label="Ratecap home"
@@ -123,6 +131,7 @@ export function HomeView({
             onGoToDashboard={onGoToDashboard}
             onLogout={onLogout}
             userEmail={userEmail}
+            onGoHome={onGoHome}
           />
 
           <main className="relative z-10">

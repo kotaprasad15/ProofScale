@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { HomeNavbar } from "./HomeView";
 import { MinimalFooter } from "./home/MinimalFooter";
 import { ThemeProvider } from "./home/ThemeContext";
-import { ChevronDown, ArrowRight } from "lucide-react";
+import { ChevronDown, ArrowRight, ArrowLeft } from "lucide-react";
 
 interface FaqViewProps {
   onSignIn: () => void;
@@ -83,6 +83,12 @@ export function FaqView(props: FaqViewProps) {
         <main className="relative z-10 max-w-4xl mx-auto px-6 sm:px-12 pt-32 pb-24 space-y-16">
           
           <header className="text-center space-y-4">
+            <button
+              onClick={props.onGoHome}
+              className="mb-8 flex items-center justify-center gap-2 text-sm text-text-muted hover:text-text-primary transition-colors cursor-pointer mx-auto"
+            >
+              <ArrowLeft className="w-4 h-4" /> Return to Home
+            </button>
             <h1 className="text-4xl md:text-5xl font-black font-raleway tracking-tight text-text-primary">
               Frequently Asked Questions
             </h1>

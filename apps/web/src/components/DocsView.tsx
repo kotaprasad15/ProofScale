@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { HomeNavbar } from "./HomeView";
 import { MinimalFooter } from "./home/MinimalFooter";
 import { ThemeProvider } from "./home/ThemeContext";
-import { Shield, Play, Target, CheckCircle2, FileText, AlertTriangle, Users, BookOpen } from "lucide-react";
+import { Shield, Play, Target, CheckCircle2, FileText, AlertTriangle, Users, BookOpen, ArrowLeft } from "lucide-react";
 
 interface DocsViewProps {
   onSignIn: () => void;
@@ -94,6 +94,12 @@ export function DocsView(props: DocsViewProps) {
             
             {/* A. Introduction */}
             <section id="intro" className="space-y-6">
+              <button
+                onClick={props.onGoHome}
+                className="mb-6 flex items-center gap-2 text-sm text-text-muted hover:text-text-primary transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" /> Return to Home
+              </button>
               <h1 className="text-3xl md:text-5xl font-black font-raleway tracking-tight text-text-primary">
                 Platform Documentation
               </h1>

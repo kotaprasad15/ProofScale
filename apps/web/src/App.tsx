@@ -413,6 +413,7 @@ export function App() {
               onGoToDashboard={() => navigateTo("/dashboard")}
               onLogout={handleLogout}
               userEmail={currentUser?.email}
+              onGoHome={() => navigateTo("/home")}
             />
           </QueryClientProvider>
         </trpc.Provider>
