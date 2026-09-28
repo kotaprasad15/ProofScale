@@ -114,7 +114,8 @@ export function HomeView({
   isLoggedIn,
   onGoToDashboard,
   onLogout,
-  userEmail
+  userEmail,
+  onGoHome
 }: HomeViewProps) {
   return (
     <ThemeProvider>
