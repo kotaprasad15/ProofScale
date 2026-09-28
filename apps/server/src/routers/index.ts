@@ -15,6 +15,7 @@ import { adminRouter } from "./admin.js";
 import { notificationsRouter } from "./notifications.js";
 import { policiesRouter } from "./policies.js";
 import { baselinesRouter } from "./baselines.js";
+import { telemetryRouter } from "./telemetry.js";
 
 export const appRouter = router({
   system: systemRouter,
@@ -32,7 +33,8 @@ export const appRouter = router({
   admin: adminRouter,
   notifications: notificationsRouter,
   policies: policiesRouter,
-  baselines: baselinesRouter
+  baselines: baselinesRouter,
+  telemetry: telemetryRouter
 });
 
 export type AppRouter = typeof appRouter;

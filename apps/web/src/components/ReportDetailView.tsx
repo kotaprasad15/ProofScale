@@ -60,6 +60,7 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
   const [copied, setCopied] = useState(false);
 
   const reportQuery = trpc.reports.getReportByRunId.useQuery({ runId });
+  const timelineQuery = trpc.runs.getTimeline.useQuery({ runId });
   const exportMarkdownQuery = trpc.reports.exportMarkdown.useQuery({ runId }, { enabled: false });
   const exportJsonQuery = trpc.reports.exportJson.useQuery({ runId }, { enabled: false });
   const createShareMutation = trpc.reports.createShareLink.useMutation();
@@ -417,6 +418,39 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
                 <p className="text-xs text-text-muted leading-relaxed">{f.evidence}</p>
                 <div className="text-[11px] text-signal-indigo font-medium pt-1">
                   💡 Recommendation: {f.recommendation}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Run Timeline */}
+      <div className="glass-panel p-6 sm:p-8 space-y-4">
+        <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
+          <Activity className="w-4 h-4 text-signal-indigo" />
+          Run Execution Timeline
+        </h3>
+
+        {timelineQuery.isLoading ? (
+          <div className="py-6"><LoadingDots size="sm" /></div>
+        ) : !timelineQuery.data?.items.length ? (
+          <div className="text-xs text-text-muted font-mono py-4">No lifecycle events recorded for this run.</div>
+        ) : (
+          <div className="space-y-0.5 border-l-2 border-white/[0.08] ml-2 pl-4 py-2 mt-4 relative">
+            {timelineQuery.data.items.map((event, i) => (
+              <div key={event.id} className="relative pb-5">
+                <div className="absolute -left-[21px] top-1.5 w-2 h-2 rounded-full bg-signal-indigo" />
+                <div className="flex flex-col sm:flex-row sm:items-baseline gap-2">
+                  <span className="text-[10px] font-mono text-text-muted w-24 shrink-0">
+                    {new Date(event.timestamp).toLocaleTimeString(undefined, { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </span>
+                  <div className="flex-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-signal-indigo px-1.5 py-0.5 rounded bg-signal-indigo-soft mr-2 inline-block">
+                      {event.eventType}
+                    </span>
+                    <span className="text-xs text-text-primary">{event.message}</span>
+                  </div>
                 </div>
               </div>
             ))}

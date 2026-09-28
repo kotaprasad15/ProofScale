@@ -92,7 +92,8 @@ export function Layout({
       items: [
         { id: "projects", label: "Overview", icon: LayoutDashboard, visible: true },
         { id: "targets", label: "Target Endpoints", icon: Target, visible: permissions?.manageTargets ?? true },
-        { id: "runs", label: "Live Telemetry", icon: Activity, visible: true }
+        { id: "runs", label: "Live Telemetry", icon: Activity, visible: true },
+        { id: "history", label: "Run Explorer", icon: Search, visible: true }
       ]
     },
     {

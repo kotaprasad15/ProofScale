@@ -18,6 +18,7 @@ import { LoadingDots } from "./components/LoadingDots";
 import { StatusChip, readinessTone } from "./components/ui/StatusChip";
 import { KillSwitchView } from "./components/KillSwitchView";
 import { DashboardOverview } from "./components/DashboardOverview";
+import { HistoryView } from "./components/HistoryView";
 import { ThemeProvider } from "./components/home/ThemeContext";
 import { useNotifications } from "./hooks/useNotifications";
 import { NotificationPreferencesView } from "./components/notifications/NotificationPreferencesView";
@@ -59,7 +60,7 @@ function parseLocationToRoute(): RouteState {
   }
 
   const cleanTab = pathname.replace("/", "");
-  const validTabs = ["projects", "targets", "plans", "runs", "reports", "organization", "settings"];
+  const validTabs = ["projects", "targets", "plans", "runs", "reports", "organization", "settings", "history"];
   const tab = cleanTab === "dashboard" || !validTabs.includes(cleanTab) ? "projects" : cleanTab;
 
   return {
@@ -207,6 +208,9 @@ function MainApp({
         ) : (
           <RunComparisonView projectId={projectId} />
         )
+      )}
+      {activeTab === "history" && (
+        <HistoryView projectId={projectId} onSelectRun={handleSelectRun} />
       )}
       {activeTab === "settings" && (
         <div className="max-w-4xl mx-auto glass-panel p-6 sm:p-8 space-y-6 pb-12">

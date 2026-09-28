@@ -160,7 +160,7 @@ export const runEvents = pgTable("run_events", {
   eventType: text("event_type").notNull(),
   message: text("message").notNull(),
   metadataJson: text("metadata_json"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  timestamp: timestamp("timestamp", { withTimezone: true }).notNull().defaultNow()
 });
 
 export const findings = pgTable("findings", {
