@@ -17,6 +17,8 @@ export function MinimalFooter({ onSignIn }: MinimalFooterProps) {
           <a href="#capabilities" className="hover:text-text-primary transition-colors">Capabilities</a>
           <a href="#roles" className="hover:text-text-primary transition-colors">Roles</a>
           <a href="#safety" className="hover:text-text-primary transition-colors">Safety</a>
+          <a href="/docs" className="hover:text-text-primary transition-colors">Documentation</a>
+          <a href="/faq" className="hover:text-text-primary transition-colors">FAQ</a>
           {onSignIn && (
             <button
               type="button"

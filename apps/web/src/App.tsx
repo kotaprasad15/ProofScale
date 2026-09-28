@@ -12,6 +12,8 @@ import { TestPlanBuilderView } from "./components/TestPlanBuilderView";
 import { LiveRunMonitorView } from "./components/LiveRunMonitorView";
 import { ReportDetailView } from "./components/ReportDetailView";
 import { RunComparisonView } from "./components/RunComparisonView";
+import { DocsView } from "./components/DocsView";
+import { FaqView } from "./components/FaqView";
 import { LoadingDots } from "./components/LoadingDots";
 import { StatusChip, readinessTone } from "./components/ui/StatusChip";
 import { KillSwitchView } from "./components/KillSwitchView";
@@ -48,6 +50,12 @@ function parseLocationToRoute(): RouteState {
   }
   if (pathname === "/signup") {
     return { path: "/signup", tab: "projects", runId: null, planId: null };
+  }
+  if (pathname === "/docs") {
+    return { path: "/docs", tab: "projects", runId: null, planId: null };
+  }
+  if (pathname === "/faq") {
+    return { path: "/faq", tab: "projects", runId: null, planId: null };
   }
 
   const cleanTab = pathname.replace("/", "");
@@ -332,7 +340,7 @@ export function App() {
     navigateTo("/home");
   };
 
-  const isPublicRoute = route.path === "/home" || route.path === "/" || route.path === "/signin" || route.path === "/signup";
+  const isPublicRoute = route.path === "/home" || route.path === "/" || route.path === "/signin" || route.path === "/signup" || route.path === "/docs" || route.path === "/faq";
 
   if (!currentUser || isPublicRoute) {
     if (route.path === "/signin" || route.path === "/signup") {
@@ -344,6 +352,48 @@ export function App() {
                 initialMode={route.path === "/signup" ? "signup" : "signin"}
                 onBackToHome={() => navigateTo("/home")}
                 onLogin={handleLogin}
+              />
+            </QueryClientProvider>
+          </trpc.Provider>
+        </ThemeProvider>
+      );
+    }
+
+    if (route.path === "/docs") {
+      return (
+        <ThemeProvider>
+          <trpc.Provider client={trpcClient} queryClient={queryClient}>
+            <QueryClientProvider client={queryClient}>
+              <DocsView
+                onSignIn={() => navigateTo("/signin")}
+                onSignUp={() => navigateTo("/signup")}
+                isLoggedIn={!!currentUser}
+                onGoToDashboard={() => navigateTo("/dashboard")}
+                onLogout={handleLogout}
+                userEmail={currentUser?.email}
+                onGoHome={() => navigateTo("/home")}
+                onNavigate={navigateTo}
+              />
+            </QueryClientProvider>
+          </trpc.Provider>
+        </ThemeProvider>
+      );
+    }
+
+    if (route.path === "/faq") {
+      return (
+        <ThemeProvider>
+          <trpc.Provider client={trpcClient} queryClient={queryClient}>
+            <QueryClientProvider client={queryClient}>
+              <FaqView
+                onSignIn={() => navigateTo("/signin")}
+                onSignUp={() => navigateTo("/signup")}
+                isLoggedIn={!!currentUser}
+                onGoToDashboard={() => navigateTo("/dashboard")}
+                onLogout={handleLogout}
+                userEmail={currentUser?.email}
+                onGoHome={() => navigateTo("/home")}
+                onNavigate={navigateTo}
               />
             </QueryClientProvider>
           </trpc.Provider>

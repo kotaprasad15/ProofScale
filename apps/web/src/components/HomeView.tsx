@@ -22,7 +22,7 @@ interface HomeViewProps {
   userEmail?: string;
 }
 
-function HomeNavbar({
+export function HomeNavbar({
   onSignIn,
   onSignUp,
   isLoggedIn,
@@ -67,7 +67,8 @@ function HomeNavbar({
         : [
             { label: "Sign In", onClick: onSignIn, ariaLabel: "Sign in" },
             { label: "Create Account / Join Org", onClick: onSignUp, ariaLabel: "Sign up" },
-            { label: "Architecture Overview", href: "#pipeline", ariaLabel: "Pipeline overview" }
+            { label: "Documentation", href: "/docs", ariaLabel: "Documentation" },
+            { label: "FAQ", href: "/faq", ariaLabel: "FAQ" }
           ]
     }
   ], [isDark, isLoggedIn, userEmail, onGoToDashboard, onLogout, onSignIn, onSignUp]);
