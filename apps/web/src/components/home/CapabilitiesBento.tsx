@@ -1,274 +1,116 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { 
-  BarChart3, 
-  Cpu, 
-  ShieldCheck, 
-  Radio, 
-  Share2, 
-  Gauge, 
-  CheckCircle2, 
-  AlertTriangle,
+import React from "react";
+import {
+  Shield,
+  Gauge,
+  Terminal,
+  FileText,
   Lock,
-  ArrowUpRight
+  Workflow,
+  Bell,
+  Layers,
 } from "lucide-react";
-import { MaskedReveal } from "./MaskedReveal";
+import { SpotlightCard, Reveal, AnimatedNumber } from "../../motion";
+import { Section, SectionHeader } from "./HomeSectionBase";
+
+const CAPS = [
+  {
+    icon: Gauge,
+    title: "Bounded Load Profiles",
+    body: "Define virtual users, ramp-up and duration envelopes. Every run is capped by policy — never an open-ended flood.",
+    span: "sm:col-span-2",
+    metric: { value: 25, suffix: " VUs", label: "default envelope" },
+  },
+  {
+    icon: Shield,
+    title: "SSRF Guardrails",
+    body: "Private-range blocking, DNS pinning and allowlist enforcement on every target before a single request fires.",
+    span: "",
+  },
+  {
+    icon: Terminal,
+    title: "Live Telemetry",
+    body: "Per-second RPS, latency percentiles and error classes streamed while the run executes.",
+    span: "",
+  },
+  {
+    icon: FileText,
+    title: "Readiness Scoring",
+    body: "A deterministic weighted score from SLA checks, latency budgets and error rates. Same inputs, same score.",
+    span: "sm:col-span-2",
+    metric: { value: 96, suffix: "/100", label: "deterministic score" },
+  },
+  {
+    icon: Lock,
+    title: "Dual-Scope RBAC",
+    body: "Organization and project roles with explicit tester access requests — operators never stumble into prod.",
+    span: "",
+  },
+  {
+    icon: Workflow,
+    title: "Baselines & Diffs",
+    body: "Promote a run to baseline and diff every future run against it — regressions surface instantly.",
+    span: "",
+  },
+  {
+    icon: Bell,
+    title: "Alerting & Push",
+    body: "Threshold breaches, kill-switch events and report-ready notifications via in-app and web push.",
+    span: "",
+  },
+  {
+    icon: Layers,
+    title: "4-Stage Sandbox",
+    body: "Validate → warm → load → cool. Each stage is sandboxed, logged, and independently abortable.",
+    span: "",
+  },
+];
 
 export function CapabilitiesBento() {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-
   return (
-    <section id="capabilities" className="pt-8 sm:pt-12 pb-16 sm:pb-24 px-6 sm:px-12 relative z-10">
-      <div className="max-w-7xl mx-auto space-y-16">
-        
-        {/* Section Heading */}
-        <div className="max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full font-mono text-[11px] font-medium tracking-wider text-signal-indigo bg-signal-indigo-soft border border-signal-indigo/25 uppercase">
-            <span className="w-1.5 h-1.5 rounded-full bg-signal-indigo" />
-            INSTRUMENT ARCHITECTURE
-          </div>
-          <MaskedReveal>
-            <h2 className="font-display font-bold text-4xl sm:text-5xl lg:text-6xl text-text-primary tracking-tight leading-[1.05]">
-              Capabilities built for verifiable proof.
-            </h2>
-          </MaskedReveal>
-          <p className="text-text-muted text-lg leading-relaxed font-sans">
-            Every layer of Ratecap is designed for audit-defensible measurement, strict safety boundaries, and empirical telemetry.
-          </p>
-        </div>
+    <Section id="capabilities">
+      <SectionHeader
+        eyebrow="02 / Capabilities"
+        title={
+          <>
+            Everything readiness requires,{" "}
+            <span className="text-gradient">nothing it doesn't.</span>
+          </>
+        }
+        body="RateCap pairs a deterministic scoring engine with strictly bounded load generation, wrapped in the safety rails an operator actually needs."
+      />
 
-        {/* Mixed-Size Bento Grid (2 Large Cells + 4 Small Cells) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
-          
-          {/* =========================================================================
-              LARGE CELL 1: Deterministic Scoring Engine (Span 7 cols)
-             ========================================================================= */}
-          <motion.div
-            onMouseEnter={() => setHoveredIndex(0)}
-            onMouseLeave={() => setHoveredIndex(null)}
-            className="lg:col-span-7 glass-panel p-8 sm:p-10 flex flex-col justify-between space-y-8 relative overflow-hidden group cursor-pointer border border-[var(--border)] hover:border-signal-indigo/50 transition-all duration-300"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs font-semibold text-signal-indigo tracking-wider uppercase">
-                CORE CALCULATION ENGINE
-              </span>
-              <div className="w-8 h-8 rounded-full bg-[var(--white-fill-sm)] flex items-center justify-center text-text-muted group-hover:text-text-primary group-hover:translate-x-1 group-hover:-translate-y-1 transition-all">
-                <ArrowUpRight className="w-4 h-4" />
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="font-display font-bold text-3xl sm:text-4xl text-text-primary tracking-tight">
-                Deterministic Scoring Engine
-              </h3>
-              <p className="text-text-muted text-sm sm:text-base leading-relaxed max-w-xl">
-                Fixed mathematical weighting across 5 metrics with a strict &gt;5% error hard-cap at 49. No black boxes.
-              </p>
-            </div>
-
-            {/* Hover-Reveal Supporting Visual: Interactive Weight Decomposition */}
-            <div className="p-5 rounded-2xl bg-[var(--panel-inset)] border border-[var(--border)] space-y-3 font-mono text-xs">
-              <div className="flex items-center justify-between text-text-muted text-[11px]">
-                <span>WEIGHTED FORMULA DECOMPOSITION</span>
-                <span className="text-signal-teal font-bold">PASS · 96/100</span>
-              </div>
-              
-              <div className="space-y-2.5">
-                <div>
-                  <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-text-primary">Reliability &amp; Errors</span>
-                    <span className="text-signal-teal font-bold">30%</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-[var(--white-fill-md)] rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: "0%" }}
-                      animate={{ width: hoveredIndex === 0 ? "100%" : "85%" }}
-                      transition={{ duration: 0.6 }}
-                      className="h-full bg-signal-teal rounded-full"
+      <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {CAPS.map((cap, i) => {
+          const Icon = cap.icon;
+          return (
+            <Reveal key={cap.title} index={i % 4} className={cap.span}>
+              <SpotlightCard className="h-full p-6 flex flex-col">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                  style={{ background: "var(--accent-soft)", color: "var(--accent)", border: "1px solid color-mix(in srgb, var(--accent) 22%, transparent)" }}
+                >
+                  <Icon className="w-5 h-5" />
+                </div>
+                <h3 className="font-display font-semibold text-base text-[var(--text-1)]">{cap.title}</h3>
+                <p className="mt-2 text-sm text-[var(--text-2)] leading-relaxed flex-1">{cap.body}</p>
+                {cap.metric && (
+                  <div className="mt-4 pt-4 flex items-baseline gap-2" style={{ borderTop: "1px solid var(--border)" }}>
+                    <AnimatedNumber
+                      value={cap.metric.value}
+                      suffix={cap.metric.suffix}
+                      className="text-xl font-bold"
+                      // eslint-disable-next-line
                     />
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-3)]">
+                      {cap.metric.label}
+                    </span>
                   </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-text-primary">Latency Percentiles (p95)</span>
-                    <span className="text-signal-indigo font-bold">25%</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-[var(--white-fill-md)] rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: "0%" }}
-                      animate={{ width: hoveredIndex === 0 ? "92%" : "70%" }}
-                      transition={{ duration: 0.6, delay: 0.05 }}
-                      className="h-full bg-signal-indigo rounded-full"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-text-primary">Capacity Envelope</span>
-                    <span className="text-text-muted font-bold">20%</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-[var(--white-fill-md)] rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: "0%" }}
-                      animate={{ width: hoveredIndex === 0 ? "95%" : "60%" }}
-                      transition={{ duration: 0.6, delay: 0.1 }}
-                      className="h-full bg-signal-indigo/70 rounded-full"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* =========================================================================
-              LARGE CELL 2: Sandboxed Worker Execution (Span 5 cols)
-             ========================================================================= */}
-          <motion.div
-            onMouseEnter={() => setHoveredIndex(1)}
-            onMouseLeave={() => setHoveredIndex(null)}
-            className="lg:col-span-5 glass-panel p-8 sm:p-10 flex flex-col justify-between space-y-8 relative overflow-hidden group cursor-pointer border border-[var(--border)] hover:border-signal-teal/50 transition-all duration-300"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs font-semibold text-signal-teal tracking-wider uppercase">
-                ISOLATED EXECUTION PLANE
-              </span>
-              <div className="w-8 h-8 rounded-full bg-[var(--white-fill-sm)] flex items-center justify-center text-text-muted group-hover:text-text-primary group-hover:translate-x-1 group-hover:-translate-y-1 transition-all">
-                <ArrowUpRight className="w-4 h-4" />
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="font-display font-bold text-3xl sm:text-4xl text-text-primary tracking-tight">
-                Sandboxed Workers
-              </h3>
-              <p className="text-text-muted text-sm sm:text-base leading-relaxed">
-                Atomic database lease lock claims runner tasks. Traffic executes with zero inter-tenant leakage.
-              </p>
-            </div>
-
-            {/* Hover-Reveal Supporting Visual: Live Worker Lease Stream */}
-            <div className="p-5 rounded-2xl bg-[var(--panel-inset)] border border-[var(--border)] space-y-2.5 font-mono text-xs">
-              <div className="flex items-center justify-between text-text-muted text-[10px]">
-                <span>ATOMIC LEASE WORKER</span>
-                <span className="text-signal-teal font-bold">LEASE #0x8F92</span>
-              </div>
-              <div className="p-2 rounded bg-[var(--white-fill-sm)] border border-[var(--border)] text-[11px] text-text-primary space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-text-muted">Target:</span>
-                  <span className="text-signal-teal">TLS 1.3 Verified</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-muted">SSRF Guard:</span>
-                  <span className="text-signal-teal">Active · Loopback Blocked</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-muted">Concurrency:</span>
-                  <span>50 VUs (Bounded Cap)</span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* =========================================================================
-              SMALL CELL 1: Dual-Scope RBAC (Span 3 cols)
-             ========================================================================= */}
-          <motion.div
-            onMouseEnter={() => setHoveredIndex(2)}
-            onMouseLeave={() => setHoveredIndex(null)}
-            className="lg:col-span-3 glass-panel p-6 sm:p-8 flex flex-col justify-between space-y-6 group cursor-pointer border border-[var(--border)] hover:border-signal-indigo/40 transition-all"
-          >
-            <div className="w-10 h-10 rounded-xl bg-signal-indigo-soft border border-signal-indigo/30 flex items-center justify-center text-signal-indigo group-hover:scale-110 transition-transform">
-              <Lock className="w-5 h-5" />
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-display font-bold text-xl text-text-primary">
-                Dual-Scope RBAC
-              </h4>
-              <p className="text-text-muted text-xs leading-relaxed font-sans">
-                Separate organization identity from project testing rights.
-              </p>
-            </div>
-            <div className="font-mono text-[10px] text-signal-indigo pt-2 border-t border-[var(--border)]">
-              4 Granular Roles
-            </div>
-          </motion.div>
-
-          {/* =========================================================================
-              SMALL CELL 2: Emergency Kill Switch (Span 3 cols)
-             ========================================================================= */}
-          <motion.div
-            onMouseEnter={() => setHoveredIndex(3)}
-            onMouseLeave={() => setHoveredIndex(null)}
-            className="lg:col-span-3 glass-panel p-6 sm:p-8 flex flex-col justify-between space-y-6 group cursor-pointer border border-[var(--border)] hover:border-signal-rose/40 transition-all"
-          >
-            <div className="w-10 h-10 rounded-xl bg-signal-rose-soft border border-signal-rose/30 flex items-center justify-center text-signal-rose group-hover:scale-110 transition-transform">
-              <Radio className="w-5 h-5" />
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-display font-bold text-xl text-text-primary">
-                Emergency Kill Switch
-              </h4>
-              <p className="text-text-muted text-xs leading-relaxed font-sans">
-                Immediate global and per-run abort to terminate active worker connections.
-              </p>
-            </div>
-            <div className="font-mono text-[10px] text-signal-rose pt-2 border-t border-[var(--border)]">
-              Zero-Latency Abort
-            </div>
-          </motion.div>
-
-          {/* =========================================================================
-              SMALL CELL 3: Token-Hashed Report Sharing (Span 3 cols)
-             ========================================================================= */}
-          <motion.div
-            onMouseEnter={() => setHoveredIndex(4)}
-            onMouseLeave={() => setHoveredIndex(null)}
-            className="lg:col-span-3 glass-panel p-6 sm:p-8 flex flex-col justify-between space-y-6 group cursor-pointer border border-[var(--border)] hover:border-signal-teal/40 transition-all"
-          >
-            <div className="w-10 h-10 rounded-xl bg-signal-teal-soft border border-signal-teal/30 flex items-center justify-center text-signal-teal group-hover:scale-110 transition-transform">
-              <Share2 className="w-5 h-5" />
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-display font-bold text-xl text-text-primary">
-                Hashed Sharing
-              </h4>
-              <p className="text-text-muted text-xs leading-relaxed font-sans">
-                SHA-256 tokenized report links with instant one-click revocation.
-              </p>
-            </div>
-            <div className="font-mono text-[10px] text-signal-teal pt-2 border-t border-[var(--border)]">
-              Configurable Expiry
-            </div>
-          </motion.div>
-
-          {/* =========================================================================
-              SMALL CELL 4: Bounded Load Presets (Span 3 cols)
-             ========================================================================= */}
-          <motion.div
-            onMouseEnter={() => setHoveredIndex(5)}
-            onMouseLeave={() => setHoveredIndex(null)}
-            className="lg:col-span-3 glass-panel p-6 sm:p-8 flex flex-col justify-between space-y-6 group cursor-pointer border border-[var(--border)] hover:border-signal-amber/40 transition-all"
-          >
-            <div className="w-10 h-10 rounded-xl bg-signal-amber-soft border border-signal-amber/30 flex items-center justify-center text-signal-amber group-hover:scale-110 transition-transform">
-              <Gauge className="w-5 h-5" />
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-display font-bold text-xl text-text-primary">
-                Bounded Presets
-              </h4>
-              <p className="text-text-muted text-xs leading-relaxed font-sans">
-                Pre-configured ramp-up scenarios with hard ceilings on virtual users.
-              </p>
-            </div>
-            <div className="font-mono text-[10px] text-signal-amber pt-2 border-t border-[var(--border)]">
-              Smoke / Peak / Stress
-            </div>
-          </motion.div>
-
-        </div>
+                )}
+              </SpotlightCard>
+            </Reveal>
+          );
+        })}
       </div>
-    </section>
+    </Section>
   );
 }

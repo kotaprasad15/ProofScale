@@ -1,14 +1,32 @@
 <!DOCTYPE html>
-<html lang="en" class="light scroll-smooth" data-theme="light">
+<html lang="en" class="light" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ratecap — Application Readiness & Bounded Load Validation</title>
+    <title>RateCap — Application Readiness & Bounded Load Validation</title>
     <meta name="description" content="Controlled, authorized synthetic performance testing and deterministic application readiness scoring." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&family=Raleway:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script>
+      // Apply persisted theme before first paint to avoid flash
+      (function () {
+        try {
+          var t = localStorage.getItem("ratecap_theme");
+          var root = document.documentElement;
+          if (t === "dark" || t === "light") {
+            root.classList.remove("light");
+            root.classList.add(t);
+            root.setAttribute("data-theme", t);
+          } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            root.classList.remove("light");
+            root.classList.add("dark");
+            root.setAttribute("data-theme", "dark");
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body class="antialiased">
     <div id="root"></div>

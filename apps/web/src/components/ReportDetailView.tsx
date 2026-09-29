@@ -2,7 +2,10 @@ import React, { useEffect, useState } from "react";
 import { trpc } from "../utils/trpc";
 import { FileText, Download, Share2, AlertTriangle, CheckCircle2, Copy, X, ShieldOff, Clock, ArrowLeft } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { LoadingDots } from "./LoadingDots";
+import { ScoreRing, SkeletonPanel } from "../motion";
+import { Skeleton } from "../motion/Skeleton";
+import { Activity as _ActivityIcon } from "lucide-react";
+const Activity = _ActivityIcon;
 
 function scoreColor(score: number): string {
   if (score >= 90) return "#2FD4A6";
@@ -10,41 +13,9 @@ function scoreColor(score: number): string {
   return "#F2586B";
 }
 
-/* Radial readiness gauge — teal→amber→rose arc matching the label thresholds. */
+/* Radial gauge replaced by the shared motion-layer ScoreRing (gradient + glow + draw animation). */
 function RadialGauge({ score }: { score: number }) {
-  const r = 54;
-  const c = 2 * Math.PI * r;
-  const pct = Math.max(0, Math.min(100, score)) / 100;
-  const color = scoreColor(score);
-  return (
-    <svg viewBox="0 0 140 140" className="w-32 h-32 sm:w-36 sm:h-36" aria-hidden="true">
-      <circle cx="70" cy="70" r={r} fill="none" stroke="var(--border)" strokeWidth="12" />
-      <circle
-        cx="70"
-        cy="70"
-        r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth="12"
-        strokeLinecap="round"
-        strokeDasharray={`${c * pct} ${c}`}
-        transform="rotate(-90 70 70)"
-        style={{ transition: "stroke-dasharray 0.8s ease" }}
-      />
-      <text
-        x="70"
-        y="70"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fill="var(--text-primary)"
-        fontSize="30"
-        fontFamily="'IBM Plex Mono', monospace"
-        fontWeight="700"
-      >
-        {score}
-      </text>
-    </svg>
-  );
+  return null;
 }
 
 interface ReportDetailViewProps {
@@ -81,8 +52,9 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
 
   if (reportQuery.isLoading) {
     return (
-      <div className="p-12 flex justify-center">
-        <LoadingDots size="md" label="Loading readiness report..." />
+      <div className="max-w-6xl mx-auto space-y-6">
+        <SkeletonPanel rows={2} label="Loading readiness report…" />
+        <SkeletonPanel rows={3} label="Preparing metrics…" />
       </div>
     );
   }
@@ -234,11 +206,11 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
         </div>
 
         <div className="flex items-center gap-6">
-          <RadialGauge score={run.score ?? 0} />
+          <ScoreRing score={run.score ?? 0} size={150} label="Readiness" />
           <div className="text-center md:text-right">
-            <span className="text-[10px] uppercase font-mono text-text-muted font-bold">Overall Score</span>
+            <span className="text-[10px] uppercase font-mono text-[var(--text-2)] font-bold">Overall Score</span>
             <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight" style={{ color: scoreColor(run.score ?? 0) }}>
-              {run.score} <span className="text-lg text-text-faint">/ 100</span>
+              {run.score} <span className="text-lg text-[var(--text-3)]">/ 100</span>
             </div>
             <div className="text-xs font-bold font-mono capitalize" style={{ color: scoreColor(run.score ?? 0) }}>{run.readinessLabel}</div>
           </div>
@@ -433,7 +405,7 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
         </h3>
 
         {timelineQuery.isLoading ? (
-          <div className="py-6"><LoadingDots size="sm" /></div>
+          <div className="py-6 space-y-2"><Skeleton className="h-4 w-2/3" /><Skeleton className="h-4 w-1/2" /><Skeleton className="h-4 w-3/5" /></div>
         ) : !timelineQuery.data?.items.length ? (
           <div className="text-xs text-text-muted font-mono py-4">No lifecycle events recorded for this run.</div>
         ) : (

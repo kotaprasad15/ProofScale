@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { HomeNavbar } from "./HomeView";
 import { MinimalFooter } from "./home/MinimalFooter";
 import { ThemeProvider } from "./home/ThemeContext";
+import { AuroraBackground } from "../motion/AuroraBackground";
 import { ChevronDown, ArrowRight, ArrowLeft } from "lucide-react";
 
 interface FaqViewProps {
@@ -18,17 +19,17 @@ interface FaqViewProps {
 const FAQS = [
   {
     id: "q1",
-    question: "What is ProofScale?",
-    answer: "ProofScale is a readiness and safety platform designed to help engineering teams run controlled, authorized performance assessments. It converts observed application behavior into evidence-backed reports that can be shared and defended responsibly."
+    question: "What is RateCap?",
+    answer: "RateCap is a readiness and safety platform designed to help engineering teams run controlled, authorized performance assessments. It converts observed application behavior into evidence-backed reports that can be shared and defended responsibly."
   },
   {
     id: "q2",
-    question: "Who is ProofScale designed for?",
-    answer: "ProofScale is built for engineering teams, QA professionals, and stakeholders who need to validate application capacity and reliability. It provides a structured, defensive approach to load testing without requiring deep performance engineering expertise."
+    question: "Who is RateCap designed for?",
+    answer: "RateCap is built for engineering teams, QA professionals, and stakeholders who need to validate application capacity and reliability. It provides a structured, defensive approach to load testing without requiring deep performance engineering expertise."
   },
   {
     id: "q3",
-    question: "What does a ProofScale readiness score mean?",
+    question: "What does a RateCap readiness score mean?",
     answer: "The readiness score (0-100) is a deterministic metric based on observed reliability, latency, capacity behavior, stability, and hygiene during a test run. It is not an unconditional guarantee of performance, but rather an empirical measurement of behavior under a specifically declared test envelope."
   },
   {
@@ -44,7 +45,7 @@ const FAQS = [
   {
     id: "q6",
     question: "Can I run assessments against a production environment?",
-    answer: "Yes, but production testing requires explicit authorization and additional safety considerations. ProofScale enforces safety guardrails and recommends starting with a conservative staging environment before applying aggressive load to production."
+    answer: "Yes, but production testing requires explicit authorization and additional safety considerations. RateCap enforces safety guardrails and recommends starting with a conservative staging environment before applying aggressive load to production."
   },
   {
     id: "q7",
@@ -63,8 +64,8 @@ const FAQS = [
   },
   {
     id: "q10",
-    question: "How does ProofScale help keep assessments safe and authorized?",
-    answer: "ProofScale mandates domain ownership verification, bounded workload caps, role-based access controls, and adherence to predefined test plans. A built-in kill switch and hard safety caps prevent runaway concurrency and protect infrastructure."
+    question: "How does RateCap help keep assessments safe and authorized?",
+    answer: "RateCap mandates domain ownership verification, bounded workload caps, role-based access controls, and adherence to predefined test plans. A built-in kill switch and hard safety caps prevent runaway concurrency and protect infrastructure."
   }
 ];
 
@@ -77,7 +78,8 @@ export function FaqView(props: FaqViewProps) {
 
   return (
     <ThemeProvider>
-      <div className="bg-[var(--color-bg)] min-h-screen text-text-primary relative overflow-x-hidden transition-colors duration-300">
+      <div className="min-h-screen text-[var(--text-1)] relative overflow-x-hidden transition-colors duration-300" style={{ background: "var(--bg-0)" }}>
+        <AuroraBackground />
         <HomeNavbar {...props} />
 
         <main className="relative z-10 max-w-4xl mx-auto px-6 sm:px-12 pt-32 pb-24 space-y-16">
@@ -85,15 +87,15 @@ export function FaqView(props: FaqViewProps) {
           <header className="text-center space-y-4">
             <button
               onClick={props.onGoHome}
-              className="mb-8 flex items-center justify-center gap-2 text-sm text-text-muted hover:text-text-primary transition-colors cursor-pointer mx-auto"
+              className="mb-8 flex items-center justify-center gap-2 text-sm text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors cursor-pointer mx-auto"
             >
               <ArrowLeft className="w-4 h-4" /> Return to Home
             </button>
-            <h1 className="text-4xl md:text-5xl font-black font-raleway tracking-tight text-text-primary">
+            <h1 className="text-4xl md:text-5xl font-black font-display tracking-tight text-[var(--text-1)]">
               Frequently Asked Questions
             </h1>
-            <p className="text-lg text-text-muted leading-relaxed max-w-2xl mx-auto">
-              Clear, technically accurate answers about ProofScale’s testing methodology, scoring system, and safety principles.
+            <p className="text-lg text-[var(--text-2)] leading-relaxed max-w-2xl mx-auto">
+              Clear, technically accurate answers about RateCap’s testing methodology, scoring system, and safety principles.
             </p>
           </header>
 
@@ -112,7 +114,7 @@ export function FaqView(props: FaqViewProps) {
                     aria-controls={`faq-answer-${faq.id}`}
                     className="w-full text-left px-6 py-5 flex items-center justify-between gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-indigo"
                   >
-                    <span className="font-bold font-raleway text-lg text-text-primary">
+                    <span className="font-bold font-display text-lg text-[var(--text-1)]">
                       {faq.question}
                     </span>
                     <ChevronDown 
@@ -127,7 +129,7 @@ export function FaqView(props: FaqViewProps) {
                     className={`grid transition-all duration-300 ease-in-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
                   >
                     <div className="overflow-hidden">
-                      <div className="px-6 pb-6 pt-2 text-text-muted text-sm leading-relaxed border-t border-white/[0.04]">
+                      <div className="px-6 pb-6 pt-2 text-[var(--text-2)] text-sm leading-relaxed border-t border-white/[0.04]">
                         {faq.answer}
                       </div>
                     </div>
@@ -138,8 +140,8 @@ export function FaqView(props: FaqViewProps) {
           </div>
 
           <div className="pt-12 border-t border-white/[0.08] flex flex-col items-center justify-center text-center space-y-6">
-            <h2 className="text-2xl font-bold font-raleway text-text-primary">Ready to start testing?</h2>
-            <p className="text-text-muted text-sm">Review the full documentation or jump into your workspace.</p>
+            <h2 className="text-2xl font-bold font-display text-[var(--text-1)]">Ready to start testing?</h2>
+            <p className="text-[var(--text-2)] text-sm">Review the full documentation or jump into your workspace.</p>
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <button
                 onClick={() => props.onNavigate("/docs")}

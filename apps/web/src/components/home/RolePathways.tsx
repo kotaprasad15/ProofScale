@@ -1,118 +1,77 @@
 import React from "react";
-import { ShieldCheck, ClipboardCheck, Gauge, Eye, ArrowRight } from "lucide-react";
-import { MaskedReveal } from "./MaskedReveal";
-import { MagneticElement } from "./MagneticElement";
-
-interface RolePathwaysProps {
-  onSignUp?: () => void;
-}
+import { Building2, Users, FlaskConical, ArrowRight } from "lucide-react";
+import { Reveal, SpotlightCard } from "../../motion";
+import { Section, SectionHeader } from "./HomeSectionBase";
 
 const ROLES = [
   {
-    icon: ShieldCheck,
-    role: "Organization Owner",
-    eyebrow: "ORG LEVEL · FULL ADMIN",
-    desc: "Create projects, define safety boundaries, manage members, and turn raw runs into client-ready proof.",
-    color: "signal-indigo",
-    badge: "FULL CONTROL"
+    icon: Building2,
+    title: "Org Owners",
+    body: "Create the workspace, invite members, set policy ceilings and keep the kill switch within reach.",
+    cta: "Create organization",
+    accent: "var(--accent)",
   },
   {
-    icon: ClipboardCheck,
-    role: "Project Owner",
-    eyebrow: "PROJECT LEVEL · WRITE",
-    desc: "Register target endpoints, build test plans, and calibrate SLA thresholds without inheriting org-wide administration.",
-    color: "signal-teal",
-    badge: "PLAN CONFIG"
+    icon: Users,
+    title: "Project Leads",
+    body: "Register targets, design bounded load envelopes and promote baselines for every release candidate.",
+    cta: "Join with invite",
+    accent: "var(--accent-2)",
   },
   {
-    icon: Gauge,
-    role: "Tester",
-    eyebrow: "RUN ACCESS · EXECUTE",
-    desc: "Trigger approved test scenarios and inspect real-time execution telemetry without modifying target configs.",
-    color: "signal-amber",
-    badge: "RUN EXECUTION"
+    icon: FlaskConical,
+    title: "Testers",
+    body: "Execute authorized runs, watch live telemetry and file findings — scoped strictly to granted projects.",
+    cta: "Request access",
+    accent: "var(--success)",
   },
-  {
-    icon: Eye,
-    role: "Viewer",
-    eyebrow: "READ ONLY · AUDIT",
-    desc: "Read-only access to final readiness reports, histograms, and evidence artifacts for compliance review.",
-    color: "text-muted",
-    badge: "READ ONLY"
-  }
 ];
 
-export function RolePathways({ onSignUp }: RolePathwaysProps) {
+export function RolePathways({ onSignUp }: { onSignUp?: () => void }) {
   return (
-    <section id="roles" className="py-16 sm:py-24 px-6 sm:px-12 relative z-10 border-t border-[var(--border)]">
-      <div className="max-w-7xl mx-auto space-y-16">
-        
-        {/* Section Heading */}
-        <div className="max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full font-mono text-[11px] font-medium tracking-wider text-signal-teal bg-signal-teal-soft border border-signal-teal/25 uppercase">
-            <span className="w-1.5 h-1.5 rounded-full bg-signal-teal" />
-            DUAL-SCOPE RBAC
-          </div>
-          <MaskedReveal>
-            <h2 className="font-display font-bold text-4xl sm:text-5xl lg:text-6xl text-text-primary tracking-tight leading-[1.05]">
-              Access that mirrors the work.
-            </h2>
-          </MaskedReveal>
-          <p className="text-text-muted text-lg leading-relaxed font-sans">
-            Account identity is strictly decoupled from organization and project roles. Everyone acts within declared boundaries.
-          </p>
-        </div>
+    <Section id="roles" className="border-t" >
+      <SectionHeader
+        eyebrow="04 / Roles"
+        title={
+          <>
+            Built for the whole <span className="text-gradient">readiness team.</span>
+          </>
+        }
+        body="Dual-scope RBAC means every role sees exactly the workspace it should — no more, no less."
+      />
 
-        {/* 4 Magnetic-Hover Cards in a Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {ROLES.map((r) => {
-            const Icon = r.icon;
-            return (
-              <MagneticElement
-                key={r.role}
-                strength={0.25}
-                radius={80}
-                className="w-full h-full"
-              >
-                <div
-                  onClick={onSignUp}
-                  className="glass-panel p-8 h-full flex flex-col justify-between space-y-6 group cursor-pointer border border-[var(--border)] hover:border-[var(--border-strong)] transition-colors"
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="w-12 h-12 rounded-2xl bg-[var(--white-fill-sm)] border border-[var(--border)] flex items-center justify-center text-text-primary group-hover:scale-110 transition-transform">
-                        <Icon className="w-6 h-6" />
-                      </div>
-                      <span className="font-mono text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-[var(--white-fill-sm)] text-text-muted border border-[var(--border)]">
-                        {r.badge}
-                      </span>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <span className="font-mono text-[10px] font-bold text-signal-indigo uppercase tracking-wider block">
-                        {r.eyebrow}
-                      </span>
-                      <h3 className="font-display font-bold text-2xl text-text-primary tracking-tight">
-                        {r.role}
-                      </h3>
-                    </div>
-
-                    <p className="text-text-muted text-xs leading-relaxed font-sans">
-                      {r.desc}
-                    </p>
+      <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-5">
+        {ROLES.map((role, i) => {
+          const Icon = role.icon;
+          return (
+            <Reveal key={role.title} index={i}>
+              <SpotlightCard className="h-full p-7 flex flex-col" role="group">
+                  <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center mb-5"
+                    style={{
+                      background: `color-mix(in srgb, ${role.accent} 12%, transparent)`,
+                      color: role.accent,
+                      border: `1px solid color-mix(in srgb, ${role.accent} 25%, transparent)`,
+                    }}
+                  >
+                    <Icon className="w-5 h-5" />
                   </div>
-
-                  <div className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-text-primary group-hover:text-signal-teal transition-colors pt-4 border-t border-[var(--border)]">
-                    <span>Enter as {r.role.split(" ")[0]}</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </MagneticElement>
-            );
-          })}
-        </div>
-
+                  <h3 className="font-display font-semibold text-lg text-[var(--text-1)]">{role.title}</h3>
+                  <p className="mt-2 text-sm text-[var(--text-2)] leading-relaxed flex-1">{role.body}</p>
+                  <button
+                    type="button"
+                    onClick={onSignUp}
+                    className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold transition-colors cursor-pointer"
+                    style={{ color: role.accent }}
+                  >
+                    {role.cta}
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+              </SpotlightCard>
+            </Reveal>
+          );
+        })}
       </div>
-    </section>
+    </Section>
   );
 }

@@ -21,6 +21,7 @@ import { DashboardOverview } from "./components/DashboardOverview";
 import { HistoryView } from "./components/HistoryView";
 import { ThemeProvider } from "./components/home/ThemeContext";
 import { useNotifications } from "./hooks/useNotifications";
+import { Splash, RouteProgress, AuroraBackground } from "./motion";
 import { NotificationPreferencesView } from "./components/notifications/NotificationPreferencesView";
 import { Shield, Play, Target, CheckCircle2, FileText, AlertTriangle, Users, LogOut, ArrowRight, Activity, Home } from "lucide-react";
 
@@ -279,6 +280,14 @@ export function App() {
   });
 
   const [route, setRoute] = useState<RouteState>(() => parseLocationToRoute());
+  const [routeLoading, setRouteLoading] = useState(false);
+
+  // Slim gradient progress bar on route change
+  useEffect(() => {
+    setRouteLoading(true);
+    const t = setTimeout(() => setRouteLoading(false), 450);
+    return () => clearTimeout(t);
+  }, [route.path, route.runId, route.planId]);
 
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
@@ -352,7 +361,10 @@ export function App() {
         <ThemeProvider>
           <trpc.Provider client={trpcClient} queryClient={queryClient}>
             <QueryClientProvider client={queryClient}>
-              <LoginView
+                <Splash />
+                <RouteProgress active={routeLoading} />
+                <AuroraBackground />
+                <LoginView
                 initialMode={route.path === "/signup" ? "signup" : "signin"}
                 onBackToHome={() => navigateTo("/home")}
                 onLogin={handleLogin}
@@ -368,7 +380,9 @@ export function App() {
         <ThemeProvider>
           <trpc.Provider client={trpcClient} queryClient={queryClient}>
             <QueryClientProvider client={queryClient}>
-              <DocsView
+                <Splash />
+                <RouteProgress active={routeLoading} />
+                <DocsView
                 onSignIn={() => navigateTo("/signin")}
                 onSignUp={() => navigateTo("/signup")}
                 isLoggedIn={!!currentUser}
@@ -389,7 +403,9 @@ export function App() {
         <ThemeProvider>
           <trpc.Provider client={trpcClient} queryClient={queryClient}>
             <QueryClientProvider client={queryClient}>
-              <FaqView
+                <Splash />
+                <RouteProgress active={routeLoading} />
+                <FaqView
                 onSignIn={() => navigateTo("/signin")}
                 onSignUp={() => navigateTo("/signup")}
                 isLoggedIn={!!currentUser}
@@ -410,15 +426,17 @@ export function App() {
       <ThemeProvider>
         <trpc.Provider client={trpcClient} queryClient={queryClient}>
           <QueryClientProvider client={queryClient}>
-            <HomeView
-              onSignIn={() => navigateTo("/signin")}
-              onSignUp={() => navigateTo("/signup")}
-              isLoggedIn={!!currentUser}
-              onGoToDashboard={() => navigateTo("/dashboard")}
-              onLogout={handleLogout}
-              userEmail={currentUser?.email}
-              onGoHome={() => navigateTo("/home")}
-            />
+              <Splash />
+              <RouteProgress active={routeLoading} />
+              <HomeView
+                onSignIn={() => navigateTo("/signin")}
+                onSignUp={() => navigateTo("/signup")}
+                isLoggedIn={!!currentUser}
+                onGoToDashboard={() => navigateTo("/dashboard")}
+                onLogout={handleLogout}
+                userEmail={currentUser?.email}
+                onGoHome={() => navigateTo("/home")}
+              />
           </QueryClientProvider>
         </trpc.Provider>
       </ThemeProvider>
@@ -429,6 +447,9 @@ export function App() {
     <ThemeProvider>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
+          <Splash />
+          <RouteProgress active={routeLoading} />
+          <AuroraBackground />
           <MainApp
             currentUser={currentUser}
             route={route}

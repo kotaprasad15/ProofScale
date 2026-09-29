@@ -135,9 +135,9 @@ export function HistoryView({ projectId, onSelectRun }: HistoryViewProps) {
                     itemStyle={{ color: "#F3F5FA", fontSize: "14px", fontWeight: "bold" }}
                   />
                   {baseline?.score && (
-                    <ReferenceLine y={baseline.score} stroke="#F0A63A" strokeDasharray="3 3" label={{ position: 'top', value: 'Baseline', fill: '#F0A63A', fontSize: 10 }} />
+                    <ReferenceLine y={baseline.score} stroke="var(--warning)" strokeDasharray="3 3" label={{ position: 'top', value: 'Baseline', fill: 'var(--warning)', fontSize: 10 }} />
                   )}
-                  <Line type="monotone" dataKey="score" stroke="#5B5FEF" strokeWidth={3} dot={{ fill: '#5B5FEF', r: 4 }} activeDot={{ r: 6, cursor: "pointer" }} />
+                  <Line type="monotone" dataKey="score" stroke="var(--accent)" strokeWidth={3} dot={{ fill: 'var(--accent)', r: 4 }} activeDot={{ r: 6, cursor: "pointer" }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -156,9 +156,9 @@ export function HistoryView({ projectId, onSelectRun }: HistoryViewProps) {
                     contentStyle={{ backgroundColor: "#10151F", borderColor: "rgba(255,255,255,0.1)", borderRadius: "12px" }}
                   />
                   {baseline?.p95Ms && (
-                    <ReferenceLine y={baseline.p95Ms} stroke="#F0A63A" strokeDasharray="3 3" />
+                    <ReferenceLine y={baseline.p95Ms} stroke="var(--warning)" strokeDasharray="3 3" />
                   )}
-                  <Line type="monotone" dataKey="p95Ms" stroke="#2FD4A6" strokeWidth={3} dot={{ fill: '#2FD4A6', r: 4 }} activeDot={{ r: 6, cursor: "pointer" }} />
+                  <Line type="monotone" dataKey="p95Ms" stroke="var(--success)" strokeWidth={3} dot={{ fill: 'var(--success)', r: 4 }} activeDot={{ r: 6, cursor: "pointer" }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -177,9 +177,9 @@ export function HistoryView({ projectId, onSelectRun }: HistoryViewProps) {
                     contentStyle={{ backgroundColor: "#10151F", borderColor: "rgba(255,255,255,0.1)", borderRadius: "12px" }}
                   />
                   {baseline?.throughputRps && (
-                    <ReferenceLine y={baseline.throughputRps} stroke="#F0A63A" strokeDasharray="3 3" />
+                    <ReferenceLine y={baseline.throughputRps} stroke="var(--warning)" strokeDasharray="3 3" />
                   )}
-                  <Line type="monotone" dataKey="throughputRps" stroke="#F0A63A" strokeWidth={3} dot={{ fill: '#F0A63A', r: 4 }} activeDot={{ r: 6, cursor: "pointer" }} />
+                  <Line type="monotone" dataKey="throughputRps" stroke="var(--warning)" strokeWidth={3} dot={{ fill: 'var(--warning)', r: 4 }} activeDot={{ r: 6, cursor: "pointer" }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -197,9 +197,9 @@ export function HistoryView({ projectId, onSelectRun }: HistoryViewProps) {
                     contentStyle={{ backgroundColor: "#10151F", borderColor: "rgba(255,255,255,0.1)", borderRadius: "12px" }}
                   />
                   {baseline?.errorRatePercent && (
-                    <ReferenceLine y={baseline.errorRatePercent} stroke="#F0A63A" strokeDasharray="3 3" />
+                    <ReferenceLine y={baseline.errorRatePercent} stroke="var(--warning)" strokeDasharray="3 3" />
                   )}
-                  <Line type="stepAfter" dataKey="errorRatePercent" stroke="#F2586B" strokeWidth={3} dot={{ fill: '#F2586B', r: 4 }} activeDot={{ r: 6, cursor: "pointer" }} />
+                  <Line type="stepAfter" dataKey="errorRatePercent" stroke="var(--danger)" strokeWidth={3} dot={{ fill: 'var(--danger)', r: 4 }} activeDot={{ r: 6, cursor: "pointer" }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

@@ -1,7 +1,8 @@
 import React from "react";
-import { ArrowRight, Sparkles } from "lucide-react";
-import { MaskedReveal } from "./MaskedReveal";
-import { MagneticElement } from "./MagneticElement";
+import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
+import { Reveal, DURATION, EASE } from "../../motion";
+import { Section } from "./HomeSectionBase";
 
 interface ClosingCTAProps {
   onSignUp?: () => void;
@@ -10,83 +11,85 @@ interface ClosingCTAProps {
   onGoToDashboard?: () => void;
 }
 
-export function ClosingCTA({
-  onSignUp,
-  onSignIn,
-  isLoggedIn,
-  onGoToDashboard
-}: ClosingCTAProps) {
+/**
+ * Final CTA: a centered glass panel with a soft gradient glow behind it.
+ * The headline animates on mount (`animate`, not `whileInView`) so it can
+ * never get stuck invisible — the old masked-line pattern clipped the text
+ * to zero visibility whenever the IntersectionObserver callback raced or
+ * never fired for this below-the-fold section.
+ */
+export function ClosingCTA({ onSignUp, onSignIn, isLoggedIn, onGoToDashboard }: ClosingCTAProps) {
   return (
-    <section className="py-20 sm:py-28 px-6 sm:px-12 relative z-10 border-t border-[var(--border)] overflow-hidden">
-      {/* Background ambient gradient glow */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 pointer-events-none z-0 overflow-hidden"
-      >
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[40vw] rounded-full bg-gradient-to-r from-signal-indigo/15 via-signal-teal/10 to-transparent blur-[160px]" />
-      </div>
+    <Section className="border-t">
+      {/* Soft gradient glow behind the panel */}
+      <div className="relative">
+        <div
+          aria-hidden="true"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] max-w-[90vw] h-[320px] rounded-full blur-[110px] pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(circle, color-mix(in srgb, var(--accent) 20%, transparent), color-mix(in srgb, var(--accent-2) 10%, transparent) 55%, transparent 75%)",
+          }}
+        />
 
-      <div className="max-w-6xl mx-auto text-center space-y-10 relative z-10">
-        
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full font-mono text-[11px] font-medium tracking-widest text-signal-indigo bg-signal-indigo-soft border border-signal-indigo/25 uppercase mx-auto">
-          <Sparkles className="w-3.5 h-3.5" />
-          START WITH CONFIDENCE
-        </div>
+        <div
+          className="relative glass rounded-3xl px-6 sm:px-12 py-12 sm:py-16 max-w-3xl mx-auto text-center"
+          style={{ boxShadow: "var(--shadow-panel), var(--glow-accent)" }}
+        >
+          <h2 className="font-display font-bold text-3xl sm:text-5xl lg:text-6xl tracking-tight leading-[1.08] text-[var(--text-1)]">
+            <motion.span
+              className="block"
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: DURATION.slow, ease: EASE.out }}
+            >
+              Ship with evidence,
+            </motion.span>
+            <motion.span
+              className="block text-gradient"
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: DURATION.slow, delay: 0.12, ease: EASE.out }}
+            >
+              not optimism.
+            </motion.span>
+          </h2>
 
-        <div className="space-y-2">
-          <MaskedReveal>
-            <h2 className="font-display font-bold text-4xl sm:text-6xl lg:text-7xl text-text-primary tracking-tight leading-[1.05]">
-              Start with the conditions
-            </h2>
-          </MaskedReveal>
-          <MaskedReveal delay={0.12}>
-            <h2 className="font-display font-bold text-4xl sm:text-6xl lg:text-7xl text-transparent bg-clip-text bg-gradient-to-r from-signal-indigo via-indigo-300 to-signal-teal tracking-tight leading-[1.05]">
-              your team can explain.
-            </h2>
-          </MaskedReveal>
-        </div>
+          <motion.p
+            className="mt-5 text-[var(--text-2)] max-w-xl mx-auto leading-relaxed"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: DURATION.slow, delay: 0.22, ease: EASE.out }}
+          >
+            Register a target, define a bounded envelope, and get a deterministic readiness
+            score backed by empirical telemetry — in minutes.
+          </motion.p>
 
-        <p className="text-text-muted text-base sm:text-xl max-w-2xl mx-auto leading-relaxed font-sans">
-          Configure an authorized target, define bounded concurrency, and turn real runtime behavior into verifiable evidence.
-        </p>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-          {isLoggedIn ? (
-            <MagneticElement strength={0.35} radius={80}>
-              <button
-                type="button"
-                onClick={onGoToDashboard}
-                className="btn-solid-primary text-base px-9 py-4 cursor-pointer"
-              >
-                <span>Go to Workspace Dashboard</span>
-                <ArrowRight className="w-5 h-5" />
+          <motion.div
+            className="mt-8 flex flex-wrap items-center justify-center gap-4"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: DURATION.slow, delay: 0.32, ease: EASE.out }}
+          >
+            {isLoggedIn ? (
+              <button type="button" onClick={onGoToDashboard} className="btn-primary">
+                Open Dashboard
+                <ArrowRight className="w-4 h-4" />
               </button>
-            </MagneticElement>
-          ) : (
-            <>
-              <MagneticElement strength={0.35} radius={80}>
-                <button
-                  type="button"
-                  onClick={onSignUp}
-                  className="btn-solid-primary text-base px-9 py-4 cursor-pointer"
-                >
-                  <span>Create Workspace</span>
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-              </MagneticElement>
-
-              <button
-                type="button"
-                onClick={onSignIn}
-                className="btn-glass-secondary text-sm px-7 py-4 cursor-pointer"
-              >
-                <span>Sign In</span>
+            ) : (
+              <button type="button" onClick={onSignUp} className="btn-primary">
+                Create Free Account
+                <ArrowRight className="w-4 h-4" />
               </button>
-            </>
-          )}
+            )}
+            {!isLoggedIn && (
+              <button type="button" onClick={onSignIn} className="btn-secondary">
+                Sign In
+              </button>
+            )}
+          </motion.div>
         </div>
-
       </div>
-    </section>
+    </Section>
   );
 }

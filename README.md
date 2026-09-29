@@ -172,5 +172,68 @@ npm run build
 
 ---
 
+---
+
+# 🎨 Design System — "Morphism"
+
+The RateCap frontend uses the **Morphism** design language: glassmorphic surfaces over an animated aurora field, neumorphic depth on controls, and a token-driven motion layer. Everything lives in `apps/web/src/`.
+
+## Design Tokens
+
+All colors, surfaces, glows and shadows are CSS variables defined per theme in [`apps/web/src/index.css`](apps/web/src/index.css) (`:root`/light and `html.dark`). Dark mode is first-class: the theme is restored pre-paint by an inline script in `apps/web/index.html`, falls back to `prefers-color-scheme`, and can be toggled manually (persisted to `localStorage` key `ratecap_theme`).
+
+| Token group | Variables |
+|---|---|
+| Canvas | `--bg-0`, `--bg-1` |
+| Surfaces | `--surface`, `--surface-solid`, `--surface-raised`, `--glass`, `--glass-strong`, `--glass-border`, `--glass-highlight` |
+| Text | `--text-1` (primary), `--text-2` (muted), `--text-3` (faint) |
+| Accent & signals | `--accent`, `--accent-2`, `--mint`, `--success`, `--warning`, `--danger` + matching `*-soft` tints |
+| Depth | `--inset-shadow`, `--outset-shadow`, `--shadow-panel`, `--glow-accent`, `--glow-success`, `--glow-warning`, `--glow-danger` |
+| Utility | `--field`, `--scrim`, `--overlay`, `--cursor`, `--skeleton-base`, `--skeleton-shine`, `--aurora-opacity` |
+
+CSS utility classes built on the tokens: `.glass` / `.glass-panel` / `.glass-subtle` / `.glass-inset` (surfaces), `.spotlight-host` (cursor-following radial highlight), `.neo-btn` / `.neo-field` (neumorphic controls), `.btn-primary` / `.btn-secondary` / `.btn-danger`, `.skeleton` (shimmer), `.aurora-field` / `.aurora-blob` (background), `.noise-texture`, `.text-gradient`. Tailwind also maps token aliases (`text-`, `signal-`, `ink-`, …) in `apps/web/tailwind.config.js` so older class names keep working.
+
+Typography: **Sora** (display headings), **Inter** (body), **JetBrains Mono** (metrics, logs, eyebrows) — loaded once in `index.html`.
+
+## Motion System
+
+All animation flows through shared tokens in [`apps/web/src/motion/tokens.ts`](apps/web/src/motion/tokens.ts): `DURATION`, `EASE` (expo-out entrances, symmetric morphs, sharp exits), `SPRING` (cursor, magnetic, layout, toggle), and prebuilt variants (`pageVariants`, `revealVariants`, `toastVariants`, `staggerContainer`/`staggerItem`). Never hard-code durations or easings — import them.
+
+Key components (all in `apps/web/src/motion/`, re-exported from `motion/index.ts`):
+
+- **CursorProvider** — spring dot + trailing-ring custom cursor that morphs over interactive elements (grow on buttons, I-beam on inputs, labeled "View"/"Run" rings via `data-cursor="…"`), shrinks on press. Disabled on touch devices and under `prefers-reduced-motion` (native cursor stays).
+- **MagneticButton** — pulls primary buttons/nav toward the cursor with spring physics; `asWrapper` mode wraps arbitrary controls.
+- **SpotlightCard** — glass card with cursor spotlight (`--spot-x/y` vars) and optional 3D tilt; keyboard-accessible when clickable.
+- **PageTransition** — AnimatePresence crossfade (blur + translate) keyed by route; persistent shell never re-animates.
+- **RouteProgress** — slim gradient bar during route changes.
+- **Reveal** — `whileInView` staggered fade-up with blur-to-sharp, once only.
+- **AnimatedNumber** — count-up metrics with easeOutExpo.
+- **ScoreRing** — animated readiness gauge: gradient arc draw, glow, count-up.
+- **Skeleton / SkeletonPanel / SkeletonMetricCard** — glass shimmer loaders for every data view.
+- **Splash** — branded intro, first visit per session, <1.5s, skippable, skipped entirely under reduced motion.
+- **RunPulse** — live "test executing" animation: pulsing waves + animated load curve.
+- **ThemeToggle** — morphing sun/moon icon.
+- **AuroraBackground** — lazy-loaded drifting aurora blobs + noise texture.
+
+### Adding a new animated component
+
+1. Import motion primitives from `../motion` (or `motion/tokens` for raw tokens):
+   ```tsx
+   import { motion } from "framer-motion";
+   import { DURATION, EASE, SPRING, useReducedMotion } from "../motion";
+   ```
+2. Style with tokens, not literals — `var(--glass)`, `var(--accent)`, `DURATION.base`, `EASE.out`.
+3. Gate movement: `const reduced = useReducedMotion();` and either branch to opacity-only variants (`reducedPageVariants`/`reducedRevealVariants`) or skip the animation.
+4. Animate only `transform` and `opacity` where possible; prefer springs from `SPRING`; add `data-cursor="Label"` for cursor morphing on interactive cards.
+5. If the component adds meaningful weight, lazy-load it (see `AuroraBackground` → `AuroraBlobs`).
+
+### Accessibility & performance rules
+
+- A global `prefers-reduced-motion` kill switch in `index.css` collapses all animations; the custom cursor layer is hidden and native cursors are never suppressed in that mode.
+- `backdrop-filter` is used only on chrome (sidebar, header, modals, toasts); mobile gets reduced blur radii. All blobs/noise are `pointer-events: none` behind content.
+- Focus-visible rings, aria labels, `role="status"`/`aria-live` on loaders and toasts, and full keyboard operation are required for any new component.
+
+---
+
 ## 📜 License
 MIT License. Developed for deterministic application readiness and load validation.

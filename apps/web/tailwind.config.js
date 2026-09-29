@@ -5,53 +5,79 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ['"Space Grotesk"', 'sans-serif'],
+        display: ['"Sora"', 'sans-serif'],
         sans: ['Inter', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'monospace'],
-        raleway: ['"Raleway"', 'sans-serif']
+        mono: ['"JetBrains Mono"', 'monospace'],
       },
       colors: {
+        // New Morphism tokens
+        text1: 'var(--text-1)',
+        text2: 'var(--text-2)',
+        text3: 'var(--text-3)',
+        accent: {
+          DEFAULT: 'var(--accent)',
+          2: 'var(--accent-2)',
+          soft: 'var(--accent-soft)',
+        },
+        mint: 'var(--mint)',
+        ok: 'var(--success)',
+        warn: 'var(--warning)',
+        danger: 'var(--danger)',
+        glass: {
+          DEFAULT: 'var(--glass)',
+          strong: 'var(--glass-strong)',
+          border: 'var(--glass-border)',
+        },
+        surface2: 'var(--surface)',
+        'surface-solid': 'var(--surface-solid)',
+        'surface-raised': 'var(--surface-raised)',
+        field2: 'var(--field)',
+        // Legacy aliases — keep old class names rendering correctly
         ink: {
-          950: 'var(--ink-950)',
-          900: 'var(--ink-900)',
-          800: 'var(--ink-800)',
-          700: 'var(--ink-800)'
+          950: 'var(--bg-0)',
+          900: 'var(--surface-solid)',
+          800: 'var(--bg-1)',
+          700: 'var(--bg-1)',
         },
         signal: {
-          indigo: 'var(--signal-indigo)',
-          'indigo-hover': '#4D51E8',
-          'indigo-soft': 'var(--color-brand-soft)',
-          teal: 'var(--signal-teal)',
-          'teal-soft': 'var(--color-success-soft)',
-          amber: 'var(--signal-amber)',
-          'amber-soft': 'var(--color-warning-soft)',
-          rose: 'var(--signal-rose)',
-          'rose-soft': 'var(--color-critical-soft)'
+          indigo: 'var(--accent)',
+          'indigo-hover': 'var(--accent)',
+          'indigo-soft': 'var(--accent-soft)',
+          teal: 'var(--success)',
+          'teal-soft': 'var(--success-soft)',
+          amber: 'var(--warning)',
+          'amber-soft': 'var(--warning-soft)',
+          rose: 'var(--danger)',
+          'rose-soft': 'var(--danger-soft)',
         },
         text: {
-          primary: 'var(--text-primary)',
-          muted: 'var(--text-muted)',
-          faint: 'var(--text-faint)'
+          primary: 'var(--text-1)',
+          muted: 'var(--text-2)',
+          faint: 'var(--text-3)',
         },
         border: {
           DEFAULT: 'var(--border)',
-          strong: 'var(--border-strong)'
+          strong: 'var(--border-strong)',
         },
         surface: {
-          DEFAULT: 'var(--color-surface)',
-          inset: 'var(--panel-inset)'
+          DEFAULT: 'var(--surface-solid)',
+          inset: 'var(--field)',
         },
-        overlay: 'var(--overlay-bg)',
-        'fill-sm': 'var(--white-fill-sm)',
-        'fill-md': 'var(--white-fill-md)'
+        overlay: 'var(--overlay)',
+        'fill-sm': 'var(--accent-soft)',
+        'fill-md': 'var(--accent-soft)',
       },
       boxShadow: {
-        glass: '0 20px 60px -20px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
-        'glass-glow': '0 0 30px -5px rgba(91, 95, 239, 0.25)',
-        'teal-glow': '0 0 30px -5px rgba(47, 212, 166, 0.25)',
-        'rose-glow': '0 0 30px -5px rgba(242, 88, 107, 0.25)'
-      }
-    }
+        glass: 'var(--shadow-panel)',
+        'glass-glow': 'var(--glow-accent)',
+        'teal-glow': 'var(--glow-success)',
+        'rose-glow': 'var(--glow-danger)',
+        inset: 'var(--inset-shadow)',
+      },
+      borderRadius: {
+        '2.5xl': '20px',
+      },
+    },
   },
-  plugins: []
+  plugins: [],
 };

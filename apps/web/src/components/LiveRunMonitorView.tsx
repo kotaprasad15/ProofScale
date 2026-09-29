@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { trpc } from "../utils/trpc";
 import { Activity, XCircle, Clock, CheckCircle2, AlertTriangle, Loader2, Filter, Target, Play, Plus, ChevronRight, Globe, Layers, ArrowUpRight, Timer, Trash2, Edit3, ShieldCheck, X } from "lucide-react";
 import { LoadingDots } from "./LoadingDots";
+import { RunPulse, AnimatedNumber } from "../motion";
 
 interface LiveRunMonitorViewProps {
   projectId: string;
@@ -87,12 +89,22 @@ function RunProgressBar({
         </span>
       </div>
 
-      <div className="w-full h-2.5 rounded-full bg-ink-950 border border-white/[0.1] overflow-hidden p-[1px] shadow-inner">
-        <div
-          className={`h-full rounded-full transition-all duration-700 ease-out ${barGradient} ${
-            status === "running" ? "shadow-[0_0_12px_rgba(6,182,212,0.7)]" : ""
+      <div className="w-full h-2.5 rounded-full overflow-hidden p-[1px]" style={{ background: "var(--field)", border: "1px solid var(--border)", boxShadow: "var(--inset-shadow)" }}>
+        <motion.div
+          className={`h-full rounded-full ${barGradient} ${
+            status === "running" ? "" : ""
           }`}
-          style={{ width: `${percent}%` }}
+          style={{
+            boxShadow: status === "running" ? "0 0 12px rgba(34,211,238,0.7)" : undefined,
+            background:
+              status === "running"
+                ? "linear-gradient(90deg, var(--accent), var(--accent-2), var(--success))"
+                : status === "completed"
+                ? "linear-gradient(90deg, var(--success), var(--mint))"
+                : undefined,
+          }}
+          animate={{ width: `${percent}%` }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         />
       </div>
     </div>
@@ -254,59 +266,56 @@ export function LiveRunMonitorView({ projectId, onSelectRun, onNavigateToBuilder
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           {recording ? (
-            <>
-              <span className="recording-dot" />
-              <span className="text-xs font-mono text-signal-rose font-bold uppercase tracking-wider">Recording</span>
-            </>
+            <RunPulse label="Load test executing" />
           ) : (
             <>
-              <span className="h-2 w-2 rounded-full bg-signal-teal" />
-              <span className="text-xs font-mono text-text-muted">Live Polling (2s)</span>
+              <span className="h-2 w-2 rounded-full" style={{ background: "var(--success)" }} />
+              <span className="text-xs font-mono text-[var(--text-2)]">Live Polling (2s)</span>
             </>
           )}
         </div>
       </div>
 
-      {/* Primary metric tiles — flat panels, no glass blur, max legibility */}
+      {/* Primary metric tiles — glass instruments with count-up numbers */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="flat-instrument p-5 space-y-1">
+        <div className="glass-panel p-5 space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">p95 Latency</span>
-            <Activity className="w-3.5 h-3.5 text-signal-indigo" />
+            <span className="text-[10px] font-mono text-[var(--text-2)] uppercase tracking-wider">p95 Latency</span>
+            <Activity className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
           </div>
-          <div className="font-mono text-3xl font-bold text-text-primary">
-            {sm?.p95Ms != null ? sm.p95Ms : "—"}
-            <span className="text-sm text-text-faint font-medium"> ms</span>
+          <div className="font-mono text-3xl font-bold text-[var(--text-1)] tabular-nums">
+            {sm?.p95Ms != null ? <AnimatedNumber value={sm.p95Ms} /> : "—"}
+            <span className="text-sm text-[var(--text-3)] font-medium"> ms</span>
           </div>
-          <div className="text-[10px] font-mono text-text-faint">
+          <div className="text-[10px] font-mono text-[var(--text-3)]">
             {recording ? "updating in place" : "latest telemetry"}
           </div>
         </div>
 
-        <div className="flat-instrument p-5 space-y-1">
+        <div className="glass-panel p-5 space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">Throughput</span>
-            <Activity className="w-3.5 h-3.5 text-signal-teal" />
+            <span className="text-[10px] font-mono text-[var(--text-2)] uppercase tracking-wider">Throughput</span>
+            <Activity className="w-3.5 h-3.5" style={{ color: "var(--success)" }} />
           </div>
-          <div className="font-mono text-3xl font-bold text-text-primary">
-            {sm?.throughputRps != null ? sm.throughputRps.toFixed(1) : "—"}
-            <span className="text-sm text-text-faint font-medium"> RPS</span>
+          <div className="font-mono text-3xl font-bold text-[var(--text-1)] tabular-nums">
+            {sm?.throughputRps != null ? <AnimatedNumber value={sm.throughputRps} decimals={1} /> : "—"}
+            <span className="text-sm text-[var(--text-3)] font-medium"> RPS</span>
           </div>
-          <div className="text-[10px] font-mono text-text-faint">sustained requests/sec</div>
+          <div className="text-[10px] font-mono text-[var(--text-3)]">sustained requests/sec</div>
         </div>
 
-        <div className="flat-instrument p-5 space-y-1">
+        <div className="glass-panel p-5 space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">Error Rate</span>
-            <ShieldCheck className="w-3.5 h-3.5 text-signal-rose" />
+            <span className="text-[10px] font-mono text-[var(--text-2)] uppercase tracking-wider">Error Rate</span>
+            <ShieldCheck className="w-3.5 h-3.5" style={{ color: "var(--danger)" }} />
           </div>
-          <div className={`font-mono text-3xl font-bold ${sm && sm.errorRate > 0.05 ? "text-signal-rose" : "text-text-primary"}`}>
-            {sm?.errorRate != null ? (sm.errorRate * 100).toFixed(2) : "—"}
-            <span className="text-sm text-text-faint font-medium"> %</span>
+          <div className={`font-mono text-3xl font-bold tabular-nums ${sm && sm.errorRate > 0.05 ? "" : "text-[var(--text-1)]"}`} style={sm && sm.errorRate > 0.05 ? { color: "var(--danger)" } : undefined}>
+            {sm?.errorRate != null ? <AnimatedNumber value={sm.errorRate * 100} decimals={2} /> : "—"}
+            <span className="text-sm text-[var(--text-3)] font-medium"> %</span>
           </div>
-          <div className="text-[10px] font-mono text-text-faint">hard-cap at 5.00%</div>
+          <div className="text-[10px] font-mono text-[var(--text-3)]">hard-cap at 5.00%</div>
         </div>
       </div>
 
