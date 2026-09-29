@@ -11,9 +11,8 @@ interface LoginViewProps {
 }
 
 const DEMO_ACCOUNTS = [
-  { role: "Owner", email: "owner@demo.dev", desc: "Full workspace control" },
-  { role: "Lead", email: "lead@demo.dev", desc: "Plans, targets, baselines" },
-  { role: "Tester", email: "tester@demo.dev", desc: "Authorized runs only" },
+  { role: "Org Owner", email: "lead@acme.dev", desc: "Full workspace control" },
+  { role: "QA Tester", email: "qa.tester@acme.dev", desc: "Authorized runs only" }
 ];
 
 export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: LoginViewProps) {
@@ -399,7 +398,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
             <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-3)] mb-3">
               Demo accounts · one-click
             </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {DEMO_ACCOUNTS.map((d) => (
                 <button
                   key={d.role}
