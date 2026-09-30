@@ -38,6 +38,8 @@
 
 Ratecap employs a decoupled two-plane architecture:
 
+> For a consolidated architecture reference, see **[`ARCHITECTURE.md`](./ARCHITECTURE.md)**.
+
 ```text
   +-------------------------------------------------------------------+
   |                       CONTROL PLANE (Dashboard)                   |
