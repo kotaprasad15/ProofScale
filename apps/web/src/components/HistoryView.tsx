@@ -15,8 +15,8 @@ export function HistoryView({ projectId, onSelectRun }: HistoryViewProps) {
   const [targetId, setTargetId] = useState<string>("");
   
   // Queries
-  const plansQuery = trpc.testPlans.list.useQuery({ projectId });
-  const targetsQuery = trpc.targets.list.useQuery({ projectId });
+  const plansQuery = trpc.testPlans.listByProject.useQuery({ projectId });
+  const targetsQuery = trpc.targets.listByProject.useQuery({ projectId });
   
   const historyQuery = trpc.telemetry.getProjectHistory.useQuery(
     { projectId, testPlanId: testPlanId || undefined, targetId: targetId || undefined },
@@ -26,7 +26,7 @@ export function HistoryView({ projectId, onSelectRun }: HistoryViewProps) {
   const [cursor, setCursor] = useState<{ id: string; sortFieldValue: any } | undefined>();
   const listQuery = trpc.runs.list.useQuery(
     { projectId, testPlanId: testPlanId || undefined, targetId: targetId || undefined, limit: 10, cursor },
-    { enabled: !!projectId, keepPreviousData: true }
+    { enabled: !!projectId }
   );
 
   if (historyQuery.isLoading || !historyQuery.data) {
@@ -66,7 +66,7 @@ export function HistoryView({ projectId, onSelectRun }: HistoryViewProps) {
               className="w-full sm:w-48 bg-ink-900 border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-text-primary focus:border-signal-indigo outline-none"
             >
               <option value="">All Plans</option>
-              {plansQuery.data?.map(p => (
+              {plansQuery.data?.map((p: any) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
@@ -80,7 +80,7 @@ export function HistoryView({ projectId, onSelectRun }: HistoryViewProps) {
               className="w-full sm:w-48 bg-ink-900 border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-text-primary focus:border-signal-indigo outline-none"
             >
               <option value="">All Targets</option>
-              {targetsQuery.data?.map(t => (
+              {targetsQuery.data?.map((t: any) => (
                 <option key={t.id} value={t.id}>{t.baseUrl}</option>
               ))}
             </select>
@@ -249,7 +249,7 @@ export function HistoryView({ projectId, onSelectRun }: HistoryViewProps) {
                       </span>
                     </td>
                     <td className="py-3 px-2">
-                      <StatusChip status={run.status as any} />
+                      <StatusChip tone={run.status === "completed" ? "ready" : run.status === "failed" ? "notready" : "cond"} label={run.status} />
                     </td>
                     <td className="py-3 px-2 text-right">
                       <button className="p-2 text-text-muted hover:text-text-primary hover:bg-white/[0.05] rounded-lg transition-colors">

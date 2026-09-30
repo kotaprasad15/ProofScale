@@ -726,9 +726,11 @@ export const authRouter = router({
       const ip = ctx.req?.ip || "unknown_ip";
 
       const [user] = await ctx.db.select().from(users).where(eq(users.email, email));
+      let generatedRawToken: string | null = null;
 
       if (user) {
         const { rawToken, tokenHash, expiresAt } = PasswordResetService.generateResetToken();
+        generatedRawToken = rawToken;
 
         await ctx.db.insert(passwordResetTokens).values({
           id: `rst_${crypto.randomUUID().slice(0, 8)}`,
@@ -756,7 +758,7 @@ export const authRouter = router({
       }
 
       // Always return generic response to prevent user enumeration (#5)
-      return { success: true, message: PasswordResetService.GENERIC_RESET_RESPONSE, mockToken: user ? rawToken : null };
+      return { success: true, message: PasswordResetService.GENERIC_RESET_RESPONSE, mockToken: generatedRawToken };
     }),
 
   /**

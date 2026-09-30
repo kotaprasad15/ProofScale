@@ -57,7 +57,7 @@ function newRequestDraft(index: number): RequestDraft {
 
 /** Parses "Key: value" lines into a header/query record. Returns error text on malformed lines. */
 function parsePairs(text: string): { record: Record<string, string> | null; error: string | null } {
-  if (!text.trim()) return { record: undefined, error: null };
+  if (!text.trim()) return { record: null, error: null };
   const record: Record<string, string> = {};
   for (const line of text.split("\n")) {
     const trimmed = line.trim();
@@ -223,8 +223,8 @@ export function TestPlanBuilderView({
         name: r.name.trim() || `Request ${i + 1}`,
         method: r.method,
         path: r.path.trim(),
-        headers: headers.record,
-        query: query.record,
+        headers: headers.record || undefined,
+        query: query.record || undefined,
         body,
         enabled: r.enabled
       });

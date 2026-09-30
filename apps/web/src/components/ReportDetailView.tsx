@@ -76,7 +76,8 @@ function ServerSideRunReport({ runId }: { runId: string }) {
           {r.passed ? "Passed" : r.cancelled ? "Cancelled" : "Failed thresholds"}
         </span>
       </div>
-r
+
+r
       {/* Envelope provenance: exact conditions the results are valid for */}
       {env && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
@@ -245,6 +246,7 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
   const { run, plan, target, findings } = reportData;
   const sb = run.scoreBreakdown;
   const metrics = run.summaryMetrics;
+  const policySnapshot = (run as any).policySnapshotJson ? JSON.parse((run as any).policySnapshotJson) : null;
   const isServerSideRun = (run as any).runKind === "server_side" || !metrics;
 
   const handleDownloadMarkdown = async () => {
@@ -396,12 +398,12 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
         </div>
       </div>
 
-      {run.policySnapshot && (
-        <div className="glass-panel p-6 sm:p-8 space-y-6 border-l-4" style={{ borderColor: run.policySnapshot.result === "pass" ? "#2FD4A6" : run.policySnapshot.result === "fail" ? "#F2586B" : "#F0A63A" }}>
+      {policySnapshot && (
+        <div className="glass-panel p-6 sm:p-8 space-y-6 border-l-4" style={{ borderColor: policySnapshot.result === "pass" ? "#2FD4A6" : policySnapshot.result === "fail" ? "#F2586B" : "#F0A63A" }}>
           <div>
             <h3 className="text-base font-semibold text-text-primary">Policy Evaluation Result</h3>
-            <div className="text-xs font-mono mt-1" style={{ color: run.policySnapshot.result === "pass" ? "#2FD4A6" : run.policySnapshot.result === "fail" ? "#F2586B" : "#F0A63A" }}>
-              Status: {run.policySnapshot.result.toUpperCase()}
+            <div className="text-xs font-mono mt-1" style={{ color: policySnapshot.result === "pass" ? "#2FD4A6" : policySnapshot.result === "fail" ? "#F2586B" : "#F0A63A" }}>
+              Status: {policySnapshot.result.toUpperCase()}
             </div>
           </div>
 
@@ -409,7 +411,7 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
             <div className="space-y-3">
               <h4 className="text-xs font-semibold text-text-muted uppercase">Rule Results</h4>
               <div className="space-y-2">
-                {run.policySnapshot.rules.map((rule: any, i: number) => (
+                {policySnapshot.rules.map((rule: any, i: number) => (
                   <div key={i} className="p-3 rounded-lg bg-[var(--white-fill-sm)] border border-[var(--border)] flex justify-between items-center">
                     <div>
                       <div className="text-xs font-semibold text-text-primary">{rule.key}</div>
@@ -425,7 +427,7 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
 
             <div className="space-y-3">
               <h4 className="text-xs font-semibold text-text-muted uppercase">Baseline Comparison</h4>
-              {!run.policySnapshot.baselineComparison?.baselineRunId ? (
+              {!policySnapshot.baselineComparison?.baselineRunId ? (
                 <div className="p-4 text-xs font-mono text-text-muted rounded-lg bg-[var(--white-fill-sm)] border border-[var(--border)]">
                   No active baseline available during evaluation.
                 </div>
@@ -433,26 +435,26 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
                 <div className="p-4 space-y-3 rounded-lg bg-[var(--white-fill-sm)] border border-[var(--border)] text-xs font-mono">
                   <div className="flex justify-between pb-2 border-b border-[var(--border)]">
                     <span className="text-text-muted">Regression Status:</span>
-                    <span className="font-bold" style={{ color: run.policySnapshot.baselineComparison.regressionStatus === "improved" ? "#2FD4A6" : run.policySnapshot.baselineComparison.regressionStatus === "regressed" ? "#F2586B" : "#F0A63A" }}>
-                      {run.policySnapshot.baselineComparison.regressionStatus.toUpperCase()}
+                    <span className="font-bold" style={{ color: policySnapshot.baselineComparison.regressionStatus === "improved" ? "#2FD4A6" : policySnapshot.baselineComparison.regressionStatus === "regressed" ? "#F2586B" : "#F0A63A" }}>
+                      {policySnapshot.baselineComparison.regressionStatus.toUpperCase()}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-3 pt-2">
                     <div>
                       <div className="text-[10px] text-text-faint">Score Delta</div>
-                      <div className="font-bold text-text-primary">{run.policySnapshot.baselineComparison.scoreDelta > 0 ? "+" : ""}{run.policySnapshot.baselineComparison.scoreDelta}</div>
+                      <div className="font-bold text-text-primary">{policySnapshot.baselineComparison.scoreDelta > 0 ? "+" : ""}{policySnapshot.baselineComparison.scoreDelta}</div>
                     </div>
                     <div>
                       <div className="text-[10px] text-text-faint">p95 Delta</div>
-                      <div className="font-bold text-text-primary">{run.policySnapshot.baselineComparison.p95DeltaMs > 0 ? "+" : ""}{run.policySnapshot.baselineComparison.p95DeltaMs} ms</div>
+                      <div className="font-bold text-text-primary">{policySnapshot.baselineComparison.p95DeltaMs > 0 ? "+" : ""}{policySnapshot.baselineComparison.p95DeltaMs} ms</div>
                     </div>
                     <div>
                       <div className="text-[10px] text-text-faint">Throughput Delta</div>
-                      <div className="font-bold text-text-primary">{run.policySnapshot.baselineComparison.throughputDeltaRps > 0 ? "+" : ""}{run.policySnapshot.baselineComparison.throughputDeltaRps} req/s</div>
+                      <div className="font-bold text-text-primary">{policySnapshot.baselineComparison.throughputDeltaRps > 0 ? "+" : ""}{policySnapshot.baselineComparison.throughputDeltaRps} req/s</div>
                     </div>
                     <div>
                       <div className="text-[10px] text-text-faint">Error Delta</div>
-                      <div className="font-bold text-text-primary">{run.policySnapshot.baselineComparison.errorRateDeltaPercent > 0 ? "+" : ""}{run.policySnapshot.baselineComparison.errorRateDeltaPercent}%</div>
+                      <div className="font-bold text-text-primary">{policySnapshot.baselineComparison.errorRateDeltaPercent > 0 ? "+" : ""}{policySnapshot.baselineComparison.errorRateDeltaPercent}%</div>
                     </div>
                   </div>
                 </div>
@@ -464,7 +466,8 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
 
       {/* Server-side execution report (v2 worker runs) */}
       {isServerSideRun && <ServerSideRunReport runId={runId} />}
-
+
+
       {/* 5-Category Weighted Breakdown (mirrors the Methodology page) */}
       {sb && (
         <div className="glass-panel p-6 sm:p-8 space-y-4">

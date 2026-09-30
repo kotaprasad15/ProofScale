@@ -218,7 +218,7 @@ export function useNotifications(userId?: string, orgId?: string) {
       if (!subscription) {
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: convertedVapidKey
+          applicationServerKey: convertedVapidKey as any
         });
       }
 

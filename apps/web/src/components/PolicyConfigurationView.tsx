@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { trpc } from "../utils/trpc";
 import { Shield, Plus, CheckCircle2, AlertTriangle, Play, RefreshCcw } from "lucide-react";
 import { LoadingDots } from "./LoadingDots";
-import { ReadinessPolicy } from "@proofscale/shared/dist/schemas/policy";
+import { ReadinessPolicy } from "@proofscale/shared";
 
 interface PolicyConfigurationViewProps {
   projectId: string;

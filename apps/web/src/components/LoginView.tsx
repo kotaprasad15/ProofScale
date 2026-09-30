@@ -165,6 +165,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
         const res = await signupMutation.mutateAsync({
           email: email.trim().toLowerCase(),
           password,
+          confirmPassword,
           displayName: displayName.trim(),
         });
         if (res.success && res.user) {
