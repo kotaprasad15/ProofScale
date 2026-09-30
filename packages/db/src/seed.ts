@@ -18,7 +18,7 @@ async function seed() {
   const defaultPlanId = "plan_smoke_01";
 
   // 2. Seed Default Users with valid demo password hash ("Password123!Secure")
-  const demoPasswordHash = PasswordService.hashPassword("Password123!Secure");
+  const demoPasswordHash = await PasswordService.hashPassword("Password123!Secure");
 
   await db.insert(users).values({
     id: defaultUserId,

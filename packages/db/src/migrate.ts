@@ -462,7 +462,7 @@ export function runMigrations(customDb?: Database.Database | null) {
       const defaultTargetId = "target_fixture_01";
       const defaultPlanId = "plan_smoke_01";
       const now = Date.now();
-      const demoPasswordHash = PasswordService.hashPassword("Password123!Secure");
+      const demoPasswordHash = PasswordService.hashPasswordSync("Password123!Secure");
 
       targetDb.prepare(`
         INSERT OR IGNORE INTO users (id, email, display_name, role, onboarding_status, last_workspace_id, password_hash, failed_login_attempts, locked_until, created_at, updated_at)

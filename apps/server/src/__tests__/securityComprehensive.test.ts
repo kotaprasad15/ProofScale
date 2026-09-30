@@ -31,7 +31,7 @@ describe("20-Point Application Security Hardening Verification", () => {
 
   before(async () => {
     // Seed test user with password
-    const passwordHash = PasswordService.hashPassword(testPassword);
+    const passwordHash = await PasswordService.hashPassword(testPassword);
     await db.insert(users).values({
       id: testUserId,
       email: testEmail,
@@ -461,7 +461,7 @@ describe("20-Point Application Security Hardening Verification", () => {
       displayName: "Victim User",
       role: "member",
       onboardingStatus: "completed",
-      passwordHash: PasswordService.hashPassword("CorrectPass123!"),
+      passwordHash: await PasswordService.hashPassword("CorrectPass123!"),
       failedLoginAttempts: 0
     });
 

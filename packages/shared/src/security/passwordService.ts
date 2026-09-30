@@ -15,22 +15,38 @@ export class PasswordService {
    * Hashes a password using scrypt with a cryptographic salt.
    * Format: salt:derivedKeyHex
    */
-  static hashPassword(password: string): string {
+  static async hashPassword(password: string): Promise<string> {
     const salt = crypto.randomBytes(16).toString("hex");
-    const derivedKey = crypto.scryptSync(password, salt, this.SCRYPT_KEYLEN);
+    const derivedKey = await new Promise<Buffer>((resolve, reject) => {
+      crypto.scrypt(password, salt, this.SCRYPT_KEYLEN, { N: 16384, r: 8, p: 1 }, (err, derivedKey) => {
+        if (err) reject(err);
+        else resolve(derivedKey);
+      });
+    });
+    return `${salt}:${derivedKey.toString("hex")}`;
+  }
+
+  static hashPasswordSync(password: string): string {
+    const salt = crypto.randomBytes(16).toString("hex");
+    const derivedKey = crypto.scryptSync(password, salt, this.SCRYPT_KEYLEN, { N: 16384, r: 8, p: 1 });
     return `${salt}:${derivedKey.toString("hex")}`;
   }
 
   /**
    * Constant-time password verification to prevent timing side-channel attacks.
    */
-  static verifyPassword(password: string, storedHash: string): boolean {
+  static async verifyPassword(password: string, storedHash: string): Promise<boolean> {
     try {
       const [salt, keyHex] = storedHash.split(":");
       if (!salt || !keyHex) return false;
 
       const keyBuffer = Buffer.from(keyHex, "hex");
-      const derivedKey = crypto.scryptSync(password, salt, keyBuffer.length);
+      const derivedKey = await new Promise<Buffer>((resolve, reject) => {
+        crypto.scrypt(password, salt, keyBuffer.length, { N: 16384, r: 8, p: 1 }, (err, derivedKey) => {
+          if (err) reject(err);
+          else resolve(derivedKey);
+        });
+      });
       return crypto.timingSafeEqual(keyBuffer, derivedKey);
     } catch {
       return false;
@@ -41,10 +57,15 @@ export class PasswordService {
    * Runs a dummy cryptographic hash calculation to ensure constant response timing
    * when an unknown email is supplied, preventing user enumeration via timing attacks.
    */
-  static runDummyVerification(): void {
+  static async runDummyVerification(): Promise<void> {
     const dummySalt = "0123456789abcdef0123456789abcdef";
     const dummyKey = Buffer.alloc(this.SCRYPT_KEYLEN, 0);
-    const derived = crypto.scryptSync("dummy_password_timing_pad", dummySalt, this.SCRYPT_KEYLEN);
+    const derived = await new Promise<Buffer>((resolve, reject) => {
+      crypto.scrypt("dummy_password_timing_pad", dummySalt, this.SCRYPT_KEYLEN, { N: 16384, r: 8, p: 1 }, (err, derivedKey) => {
+        if (err) reject(err);
+        else resolve(derivedKey);
+      });
+    });
     crypto.timingSafeEqual(dummyKey, derived);
   }
 

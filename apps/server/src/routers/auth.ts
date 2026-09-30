@@ -24,6 +24,7 @@ import {
 } from "@proofscale/db";
 import { eq, and, gt, isNull } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import { EmailService } from "../services/emailService.js";
 import crypto from "node:crypto";
 import { z } from "zod";
 
@@ -379,7 +380,7 @@ export const authRouter = router({
       }
 
       // 4. Hash password with salted scrypt (strong cryptographic hashing)
-      const passwordHash = PasswordService.hashPassword(input.password);
+      const passwordHash = await PasswordService.hashPassword(input.password);
       const userId = `usr_${crypto.randomUUID().slice(0, 8)}`;
       const displayName = input.displayName?.trim() || email.split("@")[0];
 
@@ -464,7 +465,7 @@ export const authRouter = router({
 
       // Self-heal demo account if missing or without password hash
       if (isDemoAccount) {
-        const demoPasswordHash = PasswordService.hashPassword("Password123!Secure");
+        const demoPasswordHash = await PasswordService.hashPassword("Password123!Secure");
         if (!user) {
           const demoUserId = email === "lead@acme.dev" ? "usr_admin_01" : "usr_tester_01";
           const demoName = email === "lead@acme.dev" ? "Alex Rivera (Org Owner)" : "Sam Taylor (Tester)";
@@ -495,7 +496,7 @@ export const authRouter = router({
 
       if (!user) {
         // Run dummy cryptographic hash to normalize response timing and prevent user enumeration
-        PasswordService.runDummyVerification();
+        await PasswordService.runDummyVerification();
         SecurityLogger.log({
           eventType: "auth.login_failed",
           ipAddress: ip,
@@ -510,7 +511,7 @@ export const authRouter = router({
 
       // 2. Check Account Lockout (#17)
       // Public demo accounts with correct demo credentials bypass denial so one visitor cannot lock the demo for all users
-      const isDemoWithValidPassword = isDemoAccount && (input.password === "Password123!Secure" || (user.passwordHash ? PasswordService.verifyPassword(input.password, user.passwordHash) : false));
+      const isDemoWithValidPassword = isDemoAccount && (input.password === "Password123!Secure" || (user.passwordHash ? await PasswordService.verifyPassword(input.password, user.passwordHash) : false));
 
       const lockout = PasswordService.checkLockout(user.failedLoginAttempts, user.lockedUntil);
       if (lockout.isLocked && !isDemoWithValidPassword) {
@@ -529,7 +530,7 @@ export const authRouter = router({
 
       // 3. Verify Password
       const isValid = isDemoWithValidPassword || (user.passwordHash
-        ? PasswordService.verifyPassword(input.password, user.passwordHash)
+        ? await PasswordService.verifyPassword(input.password, user.passwordHash)
         : false);
 
       if (!isValid) {
@@ -640,7 +641,7 @@ export const authRouter = router({
 
       // Check current password if one is already set
       if (user.passwordHash) {
-        const matches = PasswordService.verifyPassword(input.currentPassword, user.passwordHash);
+        const matches = await PasswordService.verifyPassword(input.currentPassword, user.passwordHash);
         if (!matches) {
           SecurityLogger.log({
             eventType: "auth.login_failed",
@@ -657,7 +658,7 @@ export const authRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: complexity.reason || "Password does not meet complexity requirements." });
       }
 
-      const newHash = PasswordService.hashPassword(input.newPassword);
+      const newHash = await PasswordService.hashPassword(input.newPassword);
       const now = new Date();
 
       // Update password
@@ -746,7 +747,7 @@ export const authRouter = router({
         });
       } else {
         // Run dummy cryptographic work to ensure uniform execution timing (#5)
-        PasswordService.runDummyVerification();
+        await PasswordService.runDummyVerification();
         SecurityLogger.log({
           eventType: "auth.password_reset_requested",
           ipAddress: ip,
@@ -755,10 +756,7 @@ export const authRouter = router({
       }
 
       // Always return generic response to prevent user enumeration (#5)
-      return {
-        success: true,
-        message: PasswordResetService.GENERIC_RESET_RESPONSE
-      };
+      return { success: true, message: PasswordResetService.GENERIC_RESET_RESPONSE, mockToken: user ? rawToken : null };
     }),
 
   /**
@@ -805,7 +803,7 @@ export const authRouter = router({
         .set({ usedAt: now })
         .where(eq(passwordResetTokens.id, tokenRecord.id));
 
-      const newHash = PasswordService.hashPassword(input.newPassword);
+      const newHash = await PasswordService.hashPassword(input.newPassword);
 
       // Update password and safely reset lockout state (#17)
       await ctx.db

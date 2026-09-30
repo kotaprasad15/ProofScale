@@ -615,7 +615,7 @@ export async function runPgMigrations(connectionUrl?: string) {
       const defaultTargetId = "target_fixture_01";
       const defaultPlanId = "plan_smoke_01";
 
-      const demoPasswordHash = PasswordService.hashPassword("Password123!Secure");
+      const demoPasswordHash = PasswordService.hashPasswordSync("Password123!Secure");
 
       await client.query(`
         INSERT INTO public.users (id, email, display_name, role, onboarding_status, last_workspace_id, password_hash, failed_login_attempts, locked_until)
@@ -684,7 +684,7 @@ export async function runPgMigrations(connectionUrl?: string) {
 
     // 5. Always guarantee demo accounts are active, unlocked, and have valid password hashes
     try {
-      const activeDemoHash = PasswordService.hashPassword("Password123!Secure");
+      const activeDemoHash = PasswordService.hashPasswordSync("Password123!Secure");
       await client.query(`
         UPDATE public.users 
         SET password_hash = $1, failed_login_attempts = 0, locked_until = NULL 

@@ -16,7 +16,9 @@ const DEMO_ACCOUNTS = [
 ];
 
 export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: LoginViewProps) {
-  const [isSignUp, setIsSignUp] = useState(initialMode === "signup");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot_password" | "reset_password">(initialMode === "signup" ? "signup" : "signin");
+  const isSignUp = mode === "signup";
+  const [resetToken, setResetToken] = useState("");
 
   // Form Fields
   const [email, setEmail] = useState("");
@@ -56,14 +58,16 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
   // Mutations
   const loginMutation = trpc.auth.login.useMutation();
   const signupMutation = trpc.auth.signup.useMutation();
+  const requestResetMutation = trpc.auth.requestPasswordReset.useMutation();
+  const completeResetMutation = trpc.auth.completePasswordReset.useMutation();
 
-  const isSubmitting = loginMutation.isPending || signupMutation.isPending;
+  const isSubmitting = loginMutation.isPending || signupMutation.isPending || requestResetMutation.isPending || completeResetMutation.isPending;
 
   const passwordsMatch = !confirmPassword || password === confirmPassword;
   const isPasswordLongEnough = password.length >= 10;
 
-  const handleToggleMode = (signUpMode: boolean) => {
-    setIsSignUp(signUpMode);
+  const handleToggleMode = (newMode: "signin" | "signup" | "forgot_password" | "reset_password") => {
+    setMode(newMode);
     setErrorMsg(null);
     setPassword("");
     setConfirmPassword("");
@@ -75,7 +79,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
     const demoPass = "Password123!Secure";
     setEmail(demoEmail);
     setPassword(demoPass);
-    setIsSignUp(false);
+    setMode("signin");
     setErrorMsg(null);
     setActiveDemo(demoRole);
 
@@ -103,6 +107,44 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
     setErrorMsg(null);
 
     try {
+      if (mode === "forgot_password") {
+        if (!email.trim()) {
+          setErrorMsg("Email is required.");
+          return;
+        }
+        const res = await requestResetMutation.mutateAsync({ email: email.trim().toLowerCase() });
+        if (res.success) {
+          if (res.mockToken) setResetToken(res.mockToken);
+          setMode("reset_password");
+          setErrorMsg(null);
+        }
+        return;
+      }
+      
+      if (mode === "reset_password") {
+        if (!resetToken.trim()) {
+          setErrorMsg("Reset token is required.");
+          return;
+        }
+        if (!isPasswordLongEnough) {
+          setErrorMsg("Password must be at least 10 characters.");
+          return;
+        }
+        if (!passwordsMatch) {
+          setErrorMsg("Passwords do not match.");
+          return;
+        }
+        
+        const res = await completeResetMutation.mutateAsync({ token: resetToken, newPassword: password });
+        if (res.success) {
+          setMode("signin");
+          setPassword("");
+          setConfirmPassword("");
+          setErrorMsg("Password reset successfully. You can now sign in.");
+        }
+        return;
+      }
+
       if (isSignUp) {
         if (!email.trim() || !password || !displayName.trim()) {
           setErrorMsg("All fields are required to create an account.");
@@ -219,38 +261,51 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
           </button>
 
           {/* Mode switch */}
-          <div className="flex p-1 rounded-xl glass-inset mb-7 relative" role="tablist" aria-label="Authentication mode">
-            {(["signin", "signup"] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                role="tab"
-                aria-selected={isSignUp === (mode === "signup")}
-                onClick={() => handleToggleMode(mode === "signup")}
-                className={`relative flex-1 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-                  isSignUp === (mode === "signup") ? "text-white" : "text-[var(--text-2)] hover:text-[var(--text-1)]"
-                }`}
-              >
-                {isSignUp === (mode === "signup") && (
-                  <motion.span
-                    layoutId="auth-mode-pill"
-                    className="absolute inset-0 rounded-lg"
-                    style={{ background: "var(--accent)", boxShadow: "var(--glow-accent)" }}
-                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                  />
-                )}
-                <span className="relative z-10">
-                  {mode === "signin" ? "Sign In" : "Create Account"}
-                </span>
-              </button>
-            ))}
-          </div>
+          {mode !== "forgot_password" && mode !== "reset_password" && (
+            <div className="flex p-1 rounded-xl glass-inset mb-7 relative" role="tablist" aria-label="Authentication mode">
+              {(["signin", "signup"] as const).map((modeOption) => (
+                <button
+                  key={modeOption}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === modeOption}
+                  onClick={() => handleToggleMode(modeOption)}
+                  className={`relative flex-1 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                    mode === modeOption ? "text-white" : "text-[var(--text-2)] hover:text-[var(--text-1)]"
+                  }`}
+                >
+                  {mode === modeOption && (
+                    <motion.span
+                      layoutId="auth-mode-pill"
+                      className="absolute inset-0 rounded-lg"
+                      style={{ background: "var(--accent)", boxShadow: "var(--glow-accent)" }}
+                      transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                    />
+                  )}
+                  <span className="relative z-10">
+                    {modeOption === "signin" ? "Sign In" : "Create Account"}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {(mode === "forgot_password" || mode === "reset_password") && (
+            <button
+              type="button"
+              onClick={() => handleToggleMode("signin")}
+              className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest text-[var(--text-2)] hover:text-[var(--text-1)] transition cursor-pointer self-start mb-6"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Back to sign in
+            </button>
+          )}
 
           <motion.form
             onSubmit={handleSubmit}
             animate={shake}
             className="space-y-4"
-            key={isSignUp ? "signup" : "signin"}
+            key={mode}
           >
             <AnimatePresence mode="popLayout" initial={false}>
               {isSignUp && (
@@ -278,7 +333,7 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
               )}
             </AnimatePresence>
 
-            <div>
+            {mode !== "reset_password" && (<div>
               <label className="block font-mono text-[10px] uppercase tracking-widest text-[var(--text-3)] mb-1.5">
                 Email
               </label>
@@ -303,12 +358,19 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
                   <CheckCircle2 className="w-3 h-3" /> Email available.
                 </p>
               )}
-            </div>
+            </div>)}
 
-            <div>
-              <label className="block font-mono text-[10px] uppercase tracking-widest text-[var(--text-3)] mb-1.5">
-                Password
-              </label>
+            {mode !== "forgot_password" && (<div>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="block font-mono text-[10px] uppercase tracking-widest text-[var(--text-3)]">
+                  Password
+                </label>
+                {!isSignUp && mode === "signin" && (
+                  <button type="button" onClick={() => handleToggleMode("forgot_password")} className="text-[10px] text-[var(--accent)] hover:underline font-mono">
+                    Forgot Password?
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-3)]" />
                 <input
@@ -320,10 +382,35 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
                   className="neo-field !pl-11"
                 />
               </div>
-            </div>
+            </div>)}
 
             <AnimatePresence mode="popLayout" initial={false}>
-              {isSignUp && (
+              {mode === "reset_password" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: DURATION.fast, ease: EASE.out }}
+                >
+                  <label className="block font-mono text-[10px] uppercase tracking-widest text-[var(--text-3)] mb-1.5">
+                    Reset Token
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-3)]" />
+                    <input
+                      type="text"
+                      value={resetToken}
+                      onChange={(e) => setResetToken(e.target.value)}
+                      placeholder="Enter token"
+                      className="neo-field !pl-11"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence mode="popLayout" initial={false}>
+              {(isSignUp || mode === "reset_password") && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -386,35 +473,36 @@ export function LoginView({ onLogin, onBackToHome, initialMode = "signin" }: Log
                   />
                 ) : (
                   <>
-                    {isSignUp ? "Create Account" : "Sign In"}
+                    {mode === "forgot_password" ? "Request Reset" : mode === "reset_password" ? "Reset Password" : isSignUp ? "Create Account" : "Sign In"}
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
             </button>
           </motion.form>
 
-          {/* Demo accounts */}
-          <div className="mt-7 pt-6" style={{ borderTop: "1px solid var(--border)" }}>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-3)] mb-3">
-              Demo accounts · one-click
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {DEMO_ACCOUNTS.map((d) => (
-                <button
-                  key={d.role}
-                  type="button"
-                  onClick={() => handleDemoLogin(d.email, d.role)}
-                  disabled={isSubmitting}
-                  className="neo-btn p-3 text-left cursor-pointer disabled:opacity-50"
-                >
-                  <span className="block text-xs font-semibold" style={{ color: activeDemo === d.role ? "var(--accent)" : "var(--text-1)" }}>
-                    {activeDemo === d.role ? "Signing in…" : d.role}
-                  </span>
-                  <span className="block font-mono text-[9px] text-[var(--text-3)] mt-0.5 truncate">{d.desc}</span>
-                </button>
-              ))}
+          {mode !== "forgot_password" && mode !== "reset_password" && (
+            <div className="mt-7 pt-6" style={{ borderTop: "1px solid var(--border)" }}>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-3)] mb-3">
+                Demo accounts · one-click
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {DEMO_ACCOUNTS.map((d) => (
+                  <button
+                    key={d.role}
+                    type="button"
+                    onClick={() => handleDemoLogin(d.email, d.role)}
+                    disabled={isSubmitting}
+                    className="neo-btn p-3 text-left cursor-pointer disabled:opacity-50"
+                  >
+                    <span className="block text-xs font-semibold" style={{ color: activeDemo === d.role ? "var(--accent)" : "var(--text-1)" }}>
+                      {activeDemo === d.role ? "Signing in…" : d.role}
+                    </span>
+                    <span className="block font-mono text-[9px] text-[var(--text-3)] mt-0.5 truncate">{d.desc}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
