@@ -4,7 +4,7 @@ services:
     name: proofscale-api
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm run start --workspace=apps/server
     envVars:
       - key: NODE_ENV
@@ -24,7 +24,7 @@ services:
     name: proofscale-worker
     runtime: node
     plan: starter
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm run start --workspace=apps/worker
     envVars:
       - key: NODE_ENV
