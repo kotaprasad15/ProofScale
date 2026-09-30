@@ -16,6 +16,8 @@ import { notificationsRouter } from "./notifications.js";
 import { policiesRouter } from "./policies.js";
 import { baselinesRouter } from "./baselines.js";
 import { telemetryRouter } from "./telemetry.js";
+import { schedulesRouter } from "./schedules.js";
+import { notificationRulesRouter } from "./notificationRules.js";
 
 export const appRouter = router({
   system: systemRouter,
@@ -34,7 +36,9 @@ export const appRouter = router({
   notifications: notificationsRouter,
   policies: policiesRouter,
   baselines: baselinesRouter,
-  telemetry: telemetryRouter
+  telemetry: telemetryRouter,
+  schedules: schedulesRouter,
+  notificationRules: notificationRulesRouter
 });
 
 export type AppRouter = typeof appRouter;

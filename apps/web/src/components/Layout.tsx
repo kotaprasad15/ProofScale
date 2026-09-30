@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   BookOpen,
+  CalendarClock,
 } from "lucide-react";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { UserPermissions } from "@proofscale/shared";
@@ -99,6 +100,7 @@ export function Layout({
       label: "Validation",
       items: [
         { id: "plans", label: "Test Plans", icon: PlaySquare, visible: permissions?.viewProject ?? true },
+        { id: "schedules", label: "Schedules", icon: CalendarClock, visible: permissions?.viewProject ?? true },
         { id: "reports", label: "Readiness Reports", icon: FileText, visible: true },
       ],
     },

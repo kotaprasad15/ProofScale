@@ -20,6 +20,7 @@ import { eq } from "drizzle-orm";
 import crypto from "node:crypto";
 import { RealtimeNotificationManager } from "./services/notifications/RealtimeNotificationManager.js";
 import { PresenceService } from "./services/presence/PresenceService.js";
+import { createTestExecutionRouter } from "./routes/testExecution.js";
 
 export function createApp() {
   const app = express();
@@ -171,6 +172,9 @@ export function createApp() {
     const guestCsrf = SessionSecurity.generateCsrfToken();
     return res.json({ csrfToken: guestCsrf });
   });
+
+  // Server-side test execution REST API (plans + runs, 202 queue flow)
+  app.use(createTestExecutionRouter());
 
   // Mount tRPC API handler
   app.use(

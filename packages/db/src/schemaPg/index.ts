@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, boolean, uniqueIndex, index } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -122,6 +122,15 @@ export const testPlans = pgTable("test_plans", {
   thresholdsJson: text("thresholds_json").notNull(),
   safetyLimitsJson: text("safety_limits_json"),
   scoringVersion: text("scoring_version").notNull().default("mvp-1"),
+  // Server-side execution (v2) spec columns
+  specJson: text("spec_json"),
+  planStatus: text("plan_status").notNull().default("draft"),
+  planEnvironment: text("plan_environment").notNull().default("staging"),
+  targetBaseUrl: text("target_base_url"),
+  approvedBy: text("approved_by"),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+  specVersion: integer("spec_version").notNull().default(0),
+  createdBy: text("created_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
 });
@@ -139,6 +148,18 @@ export const testRuns = pgTable("test_runs", {
   summaryMetricsJson: text("summary_metrics_json"),
   policySnapshotJson: text("policy_snapshot_json"),
   errorMessage: text("error_message"),
+  // Server-side execution (v2) result columns
+  envelopeJson: text("envelope_json"),
+  resultJson: text("result_json"),
+  progressJson: text("progress_json"),
+  cancelReason: text("cancel_reason"),
+  runKind: text("run_kind").notNull().default("k6"),
+  // Phase 3: trigger metadata
+  triggerSource: text("trigger_source").notNull().default("manual"),
+  scheduleId: text("schedule_id"),
+  scheduleName: text("schedule_name"),
+  scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
+  actualStartedAt: timestamp("actual_started_at", { withTimezone: true }),
   region: text("region").notNull().default("local-us-east"),
   workerId: text("worker_id"),
   leaseOwner: text("lease_owner"),
@@ -277,14 +298,25 @@ export const notifications = pgTable("notifications", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   orgId: text("org_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
-  eventType: text("event_type").notNull(), // 'run.completed' | 'run.failed' | 'run.aborted' | 'run.tier_changed'
+  eventType: text("event_type").notNull(), // lifecycle + Phase 3 event types
   title: text("title").notNull(),
   body: text("body").notNull(),
-  severity: text("severity").notNull().default("info"), // 'info' | 'warning' | 'critical'
+  severity: text("severity").notNull().default("info"), // 'info' | 'success' | 'warning' | 'critical'
   linkUrl: text("link_url"),
+  // Phase 3: provenance + idempotency
+  projectId: text("project_id"),
+  runId: text("run_id"),
+  scheduleId: text("schedule_id"),
+  dedupKey: text("dedup_key"),
+  metadataJson: text("metadata_json"),
+  readAt: timestamp("read_at", { withTimezone: true }),
   isRead: boolean("is_read").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
-});
+}, (table) => ({
+  dedupIdx: uniqueIndex("idx_notifications_dedup_key").on(table.dedupKey),
+  inboxIdx: index("idx_notifications_inbox").on(table.userId, table.orgId, table.isRead),
+  createdIdx: index("idx_notifications_created").on(table.createdAt)
+}));
 
 export const notificationDeliveries = pgTable("notification_deliveries", {
   id: text("id").primaryKey(),
@@ -318,6 +350,90 @@ export const readinessPolicies = pgTable("readiness_policies", {
   activatedAt: timestamp("activated_at", { withTimezone: true }),
   archivedAt: timestamp("archived_at", { withTimezone: true })
 });
+
+export const assessmentSchedules = pgTable("assessment_schedules", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  testPlanId: text("test_plan_id").notNull().references(() => testPlans.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("active"), // active|paused|completed|cancelled|invalid
+  scheduleType: text("schedule_type").notNull(), // one_time | recurring
+  runAt: timestamp("run_at", { withTimezone: true }),
+  cronExpression: text("cron_expression"),
+  timezone: text("timezone").notNull().default("UTC"),
+  nextRunAt: timestamp("next_run_at", { withTimezone: true }),
+  lastRunAt: timestamp("last_run_at", { withTimezone: true }),
+  lastRunId: text("last_run_id"),
+  lastRunStatus: text("last_run_status"),
+  lastError: text("last_error"),
+  maxRuns: integer("max_runs"),
+  runCount: integer("run_count").notNull().default(0),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  pausedBy: text("paused_by"),
+  pausedAt: timestamp("paused_at", { withTimezone: true }),
+  cancelledBy: text("cancelled_by"),
+  cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+  version: integer("version").notNull().default(1)
+}, (table) => ({
+  dueSchedulesIdx: index("idx_schedules_status_next_run").on(table.status, table.nextRunAt),
+  orgProjectIdx: index("idx_schedules_org_project").on(table.organizationId, table.projectId),
+  planIdx: index("idx_schedules_test_plan").on(table.testPlanId)
+}));
+
+export const scheduleExecutions = pgTable("schedule_executions", {
+  id: text("id").primaryKey(),
+  scheduleId: text("schedule_id").notNull().references(() => assessmentSchedules.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").notNull(),
+  projectId: text("project_id").notNull(),
+  testPlanId: text("test_plan_id").notNull(),
+  runId: text("run_id"),
+  occurrenceKey: text("occurrence_key").notNull(),
+  scheduledFor: timestamp("scheduled_for", { withTimezone: true }).notNull(),
+  claimedAt: timestamp("claimed_at", { withTimezone: true }),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  status: text("status").notNull().default("pending"), // pending|claimed|run_created|completed|skipped|failed
+  failureCode: text("failure_code"),
+  failureMessage: text("failure_message"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => ({
+  occurrenceKeyIdx: uniqueIndex("idx_executions_occurrence_key").on(table.occurrenceKey),
+  scheduleIdx: index("idx_executions_schedule").on(table.scheduleId),
+  runIdx: index("idx_executions_run").on(table.runId),
+  statusIdx: index("idx_executions_status").on(table.status)
+}));
+
+export const schedulerState = pgTable("scheduler_state", {
+  id: text("id").primaryKey(), // 'singleton'
+  lastHeartbeatAt: timestamp("last_heartbeat_at", { withTimezone: true }),
+  lastTickAt: timestamp("last_tick_at", { withTimezone: true }),
+  lastTickError: text("last_tick_error"),
+  runningInstance: text("running_instance"),
+  claimLeaseUntil: timestamp("claim_lease_until", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+export const notificationRules = pgTable("notification_rules", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  projectId: text("project_id"),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  eventType: text("event_type").notNull(),
+  enabled: boolean("enabled").notNull().default(true),
+  minimumSeverity: text("minimum_severity").notNull().default("info"),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => ({
+  ruleIdentityIdx: uniqueIndex("idx_notification_rules_identity").on(
+    table.userId, table.organizationId, table.projectId, table.eventType
+  ),
+  lookupIdx: index("idx_notification_rules_lookup").on(table.organizationId, table.eventType, table.enabled)
+}));
 
 export const baselines = pgTable("baselines", {
   id: text("id").primaryKey(),

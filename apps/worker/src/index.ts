@@ -6,6 +6,7 @@ dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
 import { QueueManager } from "./queue/QueueManager.js";
 import { executeLoadTest } from "./runner/k6Runner.js";
+import { startServerSideRunLoop } from "./services/serverSideRunService.js";
 import { WorkerCallbackClient } from "./services/WorkerCallbackClient.js";
 import { db, testRuns } from "@proofscale/db";
 import { eq } from "drizzle-orm";
@@ -73,4 +74,9 @@ async function pollAndExecute() {
 
 if (process.env.NODE_ENV !== "test") {
   pollAndExecute();
+  // Server-side (Node HTTP) execution plane: consumes queued server_side runs.
+  // NOTE: in-process polling is the development adapter. Production
+  // multi-instance deployments should replace this with an external job queue
+  // (e.g. BullMQ/SQS) — the engine and repositories need no changes.
+  startServerSideRunLoop();
 }

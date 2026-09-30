@@ -77,7 +77,11 @@ export function DashboardOverview({
     return map;
   }, [completedRuns]);
 
-  // Aggregate metrics across completed runs
+  // Aggregate metrics across completed runs.
+  // DEMO DATA POLICY: values derived from real persisted runs only; the UI
+  // labels any illustrative fallback explicitly as demo data (never presents
+  // it as a measured result).
+  const hasRealTelemetry = completedRuns.some((r) => r.summaryMetrics);
   const aggregateMetrics = useMemo(() => {
     if (!completedRuns.length) {
       return {
@@ -304,24 +308,33 @@ export function DashboardOverview({
               />
               <MetricCell
                 label="p95 Latency"
-                value={<AnimatedNumber value={aggregateMetrics.avgP95 || 128} suffix=" ms" />}
-                sub="Within limit (<500ms)"
-                subColor="var(--success)"
+                value={
+                  aggregateMetrics.avgP95 > 0 ? (
+                    <AnimatedNumber value={aggregateMetrics.avgP95} suffix=" ms" />
+                  ) : (
+                    <span style={{ color: "var(--text-3)" }}>—</span>
+                  )
+                }
+                sub={hasRealTelemetry ? "Measured across completed runs" : "Demo placeholder — no runs yet"}
+                subColor={hasRealTelemetry ? "var(--success)" : "var(--warning)"}
               />
               <MetricCell
                 label="Error Rate"
                 value={<AnimatedNumber value={aggregateMetrics.avgErrorRate * 100} decimals={2} suffix="%" />}
-                sub="Zero 5xx detected"
+                sub={hasRealTelemetry ? "Measured across completed runs" : "Demo placeholder — no runs yet"}
+                subColor={hasRealTelemetry ? undefined : "var(--warning)"}
               />
               <MetricCell
                 label="Validated Volume"
                 value={
-                  <AnimatedNumber
-                    value={aggregateMetrics.totalRequests > 0 ? aggregateMetrics.totalRequests : 24821}
-                  />
+                  aggregateMetrics.totalRequests > 0 ? (
+                    <AnimatedNumber value={aggregateMetrics.totalRequests} />
+                  ) : (
+                    <span style={{ color: "var(--text-3)" }}>—</span>
+                  )
                 }
-                sub="+12.4% vs baseline"
-                subColor="var(--accent)"
+                sub={hasRealTelemetry ? "Total requests recorded" : "Demo placeholder — no runs yet"}
+                subColor={hasRealTelemetry ? "var(--accent)" : "var(--warning)"}
               />
             </div>
           </div>

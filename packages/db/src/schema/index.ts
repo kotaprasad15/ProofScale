@@ -18,4 +18,6 @@ export * from "./securityTables.js";
 export * from "./notifications.js";
 export * from "./readinessPolicies.js";
 export * from "./baselines.js";
+export * from "./assessmentSchedules.js";
+export * from "./notificationRules.js";
 

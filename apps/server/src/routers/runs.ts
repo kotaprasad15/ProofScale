@@ -3,6 +3,7 @@ import { CreateTestRunSchema, CancelTestRunSchema, KillSwitch, sanitizeTargetUrl
 import { eq, desc, and, isNull } from "drizzle-orm";
 import { testRuns, runEvents, testPlans, targets, projects, readinessPolicies, baselines } from "@proofscale/db";
 import { evaluateRunAgainstPolicy } from "@proofscale/shared";
+import { createQueuedRun } from "../services/runTriggerService.js";
 import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -374,68 +375,25 @@ export const runsRouter = router({
   create: requireProjectPermission("createRuns")
     .input(CreateTestRunSchema)
     .mutation(async ({ ctx, input }) => {
-      // 1. Check Global Emergency Kill Switch
-      if (KillSwitch.isActivated()) {
-        const state = KillSwitch.getState();
-        throw new TRPCError({
-          code: "PRECONDITION_FAILED",
-          message: `Global Emergency Kill Switch is active. Run creation is disabled. Reason: ${state.reason || "System shutdown"}`
-        });
-      }
-
-      const runId = `run_${crypto.randomUUID().slice(0, 8)}`;
-
-      // 2. Validate plan and target exist
-      const [plan] = await ctx.db.select().from(testPlans).where(eq(testPlans.id, input.planId));
-      if (!plan) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Specified test plan does not exist." });
-      }
-
-      const [target] = await ctx.db.select().from(targets).where(eq(targets.id, input.targetId));
-      if (!target) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Specified target endpoint does not exist." });
-      }
-
-      // 3. Pre-execution Safety Re-Validation (SSRF & DNS rebinding guard)
-      const sanitization = sanitizeTargetUrl(target.baseUrl);
-      if (!sanitization.isValid || !sanitization.allowedHost) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Target URL safety check failed: ${sanitization.reason || "Invalid URL"}`
-        });
-      }
-
-      const allowPrivate = process.env.ALLOW_PRIVATE_TARGETS === "true" || process.env.NODE_ENV !== "production";
-      const dnsCheck = await validateTargetHostDns(sanitization.allowedHost, { allowPrivateIPs: allowPrivate });
-
-      if (!dnsCheck.isValid) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: `Target SSRF re-check failed: ${dnsCheck.reason || "Restricted destination"}`
-        });
-      }
-
-      // 4. Queue the run in DB
-      const [newRun] = await ctx.db
-        .insert(testRuns)
-        .values({
-          id: runId,
-          planId: input.planId,
-          targetId: input.targetId,
-          status: "queued",
-          requestedByUserId: ctx.user.id,
-          targetVersionLabel: input.targetVersionLabel || "v1.0.0"
-        })
-        .returning();
-
-      // 5. Emit queue event
-      await ctx.db.insert(runEvents).values({
-        id: `ev_${crypto.randomUUID().slice(0, 8)}`,
-        runId,
-        eventType: "queued",
-        message: `Run ${runId} queued for execution against ${target.baseUrl} by ${ctx.user.email}`
+      // Delegates to the shared trigger service (single safe path reused by
+      // the Phase 3 scheduler). Kill switch, plan/target authorization, SSRF
+      // re-check, and safety-envelope validation all happen there.
+      const result = await createQueuedRun(input.planId, input.targetId, {
+        requestedByUserId: ctx.user.id
       });
 
+      if (!result.ok) {
+        const codeMap: Record<string, any> = {
+          kill_switch_active: "PRECONDITION_FAILED",
+          test_plan_missing: "NOT_FOUND",
+          target_unauthorized: result.code === "target_unauthorized" && /no longer exists/i.test(result.message) ? "NOT_FOUND" : "FORBIDDEN",
+          safety_limit_changed: "BAD_REQUEST",
+          run_creation_failed: "INTERNAL_SERVER_ERROR"
+        };
+        throw new TRPCError({ code: codeMap[result.code] || "BAD_REQUEST", message: result.message });
+      }
+
+      const [newRun] = await ctx.db.select().from(testRuns).where(eq(testRuns.id, result.runId));
       return newRun;
     }),
 

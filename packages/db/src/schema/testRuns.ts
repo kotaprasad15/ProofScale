@@ -26,6 +26,23 @@ export const testRuns = sqliteTable("test_runs", {
   scoreBreakdownJson: text("score_breakdown_json"), // JSON ScoreBreakdown
   policySnapshotJson: text("policy_snapshot_json"), // JSON PolicyEvaluationSnapshot
   errorMessage: text("error_message"),
+  // ---- Server-side execution (v2) result columns ----
+  // envelopeJson: exact immutable TestPlan snapshot used for this run.
+  envelopeJson: text("envelope_json"),
+  // resultJson: full TestRunResult (metrics + samples + threshold checks).
+  resultJson: text("result_json"),
+  // progressJson: live RunProgress snapshot updated periodically while running.
+  progressJson: text("progress_json"),
+  cancelReason: text("cancel_reason"),
+  runKind: text("run_kind", { enum: ["k6", "server_side"] }).notNull().default("k6"),
+  // ---- Phase 3: trigger metadata ----
+  /** 'manual' | 'schedule' — how this run was requested. */
+  triggerSource: text("trigger_source").notNull().default("manual"),
+  scheduleId: text("schedule_id"),
+  scheduleName: text("schedule_name"),
+  /** The planned occurrence instant (may differ from actual start). */
+  scheduledFor: integer("scheduled_for", { mode: "timestamp" }),
+  actualStartedAt: integer("actual_started_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date())
 });

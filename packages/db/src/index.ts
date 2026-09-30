@@ -2,7 +2,12 @@ import * as sqliteSchema from "./schema/index.js";
 import * as pgSchema from "./schemaPg/index.js";
 import { isPostgres } from "./client.js";
 
+/** Public re-export: explicit migration entry points for tests and operators. */
+export { runMigrations } from "./migrate.js";
+export { runPgMigrations } from "./migratePg.js";
+
 export * from "./client.js";
+export * from "./repositories/index.js";
 
 // Export tables dynamically based on dialect
 export const users = (isPostgres ? pgSchema.users : sqliteSchema.users) as typeof sqliteSchema.users;
@@ -31,3 +36,7 @@ export const notifications = (isPostgres ? pgSchema.notifications : sqliteSchema
 export const notificationDeliveries = (isPostgres ? pgSchema.notificationDeliveries : sqliteSchema.notificationDeliveries) as typeof sqliteSchema.notificationDeliveries;
 export const readinessPolicies = (isPostgres ? pgSchema.readinessPolicies : sqliteSchema.readinessPolicies) as typeof sqliteSchema.readinessPolicies;
 export const baselines = (isPostgres ? pgSchema.baselines : sqliteSchema.baselines) as typeof sqliteSchema.baselines;
+export const assessmentSchedules = (isPostgres ? pgSchema.assessmentSchedules : sqliteSchema.assessmentSchedules) as typeof sqliteSchema.assessmentSchedules;
+export const scheduleExecutions = (isPostgres ? pgSchema.scheduleExecutions : sqliteSchema.scheduleExecutions) as typeof sqliteSchema.scheduleExecutions;
+export const schedulerState = (isPostgres ? pgSchema.schedulerState : sqliteSchema.schedulerState) as typeof sqliteSchema.schedulerState;
+export const notificationRules = (isPostgres ? pgSchema.notificationRules : sqliteSchema.notificationRules) as typeof sqliteSchema.notificationRules;

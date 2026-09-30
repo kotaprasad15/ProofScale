@@ -11,6 +11,13 @@ services:
         value: production
       - key: DATABASE_URL
         sync: false # You will paste your DB URL in the dashboard
+      # Phase 3 durable scheduler (runs inside this API process):
+      # Set to "false" to stop claiming scheduled occurrences (incident brake).
+      - key: SCHEDULER_ENABLED
+        value: "true"
+      # Tick cadence; <=10 occurrence claims per tick.
+      - key: SCHEDULER_INTERVAL_MS
+        value: "30000"
 
   # 2. Execution Background Worker
   - type: worker

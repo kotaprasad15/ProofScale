@@ -106,7 +106,8 @@ describe("Phase 2: Target Safety & SSRF Pipeline", () => {
         },
         (err: any) => {
           assert.strictEqual(err.code, "PRECONDITION_FAILED");
-          assert.match(err.message, /Kill Switch is active/);
+          // The message comes from the shared run-trigger service.
+          assert.match(err.message, /kill switch/i);
           return true;
         }
       );

@@ -135,8 +135,11 @@ export function runMigrations(customDb?: Database.Database | null) {
 
     CREATE TABLE IF NOT EXISTS test_runs (
       id TEXT PRIMARY KEY,
-      plan_id TEXT NOT NULL REFERENCES test_plans(id) ON DELETE CASCADE,
-      target_id TEXT NOT NULL REFERENCES targets(id) ON DELETE CASCADE,
+      -- NOTE: physical column names must match the Drizzle schema exactly
+      -- (testRuns.ts uses camelCase planId/targetId, unlike every other
+      -- table); inserts go through the schema mapping.
+      planId TEXT NOT NULL REFERENCES test_plans(id) ON DELETE CASCADE,
+      targetId TEXT NOT NULL REFERENCES targets(id) ON DELETE CASCADE,
       target_version_label TEXT NOT NULL DEFAULT 'v1.0.0',
       status TEXT NOT NULL DEFAULT 'queued',
       score INTEGER,
@@ -162,7 +165,9 @@ export function runMigrations(customDb?: Database.Database | null) {
       event_type TEXT NOT NULL,
       message TEXT NOT NULL,
       metadata_json TEXT,
-      created_at INTEGER NOT NULL
+      -- Schema source of truth (runEvents.ts) has a timestamp column, not
+      -- created_at.
+      timestamp INTEGER NOT NULL DEFAULT (unixepoch())
     );
 
     CREATE TABLE IF NOT EXISTS findings (
@@ -301,6 +306,149 @@ export function runMigrations(customDb?: Database.Database | null) {
   try { targetDb.exec("ALTER TABLE targets ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;"); } catch {}
   try { targetDb.exec("ALTER TABLE test_plans ADD COLUMN safety_limits_json TEXT;"); } catch {}
   try { targetDb.exec("ALTER TABLE test_plans ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;"); } catch {}
+  // Server-side execution (v2) columns
+  try { targetDb.exec("ALTER TABLE test_plans ADD COLUMN spec_json TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_plans ADD COLUMN plan_status TEXT NOT NULL DEFAULT 'draft';"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_plans ADD COLUMN plan_environment TEXT NOT NULL DEFAULT 'staging';"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_plans ADD COLUMN target_base_url TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_plans ADD COLUMN approved_by TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_plans ADD COLUMN approved_at INTEGER;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_plans ADD COLUMN spec_version INTEGER NOT NULL DEFAULT 0;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_plans ADD COLUMN created_by TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_runs ADD COLUMN envelope_json TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_runs ADD COLUMN result_json TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_runs ADD COLUMN progress_json TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_runs ADD COLUMN cancel_reason TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_runs ADD COLUMN run_kind TEXT NOT NULL DEFAULT 'k6';"); } catch {}
+  // Columns the PG hardening migration adds; keep fresh SQLite DBs aligned
+  // (older DBs get them via the same try/catch no-op path).
+  try { targetDb.exec("ALTER TABLE test_runs ADD COLUMN worker_id TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_runs ADD COLUMN lease_owner TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_runs ADD COLUMN attempt_count INTEGER NOT NULL DEFAULT 0;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_runs ADD COLUMN worker_profile TEXT DEFAULT 'standard-runner-1';"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_runs ADD COLUMN policy_snapshot_json TEXT;"); } catch {}
+  // Legacy SQLite DBs created before the schema/DDL alignment: repair the
+  // camelCase column mismatch and the missing run_events.timestamp. Each
+  // statement no-ops (throws + is swallowed) when inapplicable.
+  try { targetDb.exec("ALTER TABLE test_runs RENAME COLUMN plan_id TO planId;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_runs RENAME COLUMN target_id TO targetId;"); } catch {}
+  try { targetDb.exec("ALTER TABLE run_events ADD COLUMN timestamp INTEGER;"); } catch {}
+  try { targetDb.exec("UPDATE run_events SET timestamp = created_at WHERE timestamp IS NULL"); } catch {}
+  // Phase 3: trigger metadata on runs
+  try { targetDb.exec("ALTER TABLE test_runs ADD COLUMN trigger_source TEXT NOT NULL DEFAULT 'manual';"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_runs ADD COLUMN schedule_id TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_runs ADD COLUMN schedule_name TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_runs ADD COLUMN scheduled_for INTEGER;"); } catch {}
+  try { targetDb.exec("ALTER TABLE test_runs ADD COLUMN actual_started_at INTEGER;"); } catch {}
+
+  // Phase 3: durable schedules
+  targetDb.exec(`
+    CREATE TABLE IF NOT EXISTS assessment_schedules (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      test_plan_id TEXT NOT NULL REFERENCES test_plans(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      description TEXT,
+      status TEXT NOT NULL DEFAULT 'active',
+      schedule_type TEXT NOT NULL,
+      run_at INTEGER,
+      cron_expression TEXT,
+      timezone TEXT NOT NULL DEFAULT 'UTC',
+      next_run_at INTEGER,
+      last_run_at INTEGER,
+      last_run_id TEXT,
+      last_run_status TEXT,
+      last_error TEXT,
+      max_runs INTEGER,
+      run_count INTEGER NOT NULL DEFAULT 0,
+      created_by TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      paused_by TEXT,
+      paused_at INTEGER,
+      cancelled_by TEXT,
+      cancelled_at INTEGER,
+      version INTEGER NOT NULL DEFAULT 1
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_schedules_status_next_run ON assessment_schedules(status, next_run_at);
+    CREATE INDEX IF NOT EXISTS idx_schedules_org_project ON assessment_schedules(organization_id, project_id);
+    CREATE INDEX IF NOT EXISTS idx_schedules_test_plan ON assessment_schedules(test_plan_id);
+
+    CREATE TABLE IF NOT EXISTS schedule_executions (
+      id TEXT PRIMARY KEY,
+      schedule_id TEXT NOT NULL REFERENCES assessment_schedules(id) ON DELETE CASCADE,
+      organization_id TEXT NOT NULL,
+      project_id TEXT NOT NULL,
+      test_plan_id TEXT NOT NULL,
+      run_id TEXT,
+      occurrence_key TEXT NOT NULL,
+      scheduled_for INTEGER NOT NULL,
+      claimed_at INTEGER,
+      started_at INTEGER,
+      completed_at INTEGER,
+      status TEXT NOT NULL DEFAULT 'pending',
+      failure_code TEXT,
+      failure_message TEXT,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_executions_occurrence_key ON schedule_executions(occurrence_key);
+    CREATE INDEX IF NOT EXISTS idx_executions_schedule ON schedule_executions(schedule_id);
+    CREATE INDEX IF NOT EXISTS idx_executions_run ON schedule_executions(run_id);
+    CREATE INDEX IF NOT EXISTS idx_executions_status ON schedule_executions(status);
+
+    CREATE TABLE IF NOT EXISTS scheduler_state (
+      id TEXT PRIMARY KEY,
+      last_heartbeat_at INTEGER,
+      last_tick_at INTEGER,
+      last_tick_error TEXT,
+      running_instance TEXT,
+      claim_lease_until INTEGER,
+      updated_at INTEGER NOT NULL
+    );
+  `);
+
+  // Phase 3: notification rules + notification provenance/idempotency
+  targetDb.exec(`
+    CREATE TABLE IF NOT EXISTS notification_rules (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      project_id TEXT,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      event_type TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      minimum_severity TEXT NOT NULL DEFAULT 'info',
+      created_by TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_notification_rules_identity ON notification_rules(user_id, organization_id, project_id, event_type);
+    CREATE INDEX IF NOT EXISTS idx_notification_rules_lookup ON notification_rules(organization_id, event_type, enabled);
+  `);
+
+  try { targetDb.exec("ALTER TABLE notifications ADD COLUMN project_id TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE notifications ADD COLUMN run_id TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE notifications ADD COLUMN schedule_id TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE notifications ADD COLUMN dedup_key TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE notifications ADD COLUMN metadata_json TEXT;"); } catch {}
+  try { targetDb.exec("ALTER TABLE notifications ADD COLUMN read_at INTEGER;"); } catch {}
+  // Unique dedup index. Must NOT be partial: ON CONFLICT (dedup_key) inference
+  // only matches a FULL unique index (both SQLite and PG). Legacy NULL-key rows
+  // remain fine — NULLs are distinct in unique indexes.
+  try {
+    const partial = targetDb
+      .prepare("SELECT sql FROM sqlite_master WHERE type='index' AND name='idx_notifications_dedup_key' AND sql LIKE '%WHERE%'")
+      .get();
+    if (partial) targetDb.exec("DROP INDEX idx_notifications_dedup_key;");
+  } catch {}
+  try {
+    targetDb.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_notifications_dedup_key ON notifications(dedup_key);");
+  } catch {}
+  try { targetDb.exec("CREATE INDEX IF NOT EXISTS idx_notifications_inbox ON notifications(user_id, org_id, is_read);"); } catch {}
+  try { targetDb.exec("CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at);"); } catch {}
 
 
   // Auto-seed default baseline workspace if no users exist

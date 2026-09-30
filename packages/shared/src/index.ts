@@ -12,3 +12,5 @@ export * from "./reports/ComparisonEngine.js";
 export * from "./security/index.js";
 export * from "./events/LifecycleEventBus.js";
 export * from "./scoring/PolicyEvaluator.js";
+export * from "./testExec/index.js";
+export * from "./schedules/index.js";

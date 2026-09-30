@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { trpc } from "../utils/trpc";
-import { FileText, Download, Share2, AlertTriangle, CheckCircle2, Copy, X, ShieldOff, Clock, ArrowLeft } from "lucide-react";
+import { FileText, Download, Share2, AlertTriangle, CheckCircle2, Copy, X, ShieldOff, Clock, ArrowLeft, Globe, ListOrdered, Users } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { ScoreRing, SkeletonPanel } from "../motion";
 import { Skeleton } from "../motion/Skeleton";
 import { Activity as _ActivityIcon } from "lucide-react";
+import { TestRunResult, TestPlan, RunProgress } from "@proofscale/shared";
+import { testExecApi } from "../utils/api";
 const Activity = _ActivityIcon;
 
 function scoreColor(score: number): string {
@@ -21,6 +23,182 @@ function RadialGauge({ score }: { score: number }) {
 interface ReportDetailViewProps {
   runId: string;
   onBack?: () => void;
+}
+
+/**
+ * Server-side run report (v2 execution plane).
+ * Renders the exact persisted TestRunResult for runs executed by the Node.js
+ * worker, with the interpretation guardrail. Legacy k6 runs fall through to
+ * the classic report sections below.
+ */
+function ServerSideRunReport({ runId }: { runId: string }) {
+  const [data, setData] = useState<{
+    status: string;
+    result?: TestRunResult;
+    envelope?: TestPlan | null;
+    progress?: RunProgress | null;
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    testExecApi
+      .getRun(runId)
+      .then(d => {
+        if (!cancelled) setData(d);
+      })
+      .catch(() => {
+        // Not a server-side run (or not authorized) — classic report handles it.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [runId]);
+
+  if (error || !data?.result) return null;
+  const r = data.result;
+  const env = data.envelope;
+
+  return (
+    <div className="glass-panel p-6 sm:p-8 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-3">
+        <div>
+          <h3 className="text-base font-semibold text-text-primary">Server-Side Execution Report</h3>
+          <p className="text-xs text-text-muted font-mono mt-0.5">
+            Executed by the ProofScale Node.js worker — all samples recorded server-side
+          </p>
+        </div>
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-mono font-bold uppercase ${
+            r.passed ? "bg-signal-teal-soft text-signal-teal" : "bg-signal-rose-soft text-signal-rose"
+          }`}
+        >
+          {r.passed ? "Passed" : r.cancelled ? "Cancelled" : "Failed thresholds"}
+        </span>
+      </div>
+r
+      {/* Envelope provenance: exact conditions the results are valid for */}
+      {env && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
+          <div className="p-3 rounded-xl bg-[var(--white-fill-sm)] border border-[var(--border)]">
+            <div className="text-[10px] uppercase text-text-faint flex items-center gap-1 mb-1">
+              <Globe className="w-3 h-3" /> Target
+            </div>
+            <div className="text-text-primary font-semibold break-all">{r.targetBaseUrl}</div>
+            <div className="text-[10px] text-text-muted mt-0.5 capitalize">{r.environment}</div>
+          </div>
+          <div className="p-3 rounded-xl bg-[var(--white-fill-sm)] border border-[var(--border)]">
+            <div className="text-[10px] uppercase text-text-faint flex items-center gap-1 mb-1">
+              <Users className="w-3 h-3" /> Workload
+            </div>
+            <div className="text-text-primary font-semibold">
+              {env.virtualUsers} VUs · {env.durationSeconds}s
+            </div>
+            <div className="text-[10px] text-text-muted mt-0.5">≤ {env.maxRequestsPerSecond} RPS · {env.requestTimeoutMs}ms timeout</div>
+          </div>
+          <div className="p-3 rounded-xl bg-[var(--white-fill-sm)] border border-[var(--border)] sm:col-span-2">
+            <div className="text-[10px] uppercase text-text-faint flex items-center gap-1 mb-1">
+              <ListOrdered className="w-3 h-3" /> Request sequence
+            </div>
+            <div className="text-text-primary">
+              {env.requests.map((req, i) => (
+                <div key={req.id} className={req.enabled ? "" : "line-through opacity-50"}>
+                  {i + 1}. {req.method} {req.path}{!req.enabled && " (disabled)"}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Core metrics */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
+        {[
+          { label: "Total Requests", value: r.totalRequests },
+          { label: "Successful", value: r.successfulRequests },
+          { label: "Failed", value: r.failedRequests },
+          { label: "RPS", value: r.requestsPerSecond },
+          { label: "Error Rate", value: `${r.errorRatePercent}%` },
+          { label: "Duration", value: `${r.durationSeconds}s` }
+        ].map(m => (
+          <div key={m.label} className="p-3 rounded-xl bg-ink-950/80 border border-white/[0.06]">
+            <div className="text-[10px] font-mono uppercase text-text-faint">{m.label}</div>
+            <div className="text-lg font-mono font-bold text-text-primary tabular-nums">{m.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Latency percentiles */}
+      <div className="h-44">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={[
+              { name: "p50", value: r.p50LatencyMs },
+              { name: "p95", value: r.p95LatencyMs },
+              { name: "p99", value: r.p99LatencyMs }
+            ]}
+          >
+            <XAxis dataKey="name" stroke="#8D96AC" fontSize={11} />
+            <YAxis stroke="#8D96AC" fontSize={11} />
+            <Tooltip
+              contentStyle={{ backgroundColor: "#10151F", borderColor: "rgba(255,255,255,0.1)", borderRadius: "12px" }}
+              itemStyle={{ color: "#F3F5FA" }}
+              formatter={(v: any) => [`${v} ms`, "latency"]}
+            />
+            <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+              <Cell fill="#2FD4A6" />
+              <Cell fill="#F0A63A" />
+              <Cell fill="#F2586B" />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Threshold checks */}
+      <div className="space-y-2">
+        <h4 className="text-xs font-semibold text-text-muted uppercase">Threshold Evaluation</h4>
+        {([
+          ["p95 latency", r.thresholdResults.p95Latency],
+          ...(r.thresholdResults.p99Latency ? [["p99 latency", r.thresholdResults.p99Latency] as const] : []),
+          ["error rate", r.thresholdResults.errorRate],
+          ["requests/sec", r.thresholdResults.requestsPerSecond]
+        ] as [string, { actual: number; limit?: number; passed: boolean }][]).map(([label, check]) => (
+          <div
+            key={label}
+            className="p-3 rounded-lg bg-[var(--white-fill-sm)] border border-[var(--border)] flex justify-between items-center text-xs font-mono"
+          >
+            <span className="text-text-primary font-semibold capitalize">{label}</span>
+            <span className="flex items-center gap-3">
+              <span className="text-text-muted">
+                actual <strong className="text-text-primary">{check.actual}</strong>
+                {check.limit !== undefined && (
+                  <>
+                    {" "}
+                    vs limit <strong className="text-text-primary">{check.limit}</strong>
+                  </>
+                )}
+                {check.limit === undefined && <span className="text-text-faint"> (no limit configured)</span>}
+              </span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold ${
+                  check.passed ? "bg-signal-teal-soft text-signal-teal" : "bg-signal-rose-soft text-signal-rose"
+                }`
+                }
+              >
+                {check.passed ? "pass" : "fail"}
+              </span>
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Interpretation guardrail */}
+      <div className="p-4 rounded-xl bg-ink-950 border border-signal-amber/30 text-[11px] font-mono text-signal-amber leading-relaxed">
+        ⚠ Interpretation guardrail: Results are valid only for the declared target, environment, workload, request
+        sequence, thresholds, and runner configuration used during this assessment.
+      </div>
+    </div>
+  );
 }
 
 export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
@@ -67,6 +245,7 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
   const { run, plan, target, findings } = reportData;
   const sb = run.scoreBreakdown;
   const metrics = run.summaryMetrics;
+  const isServerSideRun = (run as any).runKind === "server_side" || !metrics;
 
   const handleDownloadMarkdown = async () => {
     const res = await exportMarkdownQuery.refetch();
@@ -283,6 +462,9 @@ export function ReportDetailView({ runId, onBack }: ReportDetailViewProps) {
         </div>
       )}
 
+      {/* Server-side execution report (v2 worker runs) */}
+      {isServerSideRun && <ServerSideRunReport runId={runId} />}
+
       {/* 5-Category Weighted Breakdown (mirrors the Methodology page) */}
       {sb && (
         <div className="glass-panel p-6 sm:p-8 space-y-4">

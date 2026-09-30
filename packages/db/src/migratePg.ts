@@ -189,14 +189,15 @@ export async function runPgMigrations(connectionUrl?: string) {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
-      CREATE TABLE IF NOT EXISTS run_events (
-        id TEXT PRIMARY KEY,
-        run_id TEXT NOT NULL REFERENCES test_runs(id) ON DELETE CASCADE,
-        event_type TEXT NOT NULL,
-        message TEXT NOT NULL,
-        metadata_json TEXT,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
+    CREATE TABLE IF NOT EXISTS run_events (
+      id TEXT PRIMARY KEY,
+      run_id TEXT NOT NULL REFERENCES test_runs(id) ON DELETE CASCADE,
+      event_type TEXT NOT NULL,
+      message TEXT NOT NULL,
+      metadata_json TEXT,
+      timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
 
       CREATE TABLE IF NOT EXISTS findings (
         id TEXT PRIMARY KEY,
@@ -359,6 +360,139 @@ export async function runPgMigrations(connectionUrl?: string) {
       ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS attempt_count INTEGER NOT NULL DEFAULT 0;
       ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS worker_profile TEXT DEFAULT 'standard-runner-1';
       ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS policy_snapshot_json TEXT;
+
+      -- Server-side execution (v2) columns
+      ALTER TABLE test_plans ADD COLUMN IF NOT EXISTS spec_json TEXT;
+      ALTER TABLE test_plans ADD COLUMN IF NOT EXISTS plan_status TEXT NOT NULL DEFAULT 'draft';
+      ALTER TABLE test_plans ADD COLUMN IF NOT EXISTS plan_environment TEXT NOT NULL DEFAULT 'staging';
+      ALTER TABLE test_plans ADD COLUMN IF NOT EXISTS target_base_url TEXT;
+      ALTER TABLE test_plans ADD COLUMN IF NOT EXISTS approved_by TEXT;
+      ALTER TABLE test_plans ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+      ALTER TABLE test_plans ADD COLUMN IF NOT EXISTS spec_version INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE test_plans ADD COLUMN IF NOT EXISTS created_by TEXT;
+      ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS envelope_json TEXT;
+      ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS result_json TEXT;
+      ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS progress_json TEXT;
+      ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS cancel_reason TEXT;
+      ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS run_kind TEXT NOT NULL DEFAULT 'k6';
+
+      -- Phase 3: trigger metadata on runs
+      ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS trigger_source TEXT NOT NULL DEFAULT 'manual';
+      ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS schedule_id TEXT;
+      ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS schedule_name TEXT;
+      ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS scheduled_for TIMESTAMPTZ;
+      ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS actual_started_at TIMESTAMPTZ;
+
+      -- Phase 3: durable schedules
+      CREATE TABLE IF NOT EXISTS assessment_schedules (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+        project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        test_plan_id TEXT NOT NULL REFERENCES test_plans(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        description TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        schedule_type TEXT NOT NULL,
+        run_at TIMESTAMPTZ,
+        cron_expression TEXT,
+        timezone TEXT NOT NULL DEFAULT 'UTC',
+        next_run_at TIMESTAMPTZ,
+        last_run_at TIMESTAMPTZ,
+        last_run_id TEXT,
+        last_run_status TEXT,
+        last_error TEXT,
+        max_runs INTEGER,
+        run_count INTEGER NOT NULL DEFAULT 0,
+        created_by TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        paused_by TEXT,
+        paused_at TIMESTAMPTZ,
+        cancelled_by TEXT,
+        cancelled_at TIMESTAMPTZ,
+        version INTEGER NOT NULL DEFAULT 1
+      );
+      CREATE INDEX IF NOT EXISTS idx_schedules_status_next_run ON public.assessment_schedules(status, next_run_at);
+      CREATE INDEX IF NOT EXISTS idx_schedules_org_project ON public.assessment_schedules(organization_id, project_id);
+      CREATE INDEX IF NOT EXISTS idx_schedules_test_plan ON public.assessment_schedules(test_plan_id);
+
+      CREATE TABLE IF NOT EXISTS schedule_executions (
+        id TEXT PRIMARY KEY,
+        schedule_id TEXT NOT NULL REFERENCES assessment_schedules(id) ON DELETE CASCADE,
+        organization_id TEXT NOT NULL,
+        project_id TEXT NOT NULL,
+        test_plan_id TEXT NOT NULL,
+        run_id TEXT,
+        occurrence_key TEXT NOT NULL,
+        scheduled_for TIMESTAMPTZ NOT NULL,
+        claimed_at TIMESTAMPTZ,
+        started_at TIMESTAMPTZ,
+        completed_at TIMESTAMPTZ,
+        status TEXT NOT NULL DEFAULT 'pending',
+        failure_code TEXT,
+        failure_message TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_executions_occurrence_key ON public.schedule_executions(occurrence_key);
+      CREATE INDEX IF NOT EXISTS idx_executions_schedule ON public.schedule_executions(schedule_id);
+      CREATE INDEX IF NOT EXISTS idx_executions_run ON public.schedule_executions(run_id);
+      CREATE INDEX IF NOT EXISTS idx_executions_status ON public.schedule_executions(status);
+
+      CREATE TABLE IF NOT EXISTS scheduler_state (
+        id TEXT PRIMARY KEY,
+        last_heartbeat_at TIMESTAMPTZ,
+        last_tick_at TIMESTAMPTZ,
+        last_tick_error TEXT,
+        running_instance TEXT,
+        claim_lease_until TIMESTAMPTZ,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS notification_rules (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+        project_id TEXT,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        event_type TEXT NOT NULL,
+        enabled BOOLEAN NOT NULL DEFAULT TRUE,
+        minimum_severity TEXT NOT NULL DEFAULT 'info',
+        created_by TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_notification_rules_identity ON public.notification_rules(user_id, organization_id, project_id, event_type);
+      CREATE INDEX IF NOT EXISTS idx_notification_rules_lookup ON public.notification_rules(organization_id, event_type, enabled);
+
+      -- Phase 3: notification provenance/idempotency columns
+      ALTER TABLE notifications ADD COLUMN IF NOT EXISTS project_id TEXT;
+      ALTER TABLE notifications ADD COLUMN IF NOT EXISTS run_id TEXT;
+      ALTER TABLE notifications ADD COLUMN IF NOT EXISTS schedule_id TEXT;
+      ALTER TABLE notifications ADD COLUMN IF NOT EXISTS dedup_key TEXT;
+      ALTER TABLE notifications ADD COLUMN IF NOT EXISTS metadata_json TEXT;
+      ALTER TABLE notifications ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ;
+      -- Unique dedup index. Must NOT be partial: ON CONFLICT (dedup_key)
+      -- inference requires a full unique index. NULL dedup keys (legacy rows)
+      -- remain allowed — PG unique indexes treat NULLs as distinct.
+      -- Replaces the earlier partial variant if it exists.
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM pg_indexes
+          WHERE indexname = 'idx_notifications_dedup_key'
+            AND indexdef LIKE '%WHERE%'
+        ) THEN
+          DROP INDEX idx_notifications_dedup_key;
+        END IF;
+      END $$;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_notifications_dedup_key ON public.notifications(dedup_key);
+      CREATE INDEX IF NOT EXISTS idx_notifications_inbox ON public.notifications(user_id, org_id, is_read);
+      CREATE INDEX IF NOT EXISTS idx_notifications_created ON public.notifications(created_at);
+
+      -- Legacy compatibility: pre-Phase-2 run_events tables lack the timestamp
+      -- column entirely; add it (with a default so new inserts work) before
+      -- backfilling NULLs from created_at.
+      ALTER TABLE run_events ADD COLUMN IF NOT EXISTS timestamp TIMESTAMPTZ DEFAULT NOW();
+      UPDATE public.run_events SET timestamp = created_at WHERE timestamp IS NULL;
     `);
 
     // 2. Enable Row Level Security (RLS) on ALL tables and apply scoped service_role policies

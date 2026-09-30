@@ -19,10 +19,12 @@ import { StatusChip, readinessTone } from "./components/ui/StatusChip";
 import { KillSwitchView } from "./components/KillSwitchView";
 import { DashboardOverview } from "./components/DashboardOverview";
 import { HistoryView } from "./components/HistoryView";
+import { SchedulesView } from "./components/SchedulesView";
 import { ThemeProvider } from "./components/home/ThemeContext";
 import { useNotifications } from "./hooks/useNotifications";
 import { Splash, RouteProgress, AuroraBackground } from "./motion";
 import { NotificationPreferencesView } from "./components/notifications/NotificationPreferencesView";
+import { NotificationRulesView } from "./components/notifications/NotificationRulesView";
 import { Shield, Play, Target, CheckCircle2, FileText, AlertTriangle, Users, LogOut, ArrowRight, Activity, Home } from "lucide-react";
 
 interface SessionUser {
@@ -61,7 +63,7 @@ function parseLocationToRoute(): RouteState {
   }
 
   const cleanTab = pathname.replace("/", "");
-  const validTabs = ["projects", "targets", "plans", "runs", "reports", "organization", "settings", "history"];
+  const validTabs = ["projects", "targets", "plans", "runs", "reports", "organization", "settings", "history", "schedules"];
   const tab = cleanTab === "dashboard" || !validTabs.includes(cleanTab) ? "projects" : cleanTab;
 
   return {
@@ -213,6 +215,9 @@ function MainApp({
       {activeTab === "history" && (
         <HistoryView projectId={projectId} onSelectRun={handleSelectRun} />
       )}
+      {activeTab === "schedules" && (
+        <SchedulesView projectId={projectId} onSelectRun={handleSelectRun} />
+      )}
       {activeTab === "settings" && (
         <div className="max-w-4xl mx-auto glass-panel p-6 sm:p-8 space-y-6 pb-12">
           <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
@@ -264,6 +269,11 @@ function MainApp({
               isPushSupported={notifications.isPushSupported}
               isSubscribingPush={notifications.isSubscribingPush}
             />
+          </div>
+
+          {/* Phase 3: Readiness Notification Rules */}
+          <div className="p-6 rounded-2xl bg-ink-950/80 border border-white/[0.06]">
+            <NotificationRulesView organizationId={selectedOrgId || authData?.activeOrganizationId} />
           </div>
 
           <KillSwitchView />
