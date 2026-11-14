@@ -521,7 +521,11 @@ export async function runPgMigrations(connectionUrl?: string) {
       "notification_preferences",
       "push_subscriptions",
       "notifications",
-      "notification_deliveries"
+      "notification_deliveries",
+      "assessment_schedules",
+      "schedule_executions",
+      "scheduler_state",
+      "notification_rules"
     ];
 
 
